@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "visualclient",
+  "version": "${version}",
+  "name": "Visual Client",
+  "description": "A modern client-side visual mod: weather, sky color, glint color, pack mixer, HUD modules and more. Press Right Shift in game.",
+  "authors": [
+    "Visual Client"
+  ],
+  "license": "MIT",
+  "icon": "assets/visualclient/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.visualclient.VisualClient"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "visualclient.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
