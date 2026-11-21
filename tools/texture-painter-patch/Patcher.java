@@ -87,7 +87,29 @@ public class Patcher implements Opcodes {
 	 * and offers a few static bridges (scissor, current screen, open menu, close). Every Minecraft
 	 * name is taken from the old menu (VisualGuiScreen) of the same build, so it fits each build.
 	 */
+	/** GuiGraphics.renderItem(ItemStack, int, int) as the mod itself calls it (ArmorHud, ...). */
+	static MethodInsnNode findItemDraw(Map<String, byte[]> entries) {
+		for (var e : entries.entrySet()) {
+			if (!e.getKey().startsWith("net/visualclient/") || !e.getKey().endsWith(".class")) continue;
+			ClassNode cn = readClass(e.getValue());
+			for (MethodNode m : cn.methods) {
+				for (AbstractInsnNode n : m.instructions) {
+					if (n instanceof MethodInsnNode mi && mi.getOpcode() == INVOKEVIRTUAL
+						&& (mi.desc.equals("(Lnet/minecraft/class_1799;II)V") || mi.desc.equals("(Lnet/minecraft/world/item/ItemStack;II)V"))
+						&& (mi.owner.equals("net/minecraft/class_332") || mi.owner.startsWith("net/minecraft/client/gui/GuiGraphics"))) {
+						return mi;
+					}
+				}
+			}
+		}
+		throw new IllegalStateException("no item draw call found");
+	}
+
 	static byte[] newGuiScreen(byte[] vgsBytes, byte[] compatBytes, byte[] openerBytes) {
+		return newGuiScreen(vgsBytes, compatBytes, openerBytes, null);
+	}
+
+	static byte[] newGuiScreen(byte[] vgsBytes, byte[] compatBytes, byte[] openerBytes, MethodInsnNode itemDraw) {
 		ClassNode vgs = readClass(vgsBytes);
 		ClassNode compat = readClass(compatBytes);
 		ClassNode opener = readClass(openerBytes);
@@ -243,6 +265,28 @@ public class Patcher implements Opcodes {
 		bOpen.instructions.add(new MethodInsnNode(INVOKESTATIC, COMPAT, "setScreen", setScreen.desc, false));
 		bOpen.instructions.add(new InsnNode(RETURN));
 		cn.methods.add(bOpen);
+
+		if (itemDraw != null) {
+			MethodNode bItem = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$item", "(Ljava/lang/Object;Ljava/lang/Object;II)V", null, null);
+			bItem.instructions.add(new VarInsnNode(ALOAD, 0));
+			bItem.instructions.add(new TypeInsnNode(CHECKCAST, itemDraw.owner));
+			bItem.instructions.add(new VarInsnNode(ALOAD, 1));
+			bItem.instructions.add(new TypeInsnNode(CHECKCAST, Type.getArgumentTypes(itemDraw.desc)[0].getInternalName()));
+			bItem.instructions.add(new VarInsnNode(ILOAD, 2));
+			bItem.instructions.add(new VarInsnNode(ILOAD, 3));
+			bItem.instructions.add(itemDraw.clone(null));
+			bItem.instructions.add(new InsnNode(RETURN));
+			cn.methods.add(bItem);
+		}
+
+		MethodNode bNew = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$openNew", "()V", null, null);
+		bNew.instructions.add(getInstance.clone(null));
+		bNew.instructions.add(new TypeInsnNode(NEW, NEW_SCREEN));
+		bNew.instructions.add(new InsnNode(DUP));
+		bNew.instructions.add(new MethodInsnNode(INVOKESPECIAL, NEW_SCREEN, "<init>", "()V", false));
+		bNew.instructions.add(new MethodInsnNode(INVOKESTATIC, COMPAT, "setScreen", setScreen.desc, false));
+		bNew.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(bNew);
 
 		MethodNode bClose = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$close", "(Ljava/lang/Object;)V", null, null);
 		bClose.instructions.add(new VarInsnNode(ALOAD, 0));
@@ -734,7 +778,7 @@ public class Patcher implements Opcodes {
 		Map<String, byte[]> entries = readJar(jar);
 		add.put(ITEM_SIZE_MIXIN + ".class", itemSizeMixin(entries.get(XP_ORB_MIXIN + ".class"), official));
 		add.put(NEW_SCREEN + ".class", newGuiScreen(entries.get(GUI_SCREEN + ".class"), entries.get(COMPAT + ".class"),
-			entries.get(GUI_OPENER + ".class")));
+			entries.get(GUI_OPENER + ".class"), findItemDraw(entries)));
 		byte[] result = rewriteJar(jar, (name, data) -> {
 			if (name.equals(SCREEN + ".class")) {
 				found[0] = true;

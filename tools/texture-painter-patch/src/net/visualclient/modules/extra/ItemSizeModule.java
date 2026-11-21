@@ -3,13 +3,18 @@ package net.visualclient.modules.extra;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.WeakHashMap;
 
 import net.visualclient.core.Category;
 import net.visualclient.core.ClientModule;
+import net.visualclient.core.setting.ActionSetting;
 import net.visualclient.core.setting.NumberSetting;
 import net.visualclient.core.setting.TextSetting;
 
@@ -27,7 +32,11 @@ public final class ItemSizeModule extends ClientModule {
 	public static final ItemSizeModule INSTANCE = new ItemSizeModule();
 
 	private final NumberSetting size = add(new NumberSetting("Size", 1.5, 0.25, 5.0, 0.05));
-	private final TextSetting perItem = add(new TextSetting("Per item", "", 256, "diamond=2, totem_of_undying=3"));
+	private final ActionSetting editor = add(new ActionSetting("Open item editor", ItemSizeModule::openEditor));
+	private final TextSetting perItem = add(new TextSetting("Per item", "", 8192, "diamond=2, totem_of_undying=3"));
+
+	private static volatile boolean editorRequested;
+	private static List<Entry> items;
 
 	private static final Map<Object, Float> STATE_SCALE = new WeakHashMap<>();
 	private static MethodHandle getItem;
@@ -42,6 +51,7 @@ public final class ItemSizeModule extends ClientModule {
 		size.suffix("x");
 		size.describe("Size of every dropped item (1.0 = normal).");
 		perItem.describe("Own size per item, e.g. diamond=2, totem_of_undying=3, minecraft:ender_pearl=0.5");
+		editor.describe("All items with icons, search and a size slider per item");
 	}
 
 	/** Remembers the size for an item entity's render state (called when the state is extracted). */
@@ -103,6 +113,122 @@ public final class ItemSizeModule extends ClientModule {
 			}
 		}
 		return out;
+	}
+
+	// ------------------------------------------------------------------ item editor API (NewGui)
+
+	/** One item of the game: registry key without "minecraft:", display name and an ItemStack for its icon. */
+	public static final class Entry {
+		public final String key;
+		public final String name;
+		public final Object stack;
+
+		Entry(String key, String name, Object stack) {
+			this.key = key;
+			this.name = name;
+			this.stack = stack;
+		}
+	}
+
+	private static void openEditor() {
+		editorRequested = true;
+		try {
+			Class<?> screen = Class.forName("net.visualclient.gui.NewGuiScreen");
+			Object current = screen.getMethod("vc$currentScreen").invoke(null);
+			if (!screen.isInstance(current)) screen.getMethod("vc$openNew").invoke(null);
+		} catch (Throwable ignored) {
+			// opens the next time the new menu is shown
+		}
+	}
+
+	/** True once after "Open item editor" was pressed. */
+	public static boolean consumeEditorRequest() {
+		boolean r = editorRequested;
+		editorRequested = false;
+		return r;
+	}
+
+	public static float defaultSize() {
+		return (float) INSTANCE.size.asDouble();
+	}
+
+	public static double minSize() {
+		return 0.25;
+	}
+
+	public static double maxSize() {
+		return 5.0;
+	}
+
+	/** Item sizes set per item (key without "minecraft:"). */
+	public static Map<String, Float> sizes() {
+		INSTANCE.sizeFor(null);
+		return Collections.unmodifiableMap(INSTANCE.parsed);
+	}
+
+	/** Sets (or with null removes) the size of one item; stored in "Per item", so configs keep it. */
+	public static void setSize(String key, Float value) {
+		INSTANCE.sizeFor(null);
+		Map<String, Float> m = new TreeMap<>(INSTANCE.parsed);
+		if (value == null) m.remove(key);
+		else m.put(key, Math.round(value * 100f) / 100f);
+		StringBuilder sb = new StringBuilder();
+		for (var e : m.entrySet()) {
+			if (sb.length() > 0) sb.append(", ");
+			float v = e.getValue();
+			sb.append(e.getKey()).append('=').append(v == Math.rint(v) ? String.valueOf((int) v) : String.valueOf(v));
+		}
+		INSTANCE.perItem.set(sb.toString());
+	}
+
+	/** Every item of the game (read once from the item registry). */
+	public static synchronized List<Entry> items() {
+		if (items != null) return items;
+		List<Entry> out = new ArrayList<>();
+		ClassLoader cl = ItemSizeModule.class.getClassLoader();
+		Object registry = null;
+		String[][] names = {{"net.minecraft.core.registries.BuiltInRegistries", "ITEM"}, {"net.minecraft.class_7923", "field_41178"}};
+		for (String[] n : names) {
+			try {
+				registry = Class.forName(n[0], true, cl).getField(n[1]).get(null);
+				break;
+			} catch (Throwable ignored) {
+				// try the next mapping
+			}
+		}
+		if (registry instanceof Iterable<?> it) {
+			for (Object item : it) {
+				String id = String.valueOf(item).trim().toLowerCase(Locale.ROOT);
+				String key = id.startsWith("minecraft:") ? id.substring(10) : id;
+				if (key.isEmpty() || key.equals("air")) continue;
+				out.add(new Entry(key, pretty(key), stackOf(item)));
+			}
+		}
+		items = out;
+		return out;
+	}
+
+	private static Object stackOf(Object item) {
+		for (String n : new String[] {"getDefaultInstance", "method_7854"}) {
+			try {
+				var m = item.getClass().getMethod(n);
+				if (m.getParameterCount() == 0) return m.invoke(item);
+			} catch (Throwable ignored) {
+				// try the next name
+			}
+		}
+		return null;
+	}
+
+	private static String pretty(String key) {
+		String k = key.contains(":") ? key.substring(key.indexOf(':') + 1) : key;
+		StringBuilder sb = new StringBuilder();
+		for (String w : k.split("_")) {
+			if (w.isEmpty()) continue;
+			if (sb.length() > 0) sb.append(' ');
+			sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1));
+		}
+		return sb.toString();
 	}
 
 	/** "minecraft:diamond" for an item entity (ItemStack.toString() is "<count> <item id>"). */

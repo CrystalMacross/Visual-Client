@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> ... -> 1.18.0 -> 1.19.0)
+# Visual Client patches (1.12.0 -> ... -> 1.19.0 -> 1.20.0)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -30,6 +30,9 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
   plus "Per item" overrides (`diamond=2, totem_of_undying=3`). `ItemSizeMixin` is generated per build
   from the mod's `XpOrbRendererMixin` (renderer state capture + scale at the start of submit/render),
   retargeted to `ItemEntityRenderer` (intermediary `class_916.method_62354/method_3936` on 1.21.x).
+  Since 1.20.0 "Open item editor" shows a square window in the new menu: every item with its icon
+  (`NewGuiScreen.vc$item`, the mod's own GuiGraphics item call), search, a "Custom" filter and a
+  size slider with presets per item. Sizes are stored in "Per item", so configs keep them.
 
 * **New menu UI** (1.18.0): `GUI Style → UI: Old / New` (default New). `GuiOpener.open()` returns
   the generated `NewGuiScreen` when New is selected; the sidebar of the new menu has an "Old UI"
@@ -44,7 +47,7 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
     (26.x) names both work.
 
 ```
-tools/texture-painter-patch/patch.sh visual-client-1.18.0.jar visual-client-1.19.0.jar 1.19.0
+tools/texture-painter-patch/patch.sh visual-client-1.19.0.jar visual-client-1.20.0.jar 1.20.0
 ```
 Steps that are already in the input jar are skipped.
 

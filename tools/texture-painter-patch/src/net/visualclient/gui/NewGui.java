@@ -23,6 +23,7 @@ import net.visualclient.core.setting.Setting;
 import net.visualclient.core.setting.TextSetting;
 import net.visualclient.font.Fonts;
 import net.visualclient.hud.HudModule;
+import net.visualclient.modules.extra.ItemSizeModule;
 import net.visualclient.modules.Modules;
 import net.visualclient.modules.misc.GuiStyleModule;
 import net.visualclient.modules.misc.ThemeModule;
@@ -91,6 +92,17 @@ public final class NewGui {
 	private final MethodHandle scissorOn;
 	private final MethodHandle scissorOff;
 	private final MethodHandle closeScreen;
+	private final MethodHandle itemDraw;
+
+	// item size editor (square overlay)
+	private boolean itemEditor;
+	private String itemSel;
+	private boolean itemOnlyCustom;
+	private boolean itemSearchFocused;
+	private final TextInput itemSearch = new TextInput();
+	private final Smooth itemScroll = new Smooth(0f, 18f);
+	private final Smooth itemAnim = new Smooth(0f, 12f);
+	private int itemGridX, itemGridY, itemGridW, itemGridH;
 	private final Hits hits = new Hits();
 	private final TextInput search = new TextInput();
 	private final TextInput editInput = new TextInput();
@@ -137,6 +149,8 @@ public final class NewGui {
 		scissorOn = bridge(sc, "vc$scissor", void.class, Object.class, int.class, int.class, int.class, int.class);
 		scissorOff = bridge(sc, "vc$unscissor", void.class, Object.class);
 		closeScreen = bridge(sc, "vc$close", void.class, Object.class);
+		itemDraw = bridge(sc, "vc$item", void.class, Object.class, Object.class, int.class, int.class);
+		itemSearch.begin("", 32, c -> true);
 		tabSel = new Smooth[TAB_LABELS.length];
 		tabHover = new Smooth[TAB_LABELS.length];
 		for (int i = 0; i < TAB_LABELS.length; i++) {
@@ -177,6 +191,7 @@ public final class NewGui {
 		this.my = mouseY;
 		hits.clear();
 		hint = null;
+		if (ItemSizeModule.consumeEditorRequest()) openItemEditor();
 		fade = "None".equals(GuiStyleModule.openAnimation()) ? 1f : clamp(openAnim.get(), 0f, 1f);
 		layout();
 		backdrop();
@@ -198,6 +213,7 @@ public final class NewGui {
 			if (open != null && !Modules.ALL.contains(open)) open = null;
 			if (open != null) settingsPage(); else gridPage();
 			footer();
+			if (itemEditor) itemEditorOverlay();
 		} finally {
 			Fonts.setGuiRendering(false);
 			if (scaled) Gfx.pop(g);
@@ -207,6 +223,16 @@ public final class NewGui {
 
 	public boolean key(int key, int scan, int mods) {
 		boolean ctrl = (mods & MOD_CONTROL) != 0;
+		if (itemEditor && editing == null) {
+			if (key == KEY_ESCAPE) {
+				if (!itemSearch.text().isEmpty()) itemSearch.clear(); else itemEditor = false;
+			} else if (key == KEY_BACKSPACE) itemSearch.backspace();
+			else if (key == KEY_DELETE) itemSearch.clear();
+			else if (ctrl && key == KEY_V) itemSearch.append(clipboard());
+			else if (ctrl && key == KEY_F) itemSearchFocused = true;
+			itemScroll.snap(Math.min(itemScroll.get(), itemScroll.target()));
+			return true;
+		}
 		if (editing != null) {
 			if (key == KEY_ESCAPE) endEdit(false);
 			else if (key == KEY_ENTER || key == KEY_KP_ENTER) endEdit(true);
@@ -245,6 +271,14 @@ public final class NewGui {
 		if (s == null || s.isEmpty()) return false;
 		if (editing != null) {
 			editInput.append(s);
+			return true;
+		}
+		if (itemEditor) {
+			if (!s.isBlank() || itemSearchFocused) {
+				itemSearch.append(s);
+				itemSearchFocused = true;
+				itemScroll.snap(0f);
+			}
 			return true;
 		}
 		if (!searchFocused) {
@@ -286,6 +320,10 @@ public final class NewGui {
 	}
 
 	public boolean scroll(double x, double y, double dx, double dy) {
+		if (itemEditor) {
+			if (Hits.inside(x, y, itemGridX, itemGridY, itemGridW, itemGridH)) itemScroll.set(itemScroll.target() - (float) dy * 24f);
+			return true;
+		}
 		if (!Hits.inside(x, y, scrollX, scrollY, scrollW, scrollH)) return false;
 		Smooth s = scrollIsList ? listScroll : gridScroll;
 		s.set(s.target() - (float) dy * 28f);
@@ -755,6 +793,208 @@ public final class NewGui {
 		String d = act.description();
 		if (d != null && !d.isEmpty()) {
 			Gfx.textCenter(g, font, Gfx.fit(font, d, bw - 6), bx + bw / 2, by + bh + 3, a(Theme.muted()));
+		}
+	}
+
+	// ------------------------------------------------------------------ item size editor
+
+	private void openItemEditor() {
+		ClientModule m = ItemSizeModule.INSTANCE;
+		if (Modules.ALL.contains(m)) {
+			open = m;
+			lastOpen = m;
+		}
+		itemEditor = true;
+		itemAnim.snap(0f);
+		itemAnim.set(1f);
+		itemSearch.clear();
+		itemScroll.snap(0f);
+	}
+
+	private List<ItemSizeModule.Entry> itemList() {
+		String q = itemSearch.text().trim().toLowerCase(Locale.ROOT);
+		Map<String, Float> sizes = ItemSizeModule.sizes();
+		List<ItemSizeModule.Entry> out = new ArrayList<>();
+		for (ItemSizeModule.Entry e : ItemSizeModule.items()) {
+			if (itemOnlyCustom && !sizes.containsKey(e.key)) continue;
+			if (!q.isEmpty() && !e.key.contains(q.replace(' ', '_')) && !e.name.toLowerCase(Locale.ROOT).contains(q)) continue;
+			out.add(e);
+		}
+		return out;
+	}
+
+	private void drawItem(Object stack, int x, int y) {
+		if (itemDraw == null || stack == null) return;
+		try { itemDraw.invokeExact(g, stack, x, y); } catch (Throwable ignored) { }
+	}
+
+	/** Square, sharp-cornered window: item grid with icons, search, filter and a size slider. */
+	private void itemEditorOverlay() {
+		float t = easeOut(clamp(itemAnim.get(), 0f, 1f));
+		Map<String, Float> sizes = ItemSizeModule.sizes();
+		int acc = accent();
+		// dim everything behind; clicks outside close the editor
+		Gfx.rect(g, 0, 0, w, h, a(ColorUtil.withAlpha(0xFF05060A, (int) (0xB0 * t))));
+		hits.add(0, 0, w, h).left = (hx, hy) -> itemEditor = false;
+
+		int size = Math.min(Math.min(w, h) - 16, 330);
+		int ex = (w - size) / 2;
+		int ey = (h - size) / 2 + Math.round((1f - t) * 10f);
+		hits.add(ex, ey, size, size).left = (hx, hy) -> itemSearchFocused = false;
+		Gfx.shadow(g, ex, ey, size, size, 12);
+		if (GuiStyleModule.glow()) Gfx.accentGlow(g, ex, ey, size, size, GuiStyleModule.glowSize(), 0.6f * t);
+		Gfx.rect(g, ex, ey, size, size, a(ColorUtil.withAlpha(ColorUtil.darken(Theme.background(), 0.15f), 0xF4)));
+		Gfx.gradientV(g, ex, ey, size, 40, a(ColorUtil.withAlpha(acc, 0x2A)), 0);
+		Gfx.rect(g, ex, ey, size, 2, a(acc));
+		Gfx.outline(g, ex, ey, size, size, a(ColorUtil.withAlpha(Theme.text(), 0x22)));
+
+		// header
+		int pad = 10;
+		int cx = ex + pad;
+		int cw = size - pad * 2;
+		Gfx.text(g, font, "Item Sizes", cx, ey + 9, a(Theme.text()));
+		String sub = sizes.size() + " custom  \u00b7  others " + plain(ItemSizeModule.defaultSize()) + "x";
+		Gfx.text(g, font, Gfx.fit(font, sub, cw - 80), cx + Gfx.width(font, "Item Sizes") + 8, ey + 9, a(Theme.muted()));
+		int xb = ex + size - 16;
+		boolean xh = over(xb - 3, ey + 6, 13, 13);
+		Gfx.cross(g, xb, ey + 9, 6, a(xh ? Theme.text() : Theme.muted()));
+		hits.add(xb - 3, ey + 6, 13, 13).left = (hx, hy) -> itemEditor = false;
+
+		// search + filter chip
+		int sy = ey + 24;
+		int chipW = 58;
+		int sw = cw - chipW - 6;
+		boolean sf = itemSearchFocused;
+		Gfx.rect(g, cx, sy, sw, 16, a(fieldColor(sf || over(cx, sy, sw, 16))));
+		Gfx.rect(g, cx, sy + 15, sw, 1, a(sf ? acc : ColorUtil.withAlpha(Theme.text(), 0x20)));
+		glyph(SEARCH, cx + 5, sy + 5, a(sf ? acc : Theme.muted()));
+		String q = itemSearch.text();
+		String shown = q.isEmpty() && !sf ? "Search items..." : tail(q, sw - 30) + (sf && blink() ? "_" : "");
+		Gfx.text(g, font, shown, cx + 16, sy + 4, a(q.isEmpty() && !sf ? Theme.muted() : Theme.text()));
+		hits.add(cx, sy, sw, 16).left = (hx, hy) -> itemSearchFocused = true;
+		int chx = cx + cw - chipW;
+		boolean on = itemOnlyCustom;
+		Gfx.rect(g, chx, sy, chipW, 16, a(on ? ColorUtil.withAlpha(acc, 0xC0) : fieldColor(over(chx, sy, chipW, 16))));
+		Gfx.textCenter(g, font, "Custom", chx + chipW / 2, sy + 4, a(on ? 0xFFFFFFFF : Theme.muted()));
+		hits.add(chx, sy, chipW, 16).left = (hx, hy) -> { itemOnlyCustom = !itemOnlyCustom; itemScroll.snap(0f); };
+		if (over(chx, sy, chipW, 16)) hint = "Only show items with their own size";
+
+		// grid
+		int barH = 54;
+		int gy = sy + 22;
+		int gh = ey + size - barH - gy - 4;
+		int tile = 22;
+		int gap = 2;
+		int cols = Math.max(1, (cw + gap) / (tile + gap));
+		int gx = cx + (cw - (cols * (tile + gap) - gap)) / 2;
+		List<ItemSizeModule.Entry> list = itemList();
+		int rows = (list.size() + cols - 1) / cols;
+		int total = Math.max(0, rows * (tile + gap) - gap);
+		int max = Math.max(0, total - gh);
+		clampScroll(itemScroll, max);
+		int sc = Math.round(itemScroll.get());
+		itemGridX = cx;
+		itemGridY = gy;
+		itemGridW = cw;
+		itemGridH = gh;
+		if (list.isEmpty()) {
+			String msg = ItemSizeModule.items().isEmpty() ? "Items are not loaded yet - join a world or reopen the menu"
+				: itemOnlyCustom ? "No item has its own size yet" : "No item matches \"" + q + "\"";
+			Gfx.textCenter(g, font, Gfx.fit(font, msg, cw - 10), cx + cw / 2, gy + gh / 2 - 4, a(Theme.muted()));
+		}
+		scissor(cx, gy, cx + cw, gy + gh);
+		try {
+			int first = Math.max(0, sc / (tile + gap)) * cols;
+			for (int i = first; i < list.size(); i++) {
+				int tx = gx + (i % cols) * (tile + gap);
+				int ty = gy + (i / cols) * (tile + gap) - sc;
+				if (ty > gy + gh) break;
+				ItemSizeModule.Entry e = list.get(i);
+				boolean sel = e.key.equals(itemSel);
+				boolean hov = my >= gy && my < gy + gh && over(tx, ty, tile, tile);
+				Float custom = sizes.get(e.key);
+				int bg = sel ? ColorUtil.withAlpha(acc, 0x55) : hov ? ColorUtil.withAlpha(Theme.text(), 0x22) : ColorUtil.withAlpha(Theme.text(), 0x0C);
+				Gfx.rect(g, tx, ty, tile, tile, a(bg));
+				if (sel) Gfx.outline(g, tx, ty, tile, tile, a(acc));
+				else if (custom != null) Gfx.rect(g, tx, ty + tile - 2, tile, 2, a(acc));
+				drawItem(e.stack, tx + 3, ty + 3);
+				if (custom != null) Gfx.rect(g, tx + tile - 4, ty + 1, 3, 3, a(acc));
+				hits.add(tx, ty, tile, tile).clip(gy, gy + gh).left = (hx, hy) -> { itemSel = e.key; itemSearchFocused = false; };
+				if (hov) hint = e.name + "  -  " + (custom != null ? plain(custom) + "x (own size)" : plain(ItemSizeModule.defaultSize()) + "x (default)");
+			}
+		} finally {
+			unscissor();
+		}
+		scrollbar(cx + cw + 3, gy, gh, sc, max, total);
+
+		// bottom bar: selected item
+		int by = ey + size - barH;
+		Gfx.rect(g, ex, by, size, barH, a(ColorUtil.withAlpha(0xFF000000, 0x40)));
+		Gfx.rect(g, ex, by, size, 1, a(ColorUtil.withAlpha(Theme.text(), 0x1A)));
+		ItemSizeModule.Entry selected = null;
+		if (itemSel != null) for (ItemSizeModule.Entry e : ItemSizeModule.items()) if (e.key.equals(itemSel)) { selected = e; break; }
+		if (selected == null) {
+			Gfx.textCenter(g, font, "Click an item to set its size", ex + size / 2, by + barH / 2 - 4, a(Theme.muted()));
+			return;
+		}
+		final ItemSizeModule.Entry sel = selected;
+		Float own = sizes.get(sel.key);
+		float value = own != null ? own : ItemSizeModule.defaultSize();
+		// big icon
+		Gfx.rect(g, cx, by + 9, 36, 36, a(ColorUtil.withAlpha(acc, 0x22)));
+		Gfx.outline(g, cx, by + 9, 36, 36, a(ColorUtil.withAlpha(acc, 0x70)));
+		Gfx.push(g);
+		Gfx.translate(g, cx + 2, by + 11);
+		Gfx.scale(g, 2f, 2f);
+		drawItem(sel.stack, 0, 0);
+		Gfx.pop(g);
+		int ix = cx + 44;
+		int iw = cw - 44;
+		String val = plain(value) + "x";
+		Gfx.text(g, font, Gfx.fit(font, sel.name, iw - Gfx.width(font, val) - 8), ix, by + 9, a(Theme.text()));
+		Gfx.textRight(g, font, val, ix + iw, by + 9, a(own != null ? acc : Theme.muted()));
+		// slider
+		double lo = ItemSizeModule.minSize();
+		double hi = ItemSizeModule.maxSize();
+		int tx = ix;
+		int tw = iw;
+		int ty = by + 24;
+		float f = anim(valueAnims, sel.key, clamp((float) ((value - lo) / (hi - lo)), 0f, 1f));
+		Gfx.rect(g, tx, ty, tw, 3, a(ColorUtil.withAlpha(Theme.muted(), 0x55)));
+		int fw = Math.round(tw * f);
+		if (fw > 0) Gfx.rect(g, tx, ty, fw, 3, a(own != null ? acc : ColorUtil.withAlpha(acc, 0x80)));
+		Gfx.rect(g, tx + fw - 3, ty - 3, 7, 9, a(0xFFFFFFFF));
+		Hits.Hit track = hits.add(tx - 4, ty - 6, tw + 8, 15);
+		Hits.Action setv = (hx, hy) -> {
+			double v = lo + clamp((float) ((hx - tx) / tw), 0f, 1f) * (hi - lo);
+			ItemSizeModule.setSize(sel.key, (float) (Math.round(v / 0.05) * 0.05));
+		};
+		track.left = setv;
+		track.drag = setv;
+		if (over(tx - 4, ty - 6, tw + 8, 15)) hint = "Drag to change the size of " + sel.name;
+		// presets + reset
+		float[] presets = {0.5f, 1f, 2f, 3f};
+		int px0 = ix;
+		int chipY = by + 35;
+		for (float pv : presets) {
+			String lbl = plain(pv) + "x";
+			int lw = Gfx.width(font, lbl) + 10;
+			boolean act = own != null && Math.abs(own - pv) < 0.001f;
+			boolean hv = over(px0, chipY, lw, 13);
+			Gfx.rect(g, px0, chipY, lw, 13, a(act ? ColorUtil.withAlpha(acc, 0xC0) : hv ? ColorUtil.withAlpha(Theme.text(), 0x26) : ColorUtil.withAlpha(Theme.text(), 0x12)));
+			Gfx.textCenter(g, font, lbl, px0 + lw / 2, chipY + 3, a(act ? 0xFFFFFFFF : Theme.text()));
+			hits.add(px0, chipY, lw, 13).left = (hx, hy) -> ItemSizeModule.setSize(sel.key, pv);
+			px0 += lw + 3;
+		}
+		if (own != null) {
+			String rl = "Reset";
+			int rw = Gfx.width(font, rl) + 12;
+			int rx = ix + iw - rw;
+			boolean hv = over(rx, chipY, rw, 13);
+			Gfx.rect(g, rx, chipY, rw, 13, a(hv ? ColorUtil.withAlpha(0xFFE05555, 0xB0) : ColorUtil.withAlpha(0xFFE05555, 0x50)));
+			Gfx.textCenter(g, font, rl, rx + rw / 2, chipY + 3, a(0xFFFFFFFF));
+			hits.add(rx, chipY, rw, 13).left = (hx, hy) -> ItemSizeModule.setSize(sel.key, null);
+			if (hv) hint = "Use the default size again (" + plain(ItemSizeModule.defaultSize()) + "x)";
 		}
 	}
 
