@@ -82,10 +82,12 @@ jobs:
           echo "VC_JAR=$jar" >> "$GITHUB_ENV"
           echo "LAUNCHER_VERSION=$(node -p "require('./launcher/package.json').version")" >> "$GITHUB_ENV"
 
-      - name: Remove old files from the release
+      - name: Remove old build files from the release
         run: |
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            # only replace files this workflow produces; anything else uploaded by hand is kept
             gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
+              grep -E '\.(exe|dmg|AppImage)$|^visual-client-.*\.jar$' |
               while read -r name; do gh release delete-asset "$TAG" "$name" --repo "$GITHUB_REPOSITORY" -y; done
           fi
 
