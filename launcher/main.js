@@ -11,9 +11,10 @@ const instances = require('./src/main/instances');
 const versions = require('./src/main/versions');
 const modrinth = require('./src/main/modrinth');
 const launcher = require('./src/main/launch');
+const { presence } = require('./src/main/discord');
 
 const LEGAL_VERSION = '2026-11-21';
-const ALLOWED_EXTERNAL = ['modrinth.com', 'github.com', 'www.minecraft.net', 'minecraft.net', 'account.microsoft.com'];
+const ALLOWED_EXTERNAL = ['modrinth.com', 'discord.com', 'github.com', 'www.minecraft.net', 'minecraft.net', 'account.microsoft.com'];
 
 let win = null;
 
@@ -160,8 +161,10 @@ function registerIpc() {
     const clean = { ...patch };
     delete clean.legalAccepted;
     store.saveSettings(clean);
+    if (clean.discord) presence.refresh();
     return true;
   });
+  handle('discord:status', () => presence.status());
   handle('background:choose', async () => {
     const res = await dialog.showOpenDialog(win, {
       title: 'Hintergrundbild wählen',
@@ -218,6 +221,7 @@ if (!single) {
     if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
   });
   app.whenReady().then(() => {
+    presence.configure(() => store.getSettings().discord);
     registerIpc();
     createWindow();
     app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

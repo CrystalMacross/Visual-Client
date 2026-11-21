@@ -9,7 +9,7 @@ Stand: 21. November 2026
 Im Benutzerdatenordner des Launchers werden gespeichert:
 
 - **Kontodaten:** Minecraft-Name, UUID, Skin-Adresse und das Microsoft-Aktualisierungstoken. Das Token wird mit der Verschlüsselung deines Betriebssystems gesichert (Windows DPAPI, macOS-Schlüsselbund, Linux Secret Service), sofern verfügbar.
-- **Einstellungen:** Design, Farben, Hintergrundbild, Arbeitsspeicher, Fenstergröße.
+- **Einstellungen:** Design, Farben, Hintergrundbild, Arbeitsspeicher, Fenstergröße, Discord-Einstellungen.
 - **Spieldaten:** Minecraft, Fabric, Java, Instanzen, Mods und Welten.
 
 Mit „Abmelden“ bzw. dem Löschen des Datenordners entfernst du diese Daten vollständig.
@@ -22,6 +22,7 @@ Der Launcher stellt Verbindungen nur zu folgenden Diensten her, und nur, wenn di
 - **Mojang / Minecraft-Dienste** (api.minecraftservices.com, piston-meta.mojang.com, launchermeta.mojang.com, libraries.minecraft.net, resources.download.minecraft.net, textures.minecraft.net) – Kontoprüfung, Spieldateien, Java, Skins
 - **Fabric** (meta.fabricmc.net, maven.fabricmc.net) – Mod-Loader
 - **Modrinth** (api.modrinth.com, cdn.modrinth.com) – Suche und Downloads
+- **Discord-App auf deinem PC** (lokal, nur wenn „Discord-Status“ aktiv ist) – der Launcher übergibt der Discord-App, was du spielst (Instanz, Minecraft-Version und, falls aktiviert, die Server-IP). Discord zeigt das deinen Freunden an; dafür gilt die Datenschutzerklärung von Discord.
 
 Bei diesen Verbindungen erhalten die Anbieter technisch notwendige Daten wie deine IP-Adresse und bei der Anmeldung deine Kontodaten. Dafür gelten deren Datenschutzerklärungen, z. B. die Datenschutzerklärung von Microsoft. Wir haben auf diese Daten keinen Zugriff.
 

@@ -389,6 +389,11 @@ function renderSettings() {
   $('#win-h').value = s.game.height;
   $('#fullscreen').checked = s.game.fullscreen;
   $('#close-launcher').checked = s.game.closeLauncher;
+  $('#discord-on').checked = s.discord.enabled;
+  $('#discord-server').checked = s.discord.showServer;
+  $('#discord-server').disabled = !s.discord.enabled;
+  $('#discord-id').value = s.discord.clientId || '';
+  updateDiscordState();
   $('#about').textContent = `Visual Launcher ${state.info.version} · Visual Client ${state.info.visualClient || '–'} eingebaut`;
 }
 
@@ -407,6 +412,32 @@ $('#jvm-args').addEventListener('change', (e) => { state.settings.java.jvmArgs =
 $('#win-w').addEventListener('change', (e) => { state.settings.game.width = Math.max(640, Number(e.target.value) || 1280); saveSetting({ game: state.settings.game }); });
 $('#win-h').addEventListener('change', (e) => { state.settings.game.height = Math.max(480, Number(e.target.value) || 720); saveSetting({ game: state.settings.game }); });
 $('#fullscreen').addEventListener('change', (e) => { state.settings.game.fullscreen = e.target.checked; saveSetting({ game: state.settings.game }); });
+async function updateDiscordState() {
+  const s = state.settings.discord;
+  const pill = $('#discord-state');
+  if (!pill) return;
+  let text = 'aus', cls = '';
+  if (s.enabled && !/^\d{15,25}$/.test(s.clientId || '')) { text = 'ID fehlt'; cls = ''; }
+  else if (s.enabled) {
+    const st = await api(window.vl.discord.status()).catch(() => null);
+    text = st && st.connected ? 'verbunden' : st && st.playing ? 'Discord nicht gefunden' : 'bereit';
+    cls = st && st.connected ? 'ok' : 'accent';
+  }
+  pill.textContent = text;
+  pill.className = 'pill ' + cls;
+}
+function saveDiscord() {
+  saveSetting({ discord: state.settings.discord }).then(() => setTimeout(updateDiscordState, 800));
+}
+$('#discord-on').addEventListener('change', (e) => { state.settings.discord.enabled = e.target.checked; $('#discord-server').disabled = !e.target.checked; saveDiscord(); });
+$('#discord-server').addEventListener('change', (e) => { state.settings.discord.showServer = e.target.checked; saveDiscord(); });
+$('#discord-id').addEventListener('change', (e) => {
+  const id = e.target.value.trim();
+  e.target.classList.toggle('invalid', !!id && !/^\d{15,25}$/.test(id));
+  if (id && !/^\d{15,25}$/.test(id)) { toast('Die Application ID besteht nur aus Ziffern (15–25 Stellen).', 'error'); return; }
+  state.settings.discord.clientId = id;
+  saveDiscord();
+});
 $('#close-launcher').addEventListener('change', (e) => { state.settings.game.closeLauncher = e.target.checked; saveSetting({ game: state.settings.game }); });
 
 // ------------------------------------------------------------------ instances

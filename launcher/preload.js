@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('vl', {
     chooseIcon: call('instances:chooseIcon'), clearIcon: call('instances:clearIcon')
   },
   modrinth: { search: call('modrinth:search'), install: call('modrinth:install'), modpack: call('modrinth:modpack') },
+  discord: { status: call('discord:status') },
   game: { launch: call('game:launch'), kill: call('game:kill'), running: call('game:running') },
   events: {
     launchProgress: on('launch:progress'),

@@ -7,6 +7,7 @@ const auth = require('./auth');
 const instances = require('./instances');
 const versions = require('./versions');
 const { ensureJava } = require('./java');
+const { presence } = require('./discord');
 
 let running = null;
 
@@ -55,7 +56,7 @@ async function launch(instanceId, send) {
   };
 
   launcher.on('debug', (line) => send('launch:log', String(line)));
-  launcher.on('data', (line) => send('launch:log', String(line)));
+  launcher.on('data', (line) => { send('launch:log', String(line)); presence.feed(line); });
   launcher.on('progress', (e) => progress({ stage: stageName(e.type), current: e.task, total: e.total }));
   launcher.on('download-status', () => {});
 
@@ -65,6 +66,7 @@ async function launch(instanceId, send) {
   running = child;
   instances.update(inst.id, { lastPlayed: Date.now() });
   send('launch:started', { instanceId: inst.id });
+  presence.gameStarted(inst);
 
   // play time: flushed every minute so it survives a closed launcher or a crash
   let lastFlush = Date.now();
@@ -78,6 +80,7 @@ async function launch(instanceId, send) {
     clearInterval(timer);
     flush();
     running = null;
+    presence.gameClosed();
     send('launch:closed', { code });
   });
   return true;
