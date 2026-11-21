@@ -859,6 +859,13 @@ public final class NewGui {
 		boolean xh = over(xb - 3, ey + 6, 13, 13);
 		Gfx.cross(g, xb, ey + 9, 6, a(xh ? Theme.text() : Theme.muted()));
 		hits.add(xb - 3, ey + 6, 13, 13).left = (hx, hy) -> itemEditor = false;
+		// on/off switch of the module itself
+		boolean enabled = ItemSizeModule.INSTANCE.isEnabled();
+		int swx = xb - 32;
+		drawSwitch(swx, ey + 8, anim(switchAnims, ItemSizeModule.INSTANCE, enabled ? 1f : 0f));
+		hits.add(swx - 2, ey + 5, 22, 16).left = (hx, hy) -> ItemSizeModule.INSTANCE.toggle();
+		if (over(swx - 2, ey + 5, 22, 16)) hint = enabled ? "Item Size is on - click to turn it off" : "Item Size is off - click to turn it on";
+		if (!enabled) Gfx.textRight(g, font, "off", swx - 4, ey + 9, a(0xFFE05555));
 
 		// search + filter chip
 		int sy = ey + 24;

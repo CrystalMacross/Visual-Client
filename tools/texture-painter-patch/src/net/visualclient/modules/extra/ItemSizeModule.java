@@ -57,7 +57,12 @@ public final class ItemSizeModule extends ClientModule {
 	/** Remembers the size for an item entity's render state (called when the state is extracted). */
 	public static void captureState(Object itemEntity, Object state) {
 		if (!INSTANCE.isEnabled() || state == null) return;
-		float s = INSTANCE.sizeFor(itemId(itemEntity));
+		String id = itemId(itemEntity);
+		if (!loggedCapture) {
+			loggedCapture = true;
+			System.out.println("[Visual Client] Item Size: state hook active, first item " + id);
+		}
+		float s = INSTANCE.sizeFor(id);
 		synchronized (STATE_SCALE) {
 			STATE_SCALE.put(state, s);
 		}
@@ -73,6 +78,10 @@ public final class ItemSizeModule extends ClientModule {
 		float f = s != null ? s : (float) INSTANCE.size.asDouble();
 		if (Math.abs(f - 1f) < 1e-3f) return;
 		resolve(null, poseStack);
+		if (!loggedScale) {
+			loggedScale = true;
+			System.out.println("[Visual Client] Item Size: renderer hook active, PoseStack.scale " + (scaleHandle != null ? "found" : "NOT found on " + poseStack.getClass().getName()));
+		}
 		if (scaleHandle == null) return;
 		try {
 			scaleHandle.invoke(poseStack, f, f, f);
@@ -130,7 +139,16 @@ public final class ItemSizeModule extends ClientModule {
 		}
 	}
 
+	/** Changing a size only makes sense with the module on, so the editor switches it on. */
+	public static void ensureEnabled() {
+		if (!INSTANCE.isEnabled()) INSTANCE.toggle();
+	}
+
+	private static boolean loggedScale;
+	private static boolean loggedCapture;
+
 	private static void openEditor() {
+		ensureEnabled();
 		editorRequested = true;
 		try {
 			Class<?> screen = Class.forName("net.visualclient.gui.NewGuiScreen");
@@ -168,6 +186,7 @@ public final class ItemSizeModule extends ClientModule {
 
 	/** Sets (or with null removes) the size of one item; stored in "Per item", so configs keep it. */
 	public static void setSize(String key, Float value) {
+		ensureEnabled();
 		INSTANCE.sizeFor(null);
 		Map<String, Float> m = new TreeMap<>(INSTANCE.parsed);
 		if (value == null) m.remove(key);
