@@ -139,7 +139,7 @@ function showPage(name) {
   if (name === 'settings') renderSettings();
   if (name === 'design') renderDesign();
   if (name === 'legal') renderLegal('#legal-doc', $('#legal-tabs .active').dataset.doc);
-  if (name === 'modrinth' || name === 'curseforge') libraries[name].open();
+  if (name === 'modrinth') libraries.modrinth.open();
 }
 $$('.nav[data-page]').forEach((n) => n.addEventListener('click', () => showPage(n.dataset.page)));
 $('#account-chip').addEventListener('click', () => showPage('settings'));
@@ -390,8 +390,6 @@ function renderSettings() {
   $('#win-h').value = s.game.height;
   $('#fullscreen').checked = s.game.fullscreen;
   $('#close-launcher').checked = s.game.closeLauncher;
-  $('#cf-state').textContent = s.curseforge.hasKey ? 'gespeichert' : 'fehlt';
-  $('#cf-state').className = 'pill ' + (s.curseforge.hasKey ? 'ok' : '');
   $('#about').textContent = `Visual Launcher ${state.info.version} · Visual Client ${state.info.visualClient || '–'} eingebaut`;
 }
 
@@ -411,15 +409,6 @@ $('#win-w').addEventListener('change', (e) => { state.settings.game.width = Math
 $('#win-h').addEventListener('change', (e) => { state.settings.game.height = Math.max(480, Number(e.target.value) || 720); saveSetting({ game: state.settings.game }); });
 $('#fullscreen').addEventListener('change', (e) => { state.settings.game.fullscreen = e.target.checked; saveSetting({ game: state.settings.game }); });
 $('#close-launcher').addEventListener('change', (e) => { state.settings.game.closeLauncher = e.target.checked; saveSetting({ game: state.settings.game }); });
-$('#cf-save').addEventListener('click', async () => {
-  const key = $('#cf-key').value.trim();
-  await saveSetting({ curseforge: { apiKey: key } });
-  state.settings.curseforge.hasKey = !!key;
-  $('#cf-key').value = '';
-  renderSettings();
-  libraries.curseforge.reset();
-  toast(key ? 'CurseForge-Schlüssel gespeichert.' : 'CurseForge-Schlüssel entfernt.', 'ok');
-});
 
 // ------------------------------------------------------------------ instances
 
@@ -523,7 +512,7 @@ async function renderInstanceDetail() {
   const items = await api(window.vl.instances.content(inst.id));
   const list = $('.content-list', box);
   const labels = { mod: 'Mod', resourcepack: 'Ressourcenpaket', shader: 'Shader', datapack: 'Datenpaket' };
-  if (!items.length) { list.innerHTML = '<div class="muted small">Noch leer. Füge Inhalte über Modrinth oder CurseForge hinzu.</div>'; return; }
+  if (!items.length) { list.innerHTML = '<div class="muted small">Noch leer. Füge Inhalte über Modrinth hinzu.</div>'; return; }
   list.replaceChildren(...items.map((it) => {
     const row = h(`<div class="content-row ${it.enabled ? '' : 'disabled'}">
       ${thumb(it.icon, it.name)}
@@ -659,7 +648,7 @@ window.vl.events.launchClosed(({ code }) => {
   }
 });
 
-// ------------------------------------------------------------------ libraries (Modrinth / CurseForge)
+// ------------------------------------------------------------------ library (Modrinth)
 
 const TYPE_LABELS = { mod: 'Mods', resourcepack: 'Ressourcenpakete', shader: 'Shader', modpack: 'Modpacks' };
 
@@ -677,7 +666,7 @@ class Library {
     this.gameVersion = null;
   }
 
-  title() { return this.source === 'modrinth' ? 'Modrinth' : 'CurseForge'; }
+  title() { return 'Modrinth'; }
 
   build() {
     const sorts = this.source === 'modrinth'
@@ -714,16 +703,6 @@ class Library {
   reset() { this.built = false; }
 
   async open() {
-    if (this.source === 'curseforge' && !(await api(window.vl.curseforge.hasKey()))) {
-      this.built = false;
-      this.page.innerHTML = `<div class="page-head"><div><h1>CurseForge</h1></div></div>
-        <div class="glass notice"><div class="logo big"></div><h2>API-Schlüssel benötigt</h2>
-        <p class="muted">CurseForge erlaubt den Zugriff auf seine Bibliothek nur mit einem API-Schlüssel. Du erhältst ihn kostenlos in der CurseForge-Konsole und trägst ihn in den Einstellungen ein – er bleibt verschlüsselt auf deinem Gerät.</p>
-        <button class="btn" data-ext="https://console.curseforge.com/">Schlüssel holen</button>
-        <button class="btn primary" id="cf-go-settings">Zu den Einstellungen</button></div>`;
-      $('#cf-go-settings').onclick = () => showPage('settings');
-      return;
-    }
     if (!this.built) this.build();
     const sel = $('.lib-inst', this.page);
     sel.replaceChildren(...state.instances.map((i) => h(`<option value="${esc(i.id)}">${esc(i.name)} · ${esc(i.mcVersion)}</option>`)));
@@ -823,7 +802,7 @@ class Library {
   }
 }
 
-const libraries = { modrinth: new Library('modrinth'), curseforge: new Library('curseforge') };
+const libraries = { modrinth: new Library('modrinth') };
 
 window.vl.events.installProgress((p) => {
   const total = Number(p.total) || 0;

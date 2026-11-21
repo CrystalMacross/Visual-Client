@@ -9,7 +9,7 @@ Stand: 21. November 2026
 Im Benutzerdatenordner des Launchers werden gespeichert:
 
 - **Kontodaten:** Minecraft-Name, UUID, Skin-Adresse und das Microsoft-Aktualisierungstoken. Das Token wird mit der Verschlüsselung deines Betriebssystems gesichert (Windows DPAPI, macOS-Schlüsselbund, Linux Secret Service), sofern verfügbar.
-- **Einstellungen:** Design, Farben, Hintergrundbild, Arbeitsspeicher, Fenstergröße und dein optionaler CurseForge-API-Schlüssel (ebenfalls verschlüsselt).
+- **Einstellungen:** Design, Farben, Hintergrundbild, Arbeitsspeicher, Fenstergröße.
 - **Spieldaten:** Minecraft, Fabric, Java, Instanzen, Mods und Welten.
 
 Mit „Abmelden“ bzw. dem Löschen des Datenordners entfernst du diese Daten vollständig.
@@ -22,7 +22,6 @@ Der Launcher stellt Verbindungen nur zu folgenden Diensten her, und nur, wenn di
 - **Mojang / Minecraft-Dienste** (api.minecraftservices.com, piston-meta.mojang.com, launchermeta.mojang.com, libraries.minecraft.net, resources.download.minecraft.net, textures.minecraft.net) – Kontoprüfung, Spieldateien, Java, Skins
 - **Fabric** (meta.fabricmc.net, maven.fabricmc.net) – Mod-Loader
 - **Modrinth** (api.modrinth.com, cdn.modrinth.com) – Suche und Downloads
-- **CurseForge** (api.curseforge.com, edge.forgecdn.net, media.forgecdn.net) – nur mit eigenem API-Schlüssel
 
 Bei diesen Verbindungen erhalten die Anbieter technisch notwendige Daten wie deine IP-Adresse und bei der Anmeldung deine Kontodaten. Dafür gelten deren Datenschutzerklärungen, z. B. die Datenschutzerklärung von Microsoft. Wir haben auf diese Daten keinen Zugriff.
 
@@ -32,4 +31,4 @@ Wenn du das Spiel startest, verarbeitet Minecraft Daten nach den Regeln von Moja
 
 ## 4. Deine Rechte
 
-Da wir keine personenbezogenen Daten von dir erhalten oder speichern, gibt es bei uns nichts, worüber wir Auskunft geben oder was wir löschen könnten. Deine lokalen Daten verwaltest du selbst. Für Daten bei Microsoft, Modrinth oder CurseForge wende dich an den jeweiligen Anbieter.
+Da wir keine personenbezogenen Daten von dir erhalten oder speichern, gibt es bei uns nichts, worüber wir Auskunft geben oder was wir löschen könnten. Deine lokalen Daten verwaltest du selbst. Für Daten bei Microsoft oder Modrinth wende dich an den jeweiligen Anbieter.

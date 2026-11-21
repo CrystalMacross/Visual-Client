@@ -5,7 +5,6 @@ Moderner Minecraft-Launcher mit eingebautem **Visual Client**.
 - **Microsoft-Login** (offizielles Microsoft-Anmeldefenster, mehrere Konten)
 - **Instanzen** mit Fabric – Visual Client + Fabric API werden automatisch installiert (MC 1.21.4 – 26.3)
 - **Modrinth-Bibliothek**: Mods, Ressourcenpakete, Shader, Modpacks (.mrpack) inkl. Abhängigkeiten
-- **CurseForge-Bibliothek**: Mods, Ressourcenpakete, Shader, Modpacks (benötigt eigenen API-Schlüssel)
 - **Design**: Hintergrund als Verlauf / Farbe per Hex-Code oder eigener Screenshot, Akzentfarbe, Abdunkeln, Unschärfe
 - **Java automatisch**: lädt die offizielle Mojang-Java-Laufzeit passend zur Version
 - **Keine Daten an den Entwickler**: keine Telemetrie, kein eigener Server – siehe `legal/PRIVACY.md`
@@ -44,6 +43,6 @@ nimmt automatisch die höchste Version und installiert sie beim nächsten Spiels
 | `src/main/launch.js` | Spielstart (minecraft-launcher-core) mit Fabric + Visual Client |
 | `src/main/java.js` | Download der Mojang-Java-Laufzeit |
 | `src/main/versions.js` | Minecraft-/Fabric-Versionen, Visual Client, Fabric API |
-| `src/main/modrinth.js` / `curseforge.js` | Bibliotheken, Installation, Modpacks |
+| `src/main/modrinth.js` | Bibliothek, Installation, Modpacks |
 | `renderer/` | Oberfläche (HTML/CSS/JS) |
 | `legal/` | Terms of Service, Terms of Use, Datenschutz |

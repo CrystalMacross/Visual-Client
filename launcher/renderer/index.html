@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="Content-Security-Policy"
-        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.modrinth.com https://media.forgecdn.net https://textures.minecraft.net; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.modrinth.com https://textures.minecraft.net; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Visual Launcher</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -26,7 +26,6 @@
       <button class="nav active" data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Start</span></button>
       <button class="nav" data-page="instances"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>Instanzen</span></button>
       <button class="nav" data-page="modrinth"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18M3 12h18"/></svg><span>Modrinth</span></button>
-      <button class="nav" data-page="curseforge"><svg viewBox="0 0 24 24"><path d="M4 8h16l-2 4h-4l1 4H9l1-4H6z"/><path d="M8 20h8"/></svg><span>CurseForge</span></button>
       <button class="nav" data-page="design"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5 1-1.5 2-1.5h2a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7" r="1"/></svg><span>Design</span></button>
       <div class="grow"></div>
       <button class="nav" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Einstellungen</span></button>
@@ -72,9 +71,8 @@
         <div id="instance-detail" class="detail glass" hidden></div>
       </section>
 
-      <!-- LIBRARIES (shared markup, filled by JS) -->
+      <!-- LIBRARY (filled by JS) -->
       <section class="page library" data-page="modrinth" data-source="modrinth"></section>
-      <section class="page library" data-page="curseforge" data-source="curseforge"></section>
 
       <!-- DESIGN -->
       <section class="page" data-page="design">
@@ -154,16 +152,9 @@
             <label class="toggle"><input type="checkbox" id="close-launcher"><span></span>Launcher beim Spielstart minimieren</label>
           </div>
           <div class="glass card-pad">
-            <h3>CurseForge</h3>
-            <p class="muted small">CurseForge verlangt einen eigenen API-Schlüssel. Du bekommst ihn kostenlos unter
-              <a href="#" data-ext="https://console.curseforge.com/">console.curseforge.com</a>. Er wird verschlüsselt auf diesem Gerät gespeichert.</p>
-            <div class="field"><label>API-Schlüssel <span id="cf-state" class="pill"></span></label><input id="cf-key" type="password" class="input mono" placeholder="$2a$10$…"></div>
-            <button id="cf-save" class="btn primary">Speichern</button>
-          </div>
-          <div class="glass card-pad span2">
             <h3>Datenschutz</h3>
             <p class="muted small">Visual Launcher sammelt keine Daten. Es gibt keine Telemetrie, keine Analyse und keinen Server des Entwicklers.
-              Der Launcher verbindet sich nur direkt mit Microsoft/Xbox/Mojang (Anmeldung &amp; Spieldateien), Fabric, Modrinth und – falls du einen Schlüssel einträgst – CurseForge.</p>
+              Der Launcher verbindet sich nur direkt mit Microsoft/Xbox/Mojang (Anmeldung &amp; Spieldateien), Fabric und Modrinth.</p>
             <p class="muted small" id="about"></p>
           </div>
         </div>

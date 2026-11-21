@@ -1,5 +1,5 @@
 // Small HTTP helpers. Every request goes straight to the respective service
-// (Mojang, Microsoft, Fabric, Modrinth, CurseForge) - never to the launcher author.
+// (Mojang, Microsoft, Fabric, Modrinth) - never to the launcher author.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');

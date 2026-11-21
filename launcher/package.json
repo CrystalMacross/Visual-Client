@@ -2,7 +2,7 @@
   "name": "visual-launcher",
   "productName": "Visual Launcher",
   "version": "1.0.0",
-  "description": "Modern Minecraft launcher with Microsoft login, Modrinth & CurseForge libraries and Visual Client built in.",
+  "description": "Modern Minecraft launcher with Microsoft login, Modrinth library and Visual Client built in.",
   "main": "main.js",
   "license": "MIT",
   "author": "Visual Client",

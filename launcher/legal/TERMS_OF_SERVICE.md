@@ -7,8 +7,8 @@ Diese Terms of Service („Bedingungen“) regeln die Bereitstellung der Softwar
 ## 1. Was der Launcher ist
 
 - Visual Launcher ist ein kostenloser, inoffizieller Launcher für **Minecraft: Java Edition**.
-- Er lädt das Spiel, den Mod-Loader Fabric, Java-Laufzeitumgebungen sowie Inhalte aus den Bibliotheken von **Modrinth** und **CurseForge** herunter und startet das Spiel.
-- Visual Launcher ist **kein offizielles Minecraft-Produkt**. Er ist nicht von Mojang Studios oder Microsoft genehmigt und steht in keiner Verbindung zu ihnen. Ebenso besteht keine Verbindung zu Modrinth, CurseForge/Overwolf oder dem Fabric-Projekt.
+- Er lädt das Spiel, den Mod-Loader Fabric, Java-Laufzeitumgebungen sowie Inhalte aus der Bibliothek von **Modrinth** herunter und startet das Spiel.
+- Visual Launcher ist **kein offizielles Minecraft-Produkt**. Er ist nicht von Mojang Studios oder Microsoft genehmigt und steht in keiner Verbindung zu ihnen. Ebenso besteht keine Verbindung zu Modrinth oder dem Fabric-Projekt.
 - „Minecraft“ ist eine Marke von Mojang Synergies AB. Alle weiteren Marken gehören ihren jeweiligen Inhabern.
 
 ## 2. Voraussetzungen
@@ -28,13 +28,12 @@ Wir betreiben **keine Server** für den Launcher und erhalten **keinerlei Daten*
 
 ## 5. Inhalte Dritter
 
-- Mods, Ressourcenpakete, Shader und Modpacks aus Modrinth und CurseForge stammen von **Dritten**. Wir prüfen, hosten oder verantworten diese Inhalte nicht. Für sie gelten die Lizenzen ihrer Autoren sowie die Bedingungen von Modrinth bzw. CurseForge.
-- Für die Nutzung der CurseForge-Bibliothek benötigst du einen eigenen API-Schlüssel. Dabei gelten die Bedingungen der CurseForge-API (Overwolf).
+- Mods, Ressourcenpakete, Shader und Modpacks aus Modrinth stammen von **Dritten**. Wir prüfen, hosten oder verantworten diese Inhalte nicht. Für sie gelten die Lizenzen ihrer Autoren sowie die Bedingungen von Modrinth.
 - Installiere nur Inhalte, denen du vertraust. Mods sind ausführbarer Code und können dein System beeinflussen.
 
 ## 6. Verfügbarkeit und Änderungen
 
-- Der Launcher funktioniert nur, solange die Dienste von Microsoft, Mojang, Fabric, Modrinth und CurseForge erreichbar sind und ihre Schnittstellen nicht ändern. Darauf haben wir keinen Einfluss.
+- Der Launcher funktioniert nur, solange die Dienste von Microsoft, Mojang, Fabric und Modrinth erreichbar sind und ihre Schnittstellen nicht ändern. Darauf haben wir keinen Einfluss.
 - Wir können den Launcher und diese Bedingungen jederzeit ändern oder die Weiterentwicklung einstellen. Bei geänderten Bedingungen wirst du beim nächsten Start erneut um Zustimmung gebeten.
 
 ## 7. Gewährleistung und Haftung

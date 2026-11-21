@@ -28,7 +28,6 @@ contextBridge.exposeInMainWorld('vl', {
     toggle: call('instances:toggle'), removeContent: call('instances:removeContent'), select: call('instances:select')
   },
   modrinth: { search: call('modrinth:search'), install: call('modrinth:install'), modpack: call('modrinth:modpack') },
-  curseforge: { hasKey: call('curseforge:hasKey'), search: call('curseforge:search'), install: call('curseforge:install'), modpack: call('curseforge:modpack') },
   game: { launch: call('game:launch'), kill: call('game:kill'), running: call('game:running') },
   events: {
     launchProgress: on('launch:progress'),

@@ -1,5 +1,5 @@
 // Local storage for settings and accounts. Everything stays on this computer.
-// Secrets (Microsoft refresh tokens, CurseForge API key) are encrypted with the
+// Secrets (Microsoft refresh tokens) are encrypted with the
 // operating system's key store via Electron's safeStorage when available.
 const fs = require('fs');
 const path = require('path');
@@ -19,7 +19,6 @@ const DEFAULT_SETTINGS = {
   },
   java: { minMemory: 1024, maxMemory: 4096, customPath: '', jvmArgs: '' },
   game: { width: 1280, height: 720, fullscreen: false, closeLauncher: false },
-  curseforge: { apiKey: '' },
   selectedInstance: null,
   selectedAccount: null
 };
@@ -72,16 +71,14 @@ function decrypt(value) {
 
 function getSettings() {
   const s = merge(DEFAULT_SETTINGS, readJson('settings.json', {}));
-  s.curseforge = { apiKey: decrypt(s.curseforge.apiKey) };
+  delete s.curseforge; // removed feature; drop old stored key
   return s;
 }
 
 function saveSettings(patch) {
   const current = merge(DEFAULT_SETTINGS, readJson('settings.json', {}));
   const next = merge(current, patch);
-  if (patch && patch.curseforge && 'apiKey' in patch.curseforge) {
-    next.curseforge.apiKey = encrypt(String(patch.curseforge.apiKey || '').trim());
-  }
+  delete next.curseforge;
   writeJson('settings.json', next);
   return getSettings();
 }

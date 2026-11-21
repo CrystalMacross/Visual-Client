@@ -70,7 +70,7 @@ jobs:
           name: Visual Launcher ${{ github.ref_name }}
           files: artifacts/*
           body: |
-            **Visual Launcher** – moderner Minecraft-Launcher mit Microsoft-Login, Modrinth- und CurseForge-Bibliothek und eingebautem Visual Client.
+            **Visual Launcher** – moderner Minecraft-Launcher mit Microsoft-Login, Modrinth-Bibliothek und eingebautem Visual Client.
 
             - Windows: `Visual Launcher Setup *.exe` (Installer) oder `Visual-Launcher-*-portable.exe`
             - macOS: `.dmg` (nicht signiert: Rechtsklick → Öffnen)

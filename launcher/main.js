@@ -1,6 +1,6 @@
 // Visual Launcher - main process.
 // Privacy: the launcher has no telemetry, analytics, crash reporting or own server.
-// It only talks to Microsoft/Xbox/Mojang (login + game files), Fabric, Modrinth and CurseForge.
+// It only talks to Microsoft/Xbox/Mojang (login + game files), Fabric and Modrinth.
 const fs = require('fs');
 const path = require('path');
 const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } = require('electron');
@@ -10,11 +10,10 @@ const auth = require('./src/main/auth');
 const instances = require('./src/main/instances');
 const versions = require('./src/main/versions');
 const modrinth = require('./src/main/modrinth');
-const curseforge = require('./src/main/curseforge');
 const launcher = require('./src/main/launch');
 
 const LEGAL_VERSION = '2026-11-21';
-const ALLOWED_EXTERNAL = ['modrinth.com', 'www.curseforge.com', 'curseforge.com', 'console.curseforge.com', 'github.com', 'www.minecraft.net', 'minecraft.net', 'account.microsoft.com'];
+const ALLOWED_EXTERNAL = ['modrinth.com', 'github.com', 'www.minecraft.net', 'minecraft.net', 'account.microsoft.com'];
 
 let win = null;
 
@@ -125,7 +124,7 @@ function registerIpc() {
 
   handle('settings:get', () => {
     const s = store.getSettings();
-    return { ...s, curseforge: { hasKey: !!s.curseforge.apiKey }, backgroundImage: s.design.mode === 'image' ? backgroundDataUrl(s.design.image) : null };
+    return { ...s, backgroundImage: s.design.mode === 'image' ? backgroundDataUrl(s.design.image) : null };
   });
   handle('settings:save', (patch) => {
     const clean = { ...patch };
@@ -169,10 +168,6 @@ function registerIpc() {
   handle('modrinth:install', (o) => modrinth.install(o));
   handle('modrinth:modpack', (o) => modrinth.installModpack(o, (p) => send('install:progress', p)));
 
-  handle('curseforge:hasKey', () => curseforge.hasKey());
-  handle('curseforge:search', (q) => curseforge.search(q));
-  handle('curseforge:install', (o) => curseforge.install(o));
-  handle('curseforge:modpack', (o) => curseforge.installModpack(o, (p) => send('install:progress', p)));
 
   handle('game:launch', async (id) => {
     await launcher.launch(id, send);
