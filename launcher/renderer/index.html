@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.modrinth.com https://media.forgecdn.net https://textures.minecraft.net; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Visual Launcher</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="bg" class="bg"></div>
+  <div id="bg-dim" class="bg-dim"></div>
+
+  <header class="titlebar">
+    <div class="brand"><span class="logo"></span><span>Visual Launcher</span></div>
+    <div class="drag"></div>
+    <div class="win-buttons">
+      <button data-win="minimize" title="Minimieren"><svg viewBox="0 0 12 12"><path d="M2 6h8"/></svg></button>
+      <button data-win="maximize" title="Maximieren"><svg viewBox="0 0 12 12"><rect x="2.5" y="2.5" width="7" height="7" rx="1"/></svg></button>
+      <button data-win="close" class="close" title="Schließen"><svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6"/></svg></button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="sidebar glass">
+      <button class="nav active" data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Start</span></button>
+      <button class="nav" data-page="instances"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>Instanzen</span></button>
+      <button class="nav" data-page="modrinth"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18M3 12h18"/></svg><span>Modrinth</span></button>
+      <button class="nav" data-page="curseforge"><svg viewBox="0 0 24 24"><path d="M4 8h16l-2 4h-4l1 4H9l1-4H6z"/><path d="M8 20h8"/></svg><span>CurseForge</span></button>
+      <button class="nav" data-page="design"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5 1-1.5 2-1.5h2a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7" r="1"/></svg><span>Design</span></button>
+      <div class="grow"></div>
+      <button class="nav" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Einstellungen</span></button>
+      <button class="nav" data-page="legal"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg><span>Rechtliches</span></button>
+      <button id="account-chip" class="account-chip" title="Konto"></button>
+    </nav>
+
+    <main id="content" class="content">
+      <!-- HOME -->
+      <section class="page active" data-page="home">
+        <div class="hero glass">
+          <div class="hero-text">
+            <div class="eyebrow">Bereit zum Spielen</div>
+            <h1 id="home-title">Visual Launcher</h1>
+            <p id="home-sub" class="muted">Lege eine Instanz an, um loszulegen.</p>
+            <div class="hero-meta">
+              <span class="pill" id="home-version">–</span>
+              <span class="pill accent" id="home-vc">Visual Client</span>
+            </div>
+          </div>
+          <div class="play-area">
+            <select id="home-instance" class="select"></select>
+            <button id="play" class="play"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>SPIELEN</span></button>
+            <div class="progress" id="progress" hidden>
+              <div class="progress-label"><span id="progress-stage">…</span><span id="progress-count"></span></div>
+              <div class="bar"><div id="progress-bar"></div></div>
+            </div>
+            <button id="toggle-log" class="link">Protokoll anzeigen</button>
+          </div>
+        </div>
+        <pre id="log" class="log glass" hidden></pre>
+        <h2 class="section-title">Zuletzt gespielt</h2>
+        <div id="home-recent" class="cards"></div>
+      </section>
+
+      <!-- INSTANCES -->
+      <section class="page" data-page="instances">
+        <div class="page-head">
+          <div><h1>Instanzen</h1><p class="muted">Jede Instanz hat eigene Mods, Ressourcenpakete und Welten.</p></div>
+          <button id="new-instance" class="btn primary">+ Neue Instanz</button>
+        </div>
+        <div id="instance-grid" class="cards"></div>
+        <div id="instance-detail" class="detail glass" hidden></div>
+      </section>
+
+      <!-- LIBRARIES (shared markup, filled by JS) -->
+      <section class="page library" data-page="modrinth" data-source="modrinth"></section>
+      <section class="page library" data-page="curseforge" data-source="curseforge"></section>
+
+      <!-- DESIGN -->
+      <section class="page" data-page="design">
+        <div class="page-head"><div><h1>Design</h1><p class="muted">Passe den Hintergrund und die Akzentfarbe an.</p></div>
+          <button id="design-reset" class="btn ghost">Zurücksetzen</button></div>
+        <div class="design-grid">
+          <div class="glass card-pad">
+            <h3>Hintergrund</h3>
+            <div class="segmented" id="bg-mode">
+              <button data-mode="gradient">Verlauf</button>
+              <button data-mode="solid">Farbe</button>
+              <button data-mode="image">Bild</button>
+            </div>
+            <div class="field" data-for="gradient solid">
+              <label>Farbe 1 (Hex)</label>
+              <div class="color-row"><input type="color" id="c1-pick"><input id="c1" class="input mono" maxlength="7" spellcheck="false"></div>
+            </div>
+            <div class="field" data-for="gradient">
+              <label>Farbe 2 (Hex)</label>
+              <div class="color-row"><input type="color" id="c2-pick"><input id="c2" class="input mono" maxlength="7" spellcheck="false"></div>
+            </div>
+            <div class="field" data-for="gradient">
+              <label>Winkel <span id="angle-val"></span></label>
+              <input type="range" id="angle" min="0" max="360">
+            </div>
+            <div class="field" data-for="image">
+              <div id="drop" class="drop">
+                <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+                <div><b>Screenshot hochladen</b><br><span class="muted">Klicken oder Bild hierher ziehen</span></div>
+              </div>
+            </div>
+            <div class="field">
+              <label>Abdunkeln <span id="dim-val"></span></label>
+              <input type="range" id="dim" min="0" max="85">
+            </div>
+            <div class="field">
+              <label>Unschärfe <span id="blur-val"></span></label>
+              <input type="range" id="blur" min="0" max="24">
+            </div>
+          </div>
+          <div class="glass card-pad">
+            <h3>Akzentfarbe</h3>
+            <div class="field">
+              <label>Akzent (Hex)</label>
+              <div class="color-row"><input type="color" id="accent-pick"><input id="accent" class="input mono" maxlength="7" spellcheck="false"></div>
+            </div>
+            <h3>Vorlagen</h3>
+            <div id="presets" class="presets"></div>
+            <h3>Vorschau</h3>
+            <div class="preview"><div id="preview-bg"></div><button class="play small"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>SPIELEN</span></button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="page" data-page="settings">
+        <div class="page-head"><div><h1>Einstellungen</h1><p class="muted">Alles wird nur lokal auf diesem Gerät gespeichert.</p></div></div>
+        <div class="settings-grid">
+          <div class="glass card-pad">
+            <h3>Konten</h3>
+            <div id="accounts"></div>
+            <button id="add-account" class="btn ms"><span class="ms-logo"></span>Weiteres Microsoft-Konto</button>
+          </div>
+          <div class="glass card-pad">
+            <h3>Java &amp; Speicher</h3>
+            <div class="field"><label>Maximaler RAM <span id="ram-val"></span></label><input type="range" id="ram" min="1024" max="16384" step="512"></div>
+            <div class="field"><label>Eigener Java-Pfad (optional)</label><input id="java-path" class="input" placeholder="Leer = automatisch (empfohlen)"></div>
+            <div class="field"><label>JVM-Argumente (optional)</label><input id="jvm-args" class="input mono" placeholder="-XX:+UseG1GC"></div>
+          </div>
+          <div class="glass card-pad">
+            <h3>Spiel</h3>
+            <div class="row2">
+              <div class="field"><label>Breite</label><input id="win-w" type="number" class="input" min="640"></div>
+              <div class="field"><label>Höhe</label><input id="win-h" type="number" class="input" min="480"></div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="fullscreen"><span></span>Vollbild</label>
+            <label class="toggle"><input type="checkbox" id="close-launcher"><span></span>Launcher beim Spielstart minimieren</label>
+          </div>
+          <div class="glass card-pad">
+            <h3>CurseForge</h3>
+            <p class="muted small">CurseForge verlangt einen eigenen API-Schlüssel. Du bekommst ihn kostenlos unter
+              <a href="#" data-ext="https://console.curseforge.com/">console.curseforge.com</a>. Er wird verschlüsselt auf diesem Gerät gespeichert.</p>
+            <div class="field"><label>API-Schlüssel <span id="cf-state" class="pill"></span></label><input id="cf-key" type="password" class="input mono" placeholder="$2a$10$…"></div>
+            <button id="cf-save" class="btn primary">Speichern</button>
+          </div>
+          <div class="glass card-pad span2">
+            <h3>Datenschutz</h3>
+            <p class="muted small">Visual Launcher sammelt keine Daten. Es gibt keine Telemetrie, keine Analyse und keinen Server des Entwicklers.
+              Der Launcher verbindet sich nur direkt mit Microsoft/Xbox/Mojang (Anmeldung &amp; Spieldateien), Fabric, Modrinth und – falls du einen Schlüssel einträgst – CurseForge.</p>
+            <p class="muted small" id="about"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEGAL -->
+      <section class="page" data-page="legal">
+        <div class="page-head"><div><h1>Rechtliches</h1></div></div>
+        <div class="segmented" id="legal-tabs">
+          <button data-doc="tos" class="active">Terms of Service</button>
+          <button data-doc="tou">Terms of Use</button>
+          <button data-doc="privacy">Datenschutz</button>
+        </div>
+        <article id="legal-doc" class="doc glass"></article>
+      </section>
+    </main>
+  </div>
+
+  <!-- First start: terms -->
+  <div id="gate-legal" class="gate" hidden>
+    <div class="gate-card glass">
+      <div class="logo big"></div>
+      <h1>Willkommen bei Visual Launcher</h1>
+      <p class="muted">Bitte lies und akzeptiere die Bedingungen, bevor du fortfährst.</p>
+      <div class="segmented" id="gate-tabs">
+        <button data-doc="tos" class="active">Terms of Service</button>
+        <button data-doc="tou">Terms of Use</button>
+        <button data-doc="privacy">Datenschutz</button>
+      </div>
+      <article id="gate-doc" class="doc small-doc"></article>
+      <label class="toggle"><input type="checkbox" id="gate-check"><span></span>Ich habe die Terms of Service, die Terms of Use und den Datenschutzhinweis gelesen und akzeptiere sie.</label>
+      <button id="gate-accept" class="btn primary wide" disabled>Akzeptieren &amp; weiter</button>
+    </div>
+  </div>
+
+  <!-- Login -->
+  <div id="gate-login" class="gate" hidden>
+    <div class="gate-card glass login">
+      <div class="logo big"></div>
+      <h1>Anmelden</h1>
+      <p class="muted">Melde dich mit dem Microsoft-Konto an, das Minecraft: Java Edition besitzt.</p>
+      <button id="login-btn" class="btn ms wide"><span class="ms-logo"></span>Mit Microsoft anmelden</button>
+      <p id="login-error" class="error" hidden></p>
+      <p class="muted tiny">Die Anmeldung läuft direkt über Microsoft. Dein Passwort sieht der Launcher nie. Deine Sitzung wird nur verschlüsselt auf diesem Gerät gespeichert.</p>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="gate" hidden><div class="gate-card glass modal-card" id="modal-card"></div></div>
+
+  <div id="toasts" class="toasts"></div>
+  <script src="app.js"></script>
+</body>
+</html>

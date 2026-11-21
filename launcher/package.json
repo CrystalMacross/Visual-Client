@@ -1,0 +1,53 @@
+{
+  "name": "visual-launcher",
+  "productName": "Visual Launcher",
+  "version": "1.0.0",
+  "description": "Modern Minecraft launcher with Microsoft login, Modrinth & CurseForge libraries and Visual Client built in.",
+  "main": "main.js",
+  "license": "MIT",
+  "author": "Visual Client",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/sync-visual-client.js && electron .",
+    "sync-vc": "node scripts/sync-visual-client.js",
+    "dist": "node scripts/sync-visual-client.js && electron-builder",
+    "dist:win": "node scripts/sync-visual-client.js && electron-builder --win",
+    "dist:mac": "node scripts/sync-visual-client.js && electron-builder --mac",
+    "dist:linux": "node scripts/sync-visual-client.js && electron-builder --linux"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "minecraft-launcher-core": "^3.18.2",
+    "msmc": "^5.0.5"
+  },
+  "devDependencies": {
+    "electron": "^45.4.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "net.visualclient.launcher",
+    "productName": "Visual Launcher",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "legal/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      { "from": "resources/mods", "to": "mods", "filter": ["visual-client-*.jar"] }
+    ],
+    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "license": "legal/LICENSE_AGREEMENT.txt",
+      "shortcutName": "Visual Launcher"
+    },
+    "portable": { "artifactName": "Visual-Launcher-${version}-portable.exe" },
+    "mac": { "target": ["dmg"], "category": "public.app-category.games", "icon": "build/icon.png" },
+    "linux": { "target": ["AppImage"], "category": "Game", "icon": "build/icon.png" }
+  }
+}
