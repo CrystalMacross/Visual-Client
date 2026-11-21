@@ -24,6 +24,7 @@ import java.util.zip.ZipOutputStream;
  *  - "Configs" module (ConfigsModule): named configs + shareable config codes
  *  - "No Explosion Particles" module (Extra) via FpsBoostModule.dropParticle
  *  - Totem Tweaks: "No Pop Animation" setting; NoPopAnimationMixin cancels the pop animation
+ *  - Sakura forest title-screen panorama (resources/assets/minecraft/textures/gui/title/background)
  * Steps that are already present in the input jar are skipped, so patched jars can be patched again.
  *
  * Usage (JDK 21):
@@ -203,7 +204,8 @@ public class Patcher implements Opcodes {
 		String version = args[3];
 		Map<String, byte[]> extraClasses = new TreeMap<>();
 		try (var walk = Files.walk(extras)) {
-			for (Path p : walk.filter(f -> f.toString().endsWith(".class")).toList()) {
+			// compiled helper classes plus any resources (e.g. the sakura title-screen panorama)
+			for (Path p : walk.filter(Files::isRegularFile).toList()) {
 				extraClasses.put(extras.relativize(p).toString().replace('\\', '/'), Files.readAllBytes(p));
 			}
 		}
@@ -214,17 +216,21 @@ public class Patcher implements Opcodes {
 
 	// ------------------------------------------------------------------ jars
 
-	static byte[] patchBundle(byte[] jar, Map<String, byte[]> extraClasses, String version) throws IOException {
+	static byte[] patchBundle(byte[] jar, Map<String, byte[]> extras, String version) throws IOException {
+		// assets/ go into the bundle jar once (it is a Fabric mod too, so its resources are loaded);
+		// classes go into every Minecraft build
+		Map<String, byte[]> assets = new TreeMap<>(), classes = new TreeMap<>();
+		for (var e : extras.entrySet()) (e.getKey().startsWith("assets/") ? assets : classes).put(e.getKey(), e.getValue());
 		return rewriteJar(jar, (name, data) -> {
 			if (name.startsWith("META-INF/jars/") && name.endsWith(".jar")) {
 				System.out.println("Patching " + name);
-				return patchInner(name, data, extraClasses, version);
+				return patchInner(name, data, classes, version);
 			}
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);
 			}
 			return data;
-		}, Map.of());
+		}, assets);
 	}
 
 	static byte[] patchInner(String jarName, byte[] jar, Map<String, byte[]> extraClasses, String version) throws IOException {
