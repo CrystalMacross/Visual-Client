@@ -1,0 +1,131 @@
+Terms of Service – Visual Launcher
+
+Stand: 21. November 2026
+
+Diese Terms of Service („Bedingungen“) regeln die Bereitstellung der Software Visual Launcher („Launcher“) einschließlich der eingebauten Mod Visual Client durch das Visual-Client-Projekt („wir“). Mit der Installation oder Nutzung des Launchers stimmst du diesen Bedingungen zu. Wenn du nicht zustimmst, darfst du den Launcher nicht verwenden.
+
+1. Was der Launcher ist
+
+- Visual Launcher ist ein kostenloser, inoffizieller Launcher für Minecraft: Java Edition.
+- Er lädt das Spiel, den Mod-Loader Fabric, Java-Laufzeitumgebungen sowie Inhalte aus der Bibliothek von Modrinth herunter und startet das Spiel.
+- Visual Launcher ist kein offizielles Minecraft-Produkt. Er ist nicht von Mojang Studios oder Microsoft genehmigt und steht in keiner Verbindung zu ihnen. Ebenso besteht keine Verbindung zu Modrinth oder dem Fabric-Projekt.
+- „Minecraft“ ist eine Marke von Mojang Synergies AB. Alle weiteren Marken gehören ihren jeweiligen Inhabern.
+
+2. Voraussetzungen
+
+- Du benötigst ein eigenes, rechtmäßig erworbenes Microsoft-Konto mit Minecraft: Java Edition. Der Launcher ermöglicht keine Nutzung ohne gültige Lizenz und darf dafür nicht verwendet werden.
+- Du musst das nach deinem Wohnsitzland erforderliche Mindestalter haben bzw. die Zustimmung deiner Erziehungsberechtigten besitzen, um ein Microsoft-Konto zu nutzen.
+- Für Minecraft gelten zusätzlich das Minecraft-Endbenutzer-Lizenzabkommen (EULA) und die Microsoft-Servicevereinbarung. Mit dem Start des Spiels über den Launcher akzeptierst du diese gegenüber Mojang/Microsoft.
+
+3. Anmeldung
+
+- Die Anmeldung erfolgt ausschließlich über das offizielle Anmeldefenster von Microsoft. Dein Passwort wird nie vom Launcher gesehen oder gespeichert.
+- Die vom Microsoft-Login ausgegebenen Sitzungs-Token werden nur lokal auf deinem Gerät und – sofern dein Betriebssystem das unterstützt – verschlüsselt gespeichert. Du kannst dich jederzeit abmelden und die Token damit löschen.
+
+4. Keine Datenerhebung durch uns
+
+Wir betreiben keine Server für den Launcher und erhalten keinerlei Daten von dir: keine Telemetrie, keine Analyse, keine Absturzberichte, keine Konto- oder Nutzungsdaten. Einzelheiten stehen im Datenschutzhinweis.
+
+5. Inhalte Dritter
+
+- Mods, Ressourcenpakete, Shader und Modpacks aus Modrinth stammen von Dritten. Wir prüfen, hosten oder verantworten diese Inhalte nicht. Für sie gelten die Lizenzen ihrer Autoren sowie die Bedingungen von Modrinth.
+- Installiere nur Inhalte, denen du vertraust. Mods sind ausführbarer Code und können dein System beeinflussen.
+
+6. Verfügbarkeit und Änderungen
+
+- Der Launcher funktioniert nur, solange die Dienste von Microsoft, Mojang, Fabric und Modrinth erreichbar sind und ihre Schnittstellen nicht ändern. Darauf haben wir keinen Einfluss.
+- Wir können den Launcher und diese Bedingungen jederzeit ändern oder die Weiterentwicklung einstellen. Bei geänderten Bedingungen wirst du beim nächsten Start erneut um Zustimmung gebeten.
+
+7. Gewährleistung und Haftung
+
+- Der Launcher wird „wie besehen“ (as is) und unentgeltlich bereitgestellt, ohne jede ausdrückliche oder stillschweigende Gewährleistung, insbesondere für Fehlerfreiheit, ständige Verfügbarkeit oder Eignung für einen bestimmten Zweck.
+- Wir haften nicht für Schäden, die aus der Nutzung des Launchers, des Spiels oder von Inhalten Dritter entstehen, etwa verlorene Welten, Datenverlust oder gesperrte Konten. Das gilt nicht bei Vorsatz oder grober Fahrlässigkeit, bei der Verletzung von Leben, Körper oder Gesundheit sowie soweit eine Haftung gesetzlich zwingend vorgeschrieben ist (z. B. nach dem Produkthaftungsgesetz).
+- Erstelle regelmäßig Sicherungen deiner Welten.
+
+8. Lizenz
+
+Der Quellcode von Visual Launcher und Visual Client steht unter der MIT-Lizenz (siehe LICENSE im Repository). Die enthaltenen Bibliotheken unterliegen ihren eigenen Open-Source-Lizenzen.
+
+9. Schlussbestimmungen
+
+- Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des UN-Kaufrechts. Zwingende Verbraucherschutzvorschriften deines Wohnsitzlandes bleiben unberührt.
+- Sollte eine Bestimmung unwirksam sein, bleiben die übrigen Bestimmungen wirksam.
+
+Terms of Use – Visual Launcher
+
+Stand: 21. November 2026
+
+Diese Terms of Use („Nutzungsregeln“) legen fest, wie du Visual Launcher und den eingebauten Visual Client verwenden darfst. Sie ergänzen die Terms of Service.
+
+1. Erlaubte Nutzung
+
+Du darfst den Launcher privat und kostenlos nutzen, um:
+
+- dich mit deinem eigenen Microsoft-Konto anzumelden und Minecraft: Java Edition zu spielen,
+- Instanzen mit Fabric und Visual Client anzulegen,
+- Mods, Ressourcenpakete, Shader und Modpacks aus Modrinth zu installieren,
+- das Aussehen des Launchers anzupassen, z. B. mit eigenen Hex-Farben oder eigenen Screenshots als Hintergrund.
+
+2. Nicht erlaubt
+
+Du darfst den Launcher nicht verwenden, um:
+
+- Minecraft ohne gültige Lizenz zu spielen oder Lizenz- und Kontoprüfungen zu umgehen,
+- dich mit fremden Konten anzumelden oder Zugangsdaten bzw. Sitzungs-Token anderer zu verwenden oder weiterzugeben,
+- gegen die Minecraft-EULA, die Microsoft-Servicevereinbarung, die Minecraft-Nutzungsrichtlinien oder die Regeln von Servern zu verstoßen, auf denen du spielst (z. B. durch unerlaubte Cheats),
+- Inhalte Dritter entgegen ihrer Lizenz weiterzuverbreiten oder Download-Sperren von Autoren zu umgehen,
+- die Server von Microsoft, Mojang, Modrinth oder Fabric durch automatisierte Massenanfragen zu überlasten,
+- veränderte Versionen des Launchers als offizielle Version auszugeben oder mit Schadsoftware zu verbreiten.
+
+3. Hintergründe und eigene Inhalte
+
+- Bilder, die du als Hintergrund hochlädst, bleiben nur auf deinem Gerät und werden nirgendwohin übertragen.
+- Verwende nur Bilder, an denen du die nötigen Rechte hast, und achte selbst darauf, dass sie für dich angemessen sind.
+
+4. Visual Client
+
+- Visual Client ist eine rein clientseitige Mod für optische Anpassungen und HUD-Elemente.
+- Ob Mods auf einem Server erlaubt sind, entscheidet der jeweilige Server. Informiere dich vorher über dessen Regeln.
+
+5. Folgen von Verstößen
+
+Bei Verstößen gegen diese Nutzungsregeln erlischt dein Recht zur Nutzung des Launchers. Sperren durch Microsoft, Mojang, Server oder Plattformen liegen außerhalb unseres Einflusses.
+
+6. Kontakt und Meldungen
+
+Fehler und Sicherheitsprobleme kannst du über die Issue-Seite des GitHub-Repositorys von Visual Client melden. Teile dort niemals Token oder Passwörter.
+
+Datenschutzhinweis – Visual Launcher
+
+Stand: 21. November 2026
+
+Kurz gesagt: Der Launcher schickt keine Daten an den Entwickler. Es gibt keinen Server des Visual-Client-Projekts, keine Telemetrie, keine Analyse-Tools, keine Werbung und keine automatischen Absturzberichte.
+
+1. Was lokal auf deinem Gerät gespeichert wird
+
+Im Benutzerdatenordner des Launchers werden gespeichert:
+
+- Kontodaten: Minecraft-Name, UUID, Skin-Adresse und das Microsoft-Aktualisierungstoken. Das Token wird mit der Verschlüsselung deines Betriebssystems gesichert (Windows DPAPI, macOS-Schlüsselbund, Linux Secret Service), sofern verfügbar.
+- Einstellungen: Design, Farben, Hintergrundbild, Arbeitsspeicher, Fenstergröße.
+- Spieldaten: Minecraft, Fabric, Java, Instanzen, Mods und Welten.
+
+Mit „Abmelden“ bzw. dem Löschen des Datenordners entfernst du diese Daten vollständig.
+
+2. Mit wem der Launcher direkt verbunden ist
+
+Der Launcher stellt Verbindungen nur zu folgenden Diensten her, und nur, wenn die jeweilige Funktion genutzt wird:
+
+- Microsoft / Xbox Live (login.live.com, user.auth.xboxlive.com, xsts.auth.xboxlive.com) – Anmeldung
+- Mojang / Minecraft-Dienste (api.minecraftservices.com, piston-meta.mojang.com, launchermeta.mojang.com, libraries.minecraft.net, resources.download.minecraft.net, textures.minecraft.net) – Kontoprüfung, Spieldateien, Java, Skins
+- Fabric (meta.fabricmc.net, maven.fabricmc.net) – Mod-Loader
+- Modrinth (api.modrinth.com, cdn.modrinth.com) – Suche und Downloads
+
+Bei diesen Verbindungen erhalten die Anbieter technisch notwendige Daten wie deine IP-Adresse und bei der Anmeldung deine Kontodaten. Dafür gelten deren Datenschutzerklärungen, z. B. die Datenschutzerklärung von Microsoft. Wir haben auf diese Daten keinen Zugriff.
+
+3. Minecraft selbst
+
+Wenn du das Spiel startest, verarbeitet Minecraft Daten nach den Regeln von Mojang/Microsoft, etwa für Multiplayer, Chat-Meldungen oder Telemetrie des Spiels. Das ist nicht Teil des Launchers.
+
+4. Deine Rechte
+
+Da wir keine personenbezogenen Daten von dir erhalten oder speichern, gibt es bei uns nichts, worüber wir Auskunft geben oder was wir löschen könnten. Deine lokalen Daten verwaltest du selbst. Für Daten bei Microsoft oder Modrinth wende dich an den jeweiligen Anbieter.
