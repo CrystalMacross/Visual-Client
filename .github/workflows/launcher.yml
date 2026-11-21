@@ -5,6 +5,8 @@ name: Build Visual Launcher
 on:
   push:
     tags: ['launcher-v*']
+  pull_request:
+    paths: ['launcher/**', '.github/workflows/launcher.yml', 'visual-client-*.jar']
   workflow_dispatch:
 
 permissions:
