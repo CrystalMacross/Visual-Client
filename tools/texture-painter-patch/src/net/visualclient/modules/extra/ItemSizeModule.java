@@ -56,6 +56,7 @@ public final class ItemSizeModule extends ClientModule {
 
 	/** Remembers the size for an item entity's render state (called when the state is extracted). */
 	public static void captureState(Object itemEntity, Object state) {
+		captureCalls++;
 		if (!INSTANCE.isEnabled() || state == null) return;
 		String id = itemId(itemEntity);
 		if (!loggedCapture) {
@@ -70,6 +71,7 @@ public final class ItemSizeModule extends ClientModule {
 
 	/** Scales the pose at the start of the item renderer (the entity dispatcher pops it afterwards). */
 	public static void scale(Object state, Object poseStack) {
+		scaleCalls++;
 		if (!INSTANCE.isEnabled() || poseStack == null) return;
 		Float s;
 		synchronized (STATE_SCALE) {
@@ -142,6 +144,21 @@ public final class ItemSizeModule extends ClientModule {
 	/** Changing a size only makes sense with the module on, so the editor switches it on. */
 	public static void ensureEnabled() {
 		if (!INSTANCE.isEnabled()) INSTANCE.toggle();
+	}
+
+	private static volatile long scaleCalls;
+	private static volatile long captureCalls;
+
+	/** For the item editor: are the renderer hooks running in this game? */
+	public static String hookStatus() {
+		if (scaleCalls > 0) return "Renderer hook active";
+		String h = System.getProperty("visualclient.itemsize.hooks");
+		if (h == null) return "Renderer not loaded yet - look at an item on the ground";
+		return "No item drawn yet (hooks: " + h + ")";
+	}
+
+	public static boolean hookActive() {
+		return scaleCalls > 0;
 	}
 
 	private static boolean loggedScale;

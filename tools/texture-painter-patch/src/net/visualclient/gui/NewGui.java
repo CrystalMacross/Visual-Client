@@ -867,6 +867,11 @@ public final class NewGui {
 		if (over(swx - 2, ey + 5, 22, 16)) hint = enabled ? "Item Size is on - click to turn it off" : "Item Size is off - click to turn it on";
 		if (!enabled) Gfx.textRight(g, font, "off", swx - 4, ey + 9, a(0xFFE05555));
 
+		// is the renderer hook running? (shown so problems are visible right here)
+		String hs = ItemSizeModule.hookStatus();
+		boolean hok = ItemSizeModule.hookActive();
+		Gfx.text(g, font, Gfx.fit(font, (hok ? "\u25cf " : "\u25cb ") + hs, size), ex, ey + size + 4, a(hok ? 0xFF55D17A : 0xFFE0A050));
+
 		// search + filter chip
 		int sy = ey + 24;
 		int chipW = 58;

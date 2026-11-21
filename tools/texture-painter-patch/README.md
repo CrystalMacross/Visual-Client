@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> ... -> 1.19.0 -> 1.20.0)
+# Visual Client patches (1.12.0 -> ... -> 1.20.1 -> 1.20.2)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -33,6 +33,11 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
   Since 1.20.0 "Open item editor" shows a square window in the new menu: every item with its icon
   (`NewGuiScreen.vc$item`, the mod's own GuiGraphics item call), search, a "Custom" filter and a
   size slider with presets per item. Sizes are stored in "Per item", so configs keep them.
+  Since 1.20.2 the hooks no longer use method names: `src/.../mixin/VisualMixinPlugin.java` (registered
+  as the mixin config plugin) finds ItemEntityRenderer's render/submit (PoseStack as 2nd parameter)
+  and extractRenderState (entity, state, float) when the class loads and inserts the calls;
+  `ItemSizeMixin` is only an empty @Mixin on that class. Compiled against `lib/asm-*.jar` and the
+  stand-in interfaces in `stubs/` (both compile-only). The editor shows whether the hook runs.
 
 * **New menu UI** (1.18.0): `GUI Style → UI: Old / New` (default New). `GuiOpener.open()` returns
   the generated `NewGuiScreen` when New is selected; the sidebar of the new menu has an "Old UI"
@@ -47,7 +52,7 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
     (26.x) names both work.
 
 ```
-tools/texture-painter-patch/patch.sh visual-client-1.19.0.jar visual-client-1.20.0.jar 1.20.0
+tools/texture-painter-patch/patch.sh visual-client-1.20.1.jar visual-client-1.20.2.jar 1.20.2
 ```
 Steps that are already in the input jar are skipped.
 

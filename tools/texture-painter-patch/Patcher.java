@@ -555,6 +555,10 @@ public class Patcher implements Opcodes {
 			}
 		}
 		if (hooks != 2) throw new IllegalStateException("XpOrbRendererMixin: expected 2 hooks, found " + hooks);
+		// The injectors are not used any more: VisualMixinPlugin finds the renderer's methods itself
+		// (no method names needed). Only the empty @Mixin(ItemEntityRenderer) stays, so the plugin's
+		// preApply runs for that class.
+		cn.methods.removeIf(m -> !m.name.equals("<init>"));
 		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 		cn.accept(cw);
 		return cw.toByteArray();
@@ -581,6 +585,19 @@ public class Patcher implements Opcodes {
 		if (v instanceof AnnotationNode a) { a.values = remapValues(a.values, sw); return a; }
 		if (v instanceof List<?> l) return remapValues((List<Object>) l, sw);
 		return v;
+	}
+
+	/** Registers VisualMixinPlugin in visualclient.mixins.json (once). */
+	static byte[] addPlugin(byte[] json) {
+		String s = new String(json, StandardCharsets.UTF_8);
+		if (s.contains("\"plugin\"")) {
+			if (!s.contains("VisualMixinPlugin")) throw new IllegalStateException("mixins json already has another plugin");
+			return json;
+		}
+		int pkg = s.indexOf("\"package\"");
+		if (pkg < 0) throw new IllegalStateException("mixins json: no package");
+		s = s.substring(0, pkg) + "\"plugin\": \"net.visualclient.mixin.VisualMixinPlugin\",\n  " + s.substring(pkg);
+		return s.getBytes(StandardCharsets.UTF_8);
 	}
 
 	/** Adds a mixin class name to the "client" list of visualclient.mixins.json (once). */
@@ -809,7 +826,7 @@ public class Patcher implements Opcodes {
 				return setVersion(data, version);
 			}
 			if (name.equals("visualclient.mixins.json")) {
-				return addMixin(addMixin(data, "NoPopAnimationMixin"), "ItemSizeMixin");
+				return addPlugin(addMixin(addMixin(data, "NoPopAnimationMixin"), "ItemSizeMixin"));
 			}
 			return data;
 		}, add);

@@ -5,10 +5,10 @@
 #   - "No Explosion Particles" module (Extra), Totem Tweaks "No Pop Animation"
 #   - Sakura forest title-screen panorama (resources/)
 # Already applied steps are skipped. Needs JDK 21+.
-#   tools/texture-painter-patch/patch.sh visual-client-1.20.0.jar visual-client-1.20.1.jar 1.20.1
+#   tools/texture-painter-patch/patch.sh visual-client-1.20.1.jar visual-client-1.20.2.jar 1.20.2
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
-in="$1"; out="$2"; version="${3:-1.20.1}"
+in="$1"; out="$2"; version="${3:-1.20.2}"
 build="$(mktemp -d)"
 trap 'rm -rf "$build"' EXIT
 
@@ -17,7 +17,10 @@ inner="$(unzip -Z1 "$in" | grep '^META-INF/jars/.*\.jar$' | head -1)"
 mkdir -p "$build/cp"
 unzip -p "$in" "$inner" > "$build/inner.jar"
 (cd "$build/cp" && unzip -q "$build/inner.jar" 'net/visualclient/*')
-javac --release 21 -nowarn -cp "$build/cp" -d "$build/classes" $(find "$here/src" -name '*.java')
+# Mixin's plugin interfaces exist only as compile-time stand-ins (stubs/), ASM comes with Fabric
+asm="$here/lib/asm-9.7.jar:$here/lib/asm-tree-9.7.jar"
+javac --release 21 -nowarn -d "$build/stubs" -cp "$asm" $(find "$here/stubs" -name '*.java')
+javac --release 21 -nowarn -cp "$build/cp:$build/stubs:$asm" -d "$build/classes" $(find "$here/src" -name '*.java')
 # resources that go into every Minecraft build (title-screen panorama, ...)
 if [ -d "$here/resources" ]; then cp -r "$here/resources/." "$build/classes/"; fi
 java --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
