@@ -176,14 +176,14 @@ def build_world():
         ang = i / 10 * 2 * math.pi + 0.3
         x = int(round(cx + math.cos(ang) * 11.5))
         z = int(round(cz - 13 + math.sin(ang) * 9.0))
-        if 0 < x < W and 0 < z < D and lantern_ok(x, z):
+        if 0 < x < W and 0 < z < D and (x - cx) ** 2 + (z - cz) ** 2 >= 10 ** 2 and lantern_ok(x, z):
             lights.append((x, height[x, z], z))
     # ... and scattered through the garden
     tries = 0
     while len(lights) < 70 and tries < 6000:
         tries += 1
         x, z = int(rng.integers(4, W - 4)), int(rng.integers(4, D - 4))
-        if (x - cx) ** 2 + (z - cz) ** 2 < 5 ** 2:
+        if (x - cx) ** 2 + (z - cz) ** 2 < 10 ** 2:  # keep the view around the camera open
             continue
         if lantern_ok(x, z):
             lights.append((x, height[x, z], z))

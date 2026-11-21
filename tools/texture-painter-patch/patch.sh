@@ -5,10 +5,10 @@
 #   - "No Explosion Particles" module (Extra), Totem Tweaks "No Pop Animation"
 #   - Sakura forest title-screen panorama (resources/)
 # Already applied steps are skipped. Needs JDK 21+.
-#   tools/texture-painter-patch/patch.sh visual-client-1.14.1.jar visual-client-1.15.0.jar 1.15.0
+#   tools/texture-painter-patch/patch.sh visual-client-1.15.0.jar visual-client-1.16.0.jar 1.16.0
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
-in="$1"; out="$2"; version="${3:-1.15.0}"
+in="$1"; out="$2"; version="${3:-1.16.0}"
 build="$(mktemp -d)"
 trap 'rm -rf "$build"' EXIT
 
