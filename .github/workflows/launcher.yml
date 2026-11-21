@@ -77,9 +77,11 @@ jobs:
 
       - name: Add newest Visual Client jar
         run: |
-          jar=$(ls visual-client-*.jar | sort -V | tail -1)
+          # same version logic as the launcher (numeric, handles 1.13.0 and 1_1_0 names)
+          node launcher/scripts/sync-visual-client.js
+          jar=$(ls launcher/resources/mods/visual-client-*.jar)
           cp "$jar" artifacts/
-          echo "VC_JAR=$jar" >> "$GITHUB_ENV"
+          echo "VC_JAR=$(basename "$jar")" >> "$GITHUB_ENV"
           echo "LAUNCHER_VERSION=$(node -p "require('./launcher/package.json').version")" >> "$GITHUB_ENV"
 
       - name: Remove old build files from the release
