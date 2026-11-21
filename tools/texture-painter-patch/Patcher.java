@@ -23,7 +23,7 @@ import java.util.zip.ZipOutputStream;
  *  - save() writes through TexturePainterExtras.resolveTexture so that entry lands in textures/entity/...
  *  - "Configs" module (ConfigsModule): named configs + shareable config codes
  *  - "No Explosion Particles" module (Extra) via FpsBoostModule.dropParticle
- *  - Totem Tweaks: "No Pop Animation" setting via TotemTweaksModule.popFactor
+ *  - Totem Tweaks: "No Pop Animation" setting; NoPopAnimationMixin cancels the pop animation
  * Steps that are already present in the input jar are skipped, so patched jars can be patched again.
  *
  * Usage (JDK 21):
@@ -42,6 +42,77 @@ public class Patcher implements Opcodes {
 	static final String TOTEM_TWEAKS = "net/visualclient/modules/combat/TotemTweaksModule";
 	static final String EXTRA_SETTINGS = "net/visualclient/core/ExtraSettings";
 	static final String NUMBER_SETTING = "net/visualclient/core/setting/NumberSetting";
+
+	static final String NO_POP_MIXIN = "net/visualclient/mixin/NoPopAnimationMixin";
+
+	/** Adds a mixin class name to the "client" list of visualclient.mixins.json (once). */
+	static byte[] addMixin(byte[] json, String mixin) {
+		String s = new String(json, StandardCharsets.UTF_8);
+		if (s.contains("\"" + mixin + "\"")) return json;
+		int client = s.indexOf("\"client\"");
+		int open = s.indexOf('[', client);
+		if (client < 0 || open < 0) throw new IllegalStateException("mixins json: no client list");
+		s = s.substring(0, open + 1) + "\n    \"" + mixin + "\"," + s.substring(open + 1);
+		return s.getBytes(StandardCharsets.UTF_8);
+	}
+
+	/**
+	 * Builds the mixin that cancels GameRenderer.displayItemActivation (the totem pop animation)
+	 * while "No Pop Animation" is on:
+	 *   @Mixin(GameRenderer.class) abstract class NoPopAnimationMixin {
+	 *     @Inject(method = "...", at = @At("HEAD"), cancellable = true, require = 0)
+	 *     private void visualclient$noPopAnimation(CallbackInfo ci) { if (ExtraSettings.noPopActive()) ci.cancel(); }
+	 *   }
+	 * 1.21.x builds use intermediary names (class_757.method_3189), 26.x the official ones.
+	 */
+	static byte[] noPopMixin(boolean official) {
+		String gameRenderer = official ? "net/minecraft/client/renderer/GameRenderer" : "net/minecraft/class_757";
+		String target = official ? "displayItemActivation(Lnet/minecraft/world/item/ItemStack;)V" : "method_3189(Lnet/minecraft/class_1799;)V";
+		String ci = "org/spongepowered/asm/mixin/injection/callback/CallbackInfo";
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw.visit(V21, ACC_PUBLIC | ACC_SUPER | ACC_ABSTRACT, NO_POP_MIXIN, null, "java/lang/Object", null);
+		cw.visitSource("NoPopAnimationMixin.java", null);
+		var mixin = cw.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+		var targets = mixin.visitArray("value");
+		targets.visit(null, Type.getObjectType(gameRenderer));
+		targets.visitEnd();
+		mixin.visitEnd();
+
+		var ctor = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+		ctor.visitCode();
+		ctor.visitVarInsn(ALOAD, 0);
+		ctor.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		ctor.visitInsn(RETURN);
+		ctor.visitMaxs(0, 0);
+		ctor.visitEnd();
+
+		var m = cw.visitMethod(ACC_PRIVATE, "visualclient$noPopAnimation", "(L" + ci + ";)V", null, null);
+		var inject = m.visitAnnotation("Lorg/spongepowered/asm/mixin/injection/Inject;", true);
+		var methods = inject.visitArray("method");
+		methods.visit(null, target);
+		methods.visitEnd();
+		var at = inject.visitArray("at");
+		var head = at.visitAnnotation(null, "Lorg/spongepowered/asm/mixin/injection/At;");
+		head.visit("value", "HEAD");
+		head.visitEnd();
+		at.visitEnd();
+		inject.visit("cancellable", Boolean.TRUE);
+		inject.visit("require", 0);
+		inject.visitEnd();
+		m.visitCode();
+		var skip = new jdk.internal.org.objectweb.asm.Label();
+		m.visitMethodInsn(INVOKESTATIC, EXTRA_SETTINGS, "noPopActive", "()Z", false);
+		m.visitJumpInsn(IFEQ, skip);
+		m.visitVarInsn(ALOAD, 1);
+		m.visitMethodInsn(INVOKEVIRTUAL, ci, "cancel", "()V", false);
+		m.visitLabel(skip);
+		m.visitFrame(F_SAME, 0, null, 0, null);
+		m.visitInsn(RETURN);
+		m.visitMaxs(0, 0);
+		m.visitEnd();
+		cw.visitEnd();
+		return cw.toByteArray();
+	}
 
 	static boolean references(MethodNode m, String owner) {
 		for (AbstractInsnNode n : m.instructions) if (n instanceof MethodInsnNode mi && mi.owner.equals(owner)) return true;
@@ -147,7 +218,7 @@ public class Patcher implements Opcodes {
 		return rewriteJar(jar, (name, data) -> {
 			if (name.startsWith("META-INF/jars/") && name.endsWith(".jar")) {
 				System.out.println("Patching " + name);
-				return patchInner(data, extraClasses, version);
+				return patchInner(name, data, extraClasses, version);
 			}
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);
@@ -156,8 +227,11 @@ public class Patcher implements Opcodes {
 		}, Map.of());
 	}
 
-	static byte[] patchInner(byte[] jar, Map<String, byte[]> extraClasses, String version) throws IOException {
+	static byte[] patchInner(String jarName, byte[] jar, Map<String, byte[]> extraClasses, String version) throws IOException {
 		boolean[] found = {false};
+		boolean official = jarName.contains("-mc26.");
+		Map<String, byte[]> add = new TreeMap<>(extraClasses);
+		add.put(NO_POP_MIXIN + ".class", noPopMixin(official));
 		byte[] result = rewriteJar(jar, (name, data) -> {
 			if (name.equals(SCREEN + ".class")) {
 				found[0] = true;
@@ -175,8 +249,11 @@ public class Patcher implements Opcodes {
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);
 			}
+			if (name.equals("visualclient.mixins.json")) {
+				return addMixin(data, "NoPopAnimationMixin");
+			}
 			return data;
-		}, extraClasses);
+		}, add);
 		if (!found[0]) throw new IllegalStateException("TexturePainterScreen not found");
 		return result;
 	}

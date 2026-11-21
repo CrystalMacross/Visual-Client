@@ -4,10 +4,10 @@
 #   - "Configs" module: named configs + shareable config codes
 #   - "No Explosion Particles" module (Extra), Totem Tweaks "No Pop Animation"
 # Already applied steps are skipped. Needs JDK 21+.
-#   tools/texture-painter-patch/patch.sh visual-client-1.13.0.jar visual-client-1.14.0.jar 1.14.0
+#   tools/texture-painter-patch/patch.sh visual-client-1.14.0.jar visual-client-1.14.1.jar 1.14.1
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
-in="$1"; out="$2"; version="${3:-1.14.0}"
+in="$1"; out="$2"; version="${3:-1.14.1}"
 build="$(mktemp -d)"
 trap 'rm -rf "$build"' EXIT
 

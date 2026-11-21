@@ -18,11 +18,19 @@ public final class ExtraSettings {
 	/** Called at the end of TotemTweaksModule's constructor. */
 	public static void totemTweaks(ClientModule module) {
 		noPopAnimation = module.add(new BoolSetting("No Pop Animation", false));
-		noPopAnimation.describe("Hides the totem that flies over your screen when a totem pops.");
+		noPopAnimation.describe("Completely removes the totem pop animation (the totem that flies over your screen).");
 	}
 
-	/** Replaces popSize.asFloat() in TotemTweaksModule.popFactor: a near-zero scale hides the pop totem. */
+	/** True while "No Pop Animation" is switched on (works even if Totem Tweaks itself is off). */
+	public static boolean noPopActive() {
+		return noPopAnimation != null && noPopAnimation.on();
+	}
+
+	/**
+	 * Replaces popSize.asFloat() in TotemTweaksModule.popFactor. Only a fallback: the
+	 * NoPopAnimationMixin already stops the pop animation from starting at all.
+	 */
 	public static float popScale(NumberSetting popSize) {
-		return noPopAnimation != null && noPopAnimation.on() ? 0.0001f : popSize.asFloat();
+		return noPopActive() ? 0.0001f : popSize.asFloat();
 	}
 }
