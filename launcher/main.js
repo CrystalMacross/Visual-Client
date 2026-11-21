@@ -240,6 +240,8 @@ if (!single) {
     createWindow();
     // background: refresh an expiring Minecraft session now instead of when "Play" is pressed
     setTimeout(() => auth.prepare(store.getSettings().selectedAccount), 1500);
+    // a game started before the launcher was closed keeps counting play time
+    try { launcher.resumeDetached(send); } catch { /* ignore */ }
     app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
   });
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
