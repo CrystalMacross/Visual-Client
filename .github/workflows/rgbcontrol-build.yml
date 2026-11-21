@@ -1,0 +1,75 @@
+name: Build RGB Control (Windows .exe)
+
+on:
+  push:
+    paths:
+      - "RGB-Control/**"
+      - ".github/workflows/rgbcontrol-build.yml"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: RGB-Control
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: RGB-Control/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller pytest
+
+      - name: Run tests
+        run: python -m pytest -q tests
+
+      - name: Build EXE with PyInstaller
+        shell: cmd
+        run: |
+          pyinstaller --noconfirm --clean --windowed --uac-admin --name RGBControl --icon assets\icon.ico --add-data "assets;assets" main.py
+
+      - name: Add OpenRGB (optional)
+        shell: pwsh
+        # Optional: Wenn in den Repo-Variablen (Settings > Secrets and variables > Actions > Variables)
+        # OPENRGB_ZIP_URL gesetzt ist, wird OpenRGB (portable ZIP von openrgb.org) in die App kopiert.
+        # Ohne Variable wird dieser Schritt nur uebersprungen.
+        env:
+          OPENRGB_ZIP_URL: ${{ vars.OPENRGB_ZIP_URL }}
+        run: |
+          if (-not $env:OPENRGB_ZIP_URL) {
+            Write-Host "OPENRGB_ZIP_URL nicht gesetzt - OpenRGB wird nicht mitgeliefert."
+            exit 0
+          }
+          Invoke-WebRequest -Uri $env:OPENRGB_ZIP_URL -OutFile openrgb.zip
+          Expand-Archive -Path openrgb.zip -DestinationPath openrgb_tmp -Force
+          $exe = Get-ChildItem -Path openrgb_tmp -Recurse -Filter OpenRGB.exe | Select-Object -First 1
+          if (-not $exe) { throw "OpenRGB.exe nicht im ZIP gefunden" }
+          New-Item -ItemType Directory -Force -Path dist\RGBControl\OpenRGB | Out-Null
+          Copy-Item -Path "$($exe.DirectoryName)\*" -Destination dist\RGBControl\OpenRGB -Recurse -Force
+          Write-Host "OpenRGB wurde in die App kopiert."
+
+      - name: Package ZIP
+        shell: pwsh
+        run: Compress-Archive -Path dist\RGBControl\* -DestinationPath RGBControl-Windows.zip -Force
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RGBControl-Windows
+          path: |
+            RGB-Control/dist/RGBControl/
+            RGB-Control/RGBControl-Windows.zip
+          if-no-files-found: error
+          retention-days: 30
