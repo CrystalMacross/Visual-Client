@@ -347,3 +347,14 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
   .hero { flex-direction: column; align-items: stretch; }
   .play-area { width: 100%; }
 }
+
+/* instance profile picture */
+.profile-pic { position: relative; padding: 0; border-radius: 18px; flex-shrink: 0; }
+.profile-pic .thumb { width: 64px; height: 64px; border-radius: 18px; }
+.profile-edit {
+  position: absolute; inset: 0; border-radius: 18px; display: grid; place-items: center;
+  background: rgba(0, 0, 0, .55); opacity: 0; transition: opacity .15s; color: #fff;
+}
+.profile-pic:hover .profile-edit, .profile-pic.over .profile-edit { opacity: 1; }
+.profile-pic.over { outline: 2px dashed var(--accent); outline-offset: 3px; }
+.brand-version { font-size: 11px; font-weight: 600; color: var(--faint); padding: 2px 7px; border-radius: 999px; background: rgba(255, 255, 255, .06); }

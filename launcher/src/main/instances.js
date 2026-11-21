@@ -32,7 +32,36 @@ function read(id) {
   return meta;
 }
 
+const ICON_FILE = 'profile.png';
+
+/** Adds the instance's own profile picture (if any) as a data URL for the UI. */
+function withIconUrl(meta) {
+  const file = path.join(instanceDir(meta.id), ICON_FILE);
+  if (meta.customIcon && fs.existsSync(file)) {
+    meta.iconUrl = 'data:image/png;base64,' + fs.readFileSync(file).toString('base64');
+  }
+  return meta;
+}
+
+/** Stores a square PNG (already cropped/resized) as the instance's profile picture. */
+function setProfilePicture(id, png) {
+  fs.writeFileSync(path.join(instanceDir(id), ICON_FILE), png);
+  const meta = read(id);
+  meta.customIcon = true;
+  write(meta);
+  return withIconUrl(read(id));
+}
+
+function clearProfilePicture(id) {
+  fs.rmSync(path.join(instanceDir(id), ICON_FILE), { force: true });
+  const meta = read(id);
+  delete meta.customIcon;
+  write(meta);
+  return read(id);
+}
+
 function write(meta) {
+  delete meta.iconUrl;
   fs.mkdirSync(instanceDir(meta.id), { recursive: true });
   fs.writeFileSync(metaFile(meta.id), JSON.stringify(meta, null, 2));
   return meta;
@@ -42,7 +71,7 @@ function list() {
   fs.mkdirSync(instancesRoot(), { recursive: true });
   return fs.readdirSync(instancesRoot())
     .filter((id) => fs.existsSync(path.join(instancesRoot(), id, 'visual-launcher.json')))
-    .map((id) => { try { return read(id); } catch { return null; } })
+    .map((id) => { try { return withIconUrl(read(id)); } catch { return null; } })
     .filter(Boolean)
     .sort((a, b) => (b.lastPlayed || b.created || 0) - (a.lastPlayed || a.created || 0));
 }
@@ -158,6 +187,7 @@ function recordInstall(id, key, info) {
 }
 
 module.exports = {
-  CONTENT_DIRS, sharedRoot, instancesRoot, instanceDir, list, read, create, update, addPlayTime, remove, openFolder,
+  CONTENT_DIRS, sharedRoot, instancesRoot, instanceDir, list, read, create, update, addPlayTime, remove,
+  setProfilePicture, clearProfilePicture, openFolder,
   content, toggleContent, removeContent, recordInstall
 };

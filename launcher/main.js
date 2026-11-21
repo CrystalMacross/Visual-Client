@@ -3,7 +3,7 @@
 // It only talks to Microsoft/Xbox/Mojang (login + game files), Fabric and Modrinth.
 const fs = require('fs');
 const path = require('path');
-const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, nativeImage } = require('electron');
 
 const store = require('./src/main/store');
 const auth = require('./src/main/auth');
@@ -101,6 +101,36 @@ function storeBackground(source) {
   return backgroundDataUrl(name);
 }
 
+// ---------------------------------------------------------------- instance profile pictures
+
+/** Loads an image, crops it to a centred square and scales it to 256x256 PNG. */
+function squarePng(file) {
+  const ext = path.extname(file).toLowerCase();
+  if (!IMAGE_TYPES[ext]) throw new Error('Bitte wähle ein Bild (PNG, JPG, WEBP, GIF oder BMP).');
+  if (fs.statSync(file).size > 25 * 1024 * 1024) throw new Error('Das Bild ist größer als 25 MB.');
+  let img = nativeImage.createFromPath(file);
+  if (img.isEmpty()) throw new Error('Das Bild konnte nicht gelesen werden.');
+  const { width, height } = img.getSize();
+  const side = Math.min(width, height);
+  img = img.crop({ x: Math.floor((width - side) / 2), y: Math.floor((height - side) / 2), width: side, height: side });
+  if (side > 256) img = img.resize({ width: 256, height: 256, quality: 'best' });
+  return img.toPNG();
+}
+
+async function chooseProfilePicture(id, filePath) {
+  let file = filePath;
+  if (!file) {
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Profilbild für die Instanz wählen',
+      properties: ['openFile'],
+      filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }]
+    });
+    if (res.canceled || !res.filePaths[0]) return null;
+    file = res.filePaths[0];
+  }
+  return instances.setProfilePicture(id, squarePng(String(file)));
+}
+
 // ---------------------------------------------------------------- IPC
 
 function registerIpc() {
@@ -163,6 +193,8 @@ function registerIpc() {
   handle('instances:toggle', (id, type, file) => instances.toggleContent(id, type, file));
   handle('instances:removeContent', (id, type, file) => instances.removeContent(id, type, file));
   handle('instances:select', (id) => store.saveSettings({ selectedInstance: id }));
+  handle('instances:chooseIcon', (id, filePath) => chooseProfilePicture(id, filePath));
+  handle('instances:clearIcon', (id) => instances.clearProfilePicture(id));
 
   handle('modrinth:search', (q) => modrinth.search(q));
   handle('modrinth:install', (o) => modrinth.install(o));

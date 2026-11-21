@@ -25,7 +25,8 @@ contextBridge.exposeInMainWorld('vl', {
   instances: {
     list: call('instances:list'), create: call('instances:create'), update: call('instances:update'),
     remove: call('instances:remove'), open: call('instances:open'), content: call('instances:content'),
-    toggle: call('instances:toggle'), removeContent: call('instances:removeContent'), select: call('instances:select')
+    toggle: call('instances:toggle'), removeContent: call('instances:removeContent'), select: call('instances:select'),
+    chooseIcon: call('instances:chooseIcon'), clearIcon: call('instances:clearIcon')
   },
   modrinth: { search: call('modrinth:search'), install: call('modrinth:install'), modpack: call('modrinth:modpack') },
   game: { launch: call('game:launch'), kill: call('game:kill'), running: call('game:running') },

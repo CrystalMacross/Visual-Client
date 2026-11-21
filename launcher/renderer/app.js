@@ -483,7 +483,7 @@ function playtimeBadge(i) {
 
 function instanceCard(i) {
   const el = h(`<div class="card glass ${i.id === state.selectedInstance ? 'selected' : ''}">
-    ${thumb(i.icon, i.name)}
+    ${thumb(i.iconUrl || i.icon, i.name)}
     <div class="body"><div class="title-row"><div class="title">${esc(i.name)}</div>${playtimeBadge(i)}</div>
     <div class="meta">${esc(i.mcVersion)} · Fabric${i.visualClient && supportsVc(i.mcVersion) ? ' · Visual Client' : ''}</div></div></div>`);
   el.addEventListener('click', () => { selectInstance(i.id); if ($('.page[data-page=instances]').classList.contains('active')) renderInstances(); });
@@ -502,16 +502,37 @@ async function renderInstanceDetail() {
   const box = $('#instance-detail');
   if (!inst) { box.hidden = true; return; }
   box.hidden = false;
-  box.innerHTML = `<div class="detail-head">${thumb(inst.icon, inst.name)}
+  box.innerHTML = `<div class="detail-head"><button class="profile-pic" data-act="icon" title="Profilbild ändern (klicken oder Bild hierher ziehen)">${thumb(inst.iconUrl || inst.icon, inst.name)}<span class="profile-edit"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></button>
     <div><h2>${esc(inst.name)}${playtimeBadge(inst)}</h2><div class="muted">Minecraft ${esc(inst.mcVersion)} · Fabric ${esc(inst.loaderVersion || 'neueste')}</div></div>
     <div class="detail-actions">
       <button class="btn" data-act="folder">Ordner öffnen</button>
       <button class="btn" data-act="rename">Umbenennen</button>
+      ${inst.customIcon ? '<button class="btn" data-act="clear-icon">Profilbild entfernen</button>' : ''}
       <button class="btn danger" data-act="delete">Löschen</button>
     </div></div>
     ${supportsVc(inst.mcVersion) ? `<label class="toggle"><input type="checkbox" id="inst-vc" ${inst.visualClient ? 'checked' : ''}><span></span>Visual Client ${esc(state.info.visualClient || '')} verwenden (inkl. Fabric API)</label>` : '<p class="muted small">Visual Client unterstützt diese Minecraft-Version nicht (1.21.4 – 26.3).</p>'}
     <h3 style="margin-top:18px">Inhalte</h3><div class="content-list"><div class="spinner"></div></div>`;
   $('[data-act=folder]', box).onclick = () => api(window.vl.instances.open(inst.id));
+  const setIcon = async (filePath) => {
+    try {
+      const res = await api(window.vl.instances.chooseIcon(inst.id, filePath));
+      if (!res) return;
+      await loadInstances();
+      renderInstances();
+      toast('Profilbild gespeichert.', 'ok');
+    } catch (e) { toast(e.message, 'error'); }
+  };
+  const pic = $('[data-act=icon]', box);
+  pic.onclick = () => setIcon();
+  pic.addEventListener('dragover', (e) => { e.preventDefault(); pic.classList.add('over'); });
+  pic.addEventListener('dragleave', () => pic.classList.remove('over'));
+  pic.addEventListener('drop', (e) => {
+    e.preventDefault(); e.stopPropagation(); pic.classList.remove('over');
+    const f = e.dataTransfer.files[0];
+    if (f) setIcon(window.vl.pathForFile(f));
+  });
+  const clear = $('[data-act=clear-icon]', box);
+  if (clear) clear.onclick = async () => { await api(window.vl.instances.clearIcon(inst.id)); await loadInstances(); renderInstances(); };
   $('[data-act=rename]', box).onclick = () => openModal('Instanz umbenennen', `<div class="field"><label>Name</label><input id="m-name" class="input" maxlength="48" value="${esc(inst.name)}"></div>`, async () => {
     const name = $('#m-name').value.trim();
     if (!name) return false;
@@ -839,6 +860,7 @@ window.vl.events.installProgress((p) => {
 (async function boot() {
   try {
     state.info = await api(window.vl.app.info());
+    $('#app-version').textContent = 'v' + state.info.version;
     state.settings = await api(window.vl.settings.get());
     applyDesign(state.settings.design, state.settings.backgroundImage);
     await loadAccounts();
