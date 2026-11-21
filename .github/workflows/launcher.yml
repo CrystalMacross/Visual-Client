@@ -1,10 +1,14 @@
 name: Build Visual Launcher
 
-# Builds Windows / macOS / Linux installers.
-# Pushing a tag like "launcher-v1.0.0" also creates a GitHub Release with all installers attached.
+# Builds Windows / macOS / Linux installers and uploads them (plus the newest Visual Client jar)
+# to the GitHub release "launcher":
+#   https://github.com/<owner>/<repo>/releases/tag/launcher
+# Runs on pushes to main, on pull requests (same repository), on "launcher-v*" tags and manually.
 on:
   push:
+    branches: [main]
     tags: ['launcher-v*']
+    paths: ['launcher/**', '.github/workflows/launcher.yml', 'visual-client-*.jar']
   pull_request:
     paths: ['launcher/**', '.github/workflows/launcher.yml', 'visual-client-*.jar']
   workflow_dispatch:
@@ -55,23 +59,53 @@ jobs:
           if-no-files-found: error
 
   release:
-    if: startsWith(github.ref, 'refs/tags/launcher-v')
+    # forks get no write token, so only publish for this repository
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     needs: build
     runs-on: ubuntu-latest
+    concurrency: launcher-release
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: launcher
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
 
-      - name: Create release
+      - name: Add newest Visual Client jar
+        run: |
+          jar=$(ls visual-client-*.jar | sort -V | tail -1)
+          cp "$jar" artifacts/
+          echo "VC_JAR=$jar" >> "$GITHUB_ENV"
+          echo "LAUNCHER_VERSION=$(node -p "require('./launcher/package.json').version")" >> "$GITHUB_ENV"
+
+      - name: Remove old files from the release
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' |
+              while read -r name; do gh release delete-asset "$TAG" "$name" --repo "$GITHUB_REPOSITORY" -y; done
+          fi
+
+      - name: Upload to release "launcher"
         uses: softprops/action-gh-release@v2
         with:
-          name: Visual Launcher ${{ github.ref_name }}
+          tag_name: ${{ env.TAG }}
+          target_commitish: ${{ github.event.pull_request.head.sha || github.sha }}
+          name: Visual Launcher ${{ env.LAUNCHER_VERSION }}
+          make_latest: true
           files: artifacts/*
           body: |
-            **Visual Launcher** – moderner Minecraft-Launcher mit Microsoft-Login, Modrinth-Bibliothek und eingebautem Visual Client.
+            **Visual Launcher ${{ env.LAUNCHER_VERSION }}** – moderner Minecraft-Launcher mit Microsoft-Login, Modrinth-Bibliothek und eingebautem Visual Client (`${{ env.VC_JAR }}`).
 
-            - Windows: `Visual Launcher Setup *.exe` (Installer) oder `Visual-Launcher-*-portable.exe`
+            **Download**
+            - Windows: `Visual-Launcher-${{ env.LAUNCHER_VERSION }}-portable.exe` (ohne Installation) oder `Visual.Launcher.Setup.${{ env.LAUNCHER_VERSION }}.exe` (Installer)
             - macOS: `.dmg` (nicht signiert: Rechtsklick → Öffnen)
             - Linux: `.AppImage`
+            - Nur die Mod: `${{ env.VC_JAR }}` in den `mods`-Ordner legen (Fabric + Fabric API nötig)
+
+            Windows warnt beim ersten Start, weil die Datei nicht signiert ist: „Weitere Informationen“ → „Trotzdem ausführen“.
+
+            Automatisch gebaut aus Commit ${{ github.event.pull_request.head.sha || github.sha }}.
