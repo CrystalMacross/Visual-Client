@@ -1,4 +1,5 @@
-"""Renders a Minecraft-style cherry blossom (sakura) forest as a title-screen panorama.
+"""Renders a Minecraft-style cherry blossom (sakura) garden at night, with a shader look,
+as a title-screen panorama.
 
 Output: panorama_0.png .. panorama_5.png (front, right, back, left, top, bottom) - the
 layout Minecraft expects in assets/minecraft/textures/gui/title/background/.
@@ -6,17 +7,23 @@ layout Minecraft expects in assets/minecraft/textures/gui/title/background/.
     python render_panorama.py <out_dir> [face_size]
 
 Needs numpy, numba and pillow. Everything is procedural (no game assets are used).
+
+Shader-style features: moon light with soft shadows, warm stone lanterns as point lights
+(with shadows), reflective pond (one reflection bounce, Fresnel), ground mist, stars,
+bloom (computed with padding around every face so the cube seams stay invisible) and a
+filmic tone curve. Nothing floats: blocks not connected to the ground are removed.
 """
 import math
 import os
 import sys
+from collections import deque
 
 import numpy as np
 from numba import njit, prange
 from PIL import Image
 
 W, H, D = 192, 56, 192  # world size (x, y, z)
-AIR, GRASS, DIRT, STONE, LOG, LEAVES, WATER, PETALS = 0, 1, 2, 3, 4, 5, 6, 7
+AIR, GRASS, DIRT, STONE, LOG, LEAVES, WATER, PETALS, LANTERN, STONE_LANTERN = 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
 SEED = 7
 
 
@@ -38,14 +45,97 @@ def value_noise(shape, scale, rng):
     return (a * (1 - tx) + b * tx) * (1 - tz) + (c * (1 - tx) + d * tx) * tz
 
 
+def box_blur(a, r):
+    out = a.copy()
+    for axis in (0, 1):
+        acc = np.zeros_like(out)
+        for k in range(-r, r + 1):
+            acc += np.roll(out, k, axis=axis)
+        out = acc / (2 * r + 1)
+    return out
+
+
+def set_block(world, x, y, z, block, overwrite=(AIR,)):
+    if 0 <= x < W and 0 <= y < H and 0 <= z < D and world[x, y, z] in overwrite:
+        world[x, y, z] = block
+
+
+def grow_cherry_tree(world, x, y, z, rng):
+    trunk = int(rng.integers(5, 8))
+    lean = [(1, 0), (-1, 0), (0, 1), (0, -1)][int(rng.integers(0, 4))]
+    px, pz = x, z
+    for i in range(trunk):
+        if i == trunk - 2:
+            # step sideways: keep the log below so the trunk stays connected
+            set_block(world, px + lean[0], y + i - 1, pz + lean[1], LOG, (AIR, LEAVES))
+            px, pz = px + lean[0], pz + lean[1]
+        set_block(world, px, y + i, pz, LOG, (AIR, LEAVES))
+    canopies = [(px, y + trunk, pz, rng.uniform(3.6, 5.2))]
+    # side branch: a continuous chain of logs from the trunk to the second canopy
+    if rng.random() < 0.8:
+        by = y + trunk - 3
+        bx, bz = x, z
+        for i in range(1, 4):
+            bx, bz = x - lean[0] * i, z - lean[1] * i
+            if i == 2:
+                by += 1
+                set_block(world, bx, by - 1, bz, LOG, (AIR, LEAVES))
+            set_block(world, bx, by, bz, LOG, (AIR, LEAVES))
+        canopies.append((bx, by + 1, bz, rng.uniform(2.8, 4.0)))
+    for (ox, oy, oz, r) in canopies:
+        ri = int(math.ceil(r))
+        for dx in range(-ri - 1, ri + 2):
+            for dy in range(-2, 3):
+                for dz in range(-ri - 1, ri + 2):
+                    d = (dx * dx + dz * dz) / (r * r) + ((dy - 0.3) * (dy - 0.3)) / 3.2
+                    if d < 1.0 and rng.random() > 0.06 + 0.3 * max(0, d - 0.75):
+                        set_block(world, ox + dx, oy + dy, oz + dz, LEAVES)
+        # hanging blossoms, only directly below an existing leaf block
+        for _ in range(int(r * 5)):
+            ang = rng.uniform(0, 2 * math.pi)
+            hx, hz = int(round(ox + math.cos(ang) * (r - 0.6))), int(round(oz + math.sin(ang) * (r - 0.6)))
+            col_y = None
+            for yy in range(oy + 2, oy - 3, -1):
+                if 0 <= hx < W and 0 <= hz < D and 0 <= yy < H and world[hx, yy, hz] == LEAVES:
+                    col_y = yy
+            if col_y is None:
+                continue
+            for dy in range(1, int(rng.integers(2, 4))):
+                set_block(world, hx, col_y - dy, hz, LEAVES)
+
+
+def remove_floating(world):
+    """Keeps only logs/leaves/lanterns connected (6-neighbour) to the terrain."""
+    support = np.isin(world, (GRASS, DIRT, STONE, WATER, PETALS))
+    keep = support.copy()
+    attachable = np.isin(world, (LOG, LEAVES, LANTERN, STONE_LANTERN))
+    q = deque()
+    xs, ys, zs = np.nonzero(attachable)
+    for x, y, z in zip(xs, ys, zs):
+        for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+            nx, ny, nz = x + dx, y + dy, z + dz
+            if 0 <= nx < W and 0 <= ny < H and 0 <= nz < D and support[nx, ny, nz]:
+                keep[x, y, z] = True
+                q.append((x, y, z))
+                break
+    while q:
+        x, y, z = q.popleft()
+        for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+            nx, ny, nz = x + dx, y + dy, z + dz
+            if 0 <= nx < W and 0 <= ny < H and 0 <= nz < D and attachable[nx, ny, nz] and not keep[nx, ny, nz]:
+                keep[nx, ny, nz] = True
+                q.append((nx, ny, nz))
+    floating = attachable & ~keep
+    world[floating] = AIR
+    return int(floating.sum())
+
+
 def build_world():
     rng = np.random.default_rng(SEED)
     world = np.zeros((W, H, D), dtype=np.uint8)
     height = 18 + 7 * value_noise((W, D), 48, rng) + 3 * value_noise((W, D), 16, rng) + 0.8 * value_noise((W, D), 6, rng)
     cx, cz = W // 2, D // 2
     xx, zz = np.meshgrid(np.arange(W), np.arange(D), indexing="ij")
-    # gentle valley around the camera and a small pond in front of it
-    dist = np.sqrt((xx - cx) ** 2 + (zz - cz) ** 2)
     pond = np.sqrt((xx - cx) ** 2 * 0.6 + (zz - (cz - 13)) ** 2)
     height -= np.clip(7 - pond, 0, 7) * 0.75
     height = np.round(height).astype(int)
@@ -61,7 +151,6 @@ def build_world():
                 world[x, h, z] = DIRT
                 world[x, h + 1 : water_level + 1, z] = WATER
 
-    # cherry trees (keep the area right around the camera and the pond free)
     trees = []
     tries = 0
     while len(trees) < 320 and tries < 40000:
@@ -76,7 +165,35 @@ def build_world():
         trees.append((x, z))
         grow_cherry_tree(world, x, height[x, z] + 1, z, rng)
 
-    # petal carpet under the canopies
+    # Japanese stone lanterns standing on the ground: stone base + glowing lantern block
+    lights = []
+    def lantern_ok(x, z):
+        h = height[x, z]
+        return (world[x, h, z] == GRASS and world[x, h + 1, z] == AIR and world[x, h + 2, z] == AIR
+                and world[x, h + 3, z] == AIR and all((x - lx) ** 2 + (z - lz) ** 2 > 7 ** 2 for lx, _, lz in lights))
+    # a ring around the pond ...
+    for i in range(10):
+        ang = i / 10 * 2 * math.pi + 0.3
+        x = int(round(cx + math.cos(ang) * 11.5))
+        z = int(round(cz - 13 + math.sin(ang) * 9.0))
+        if 0 < x < W and 0 < z < D and lantern_ok(x, z):
+            lights.append((x, height[x, z], z))
+    # ... and scattered through the garden
+    tries = 0
+    while len(lights) < 70 and tries < 6000:
+        tries += 1
+        x, z = int(rng.integers(4, W - 4)), int(rng.integers(4, D - 4))
+        if (x - cx) ** 2 + (z - cz) ** 2 < 5 ** 2:
+            continue
+        if lantern_ok(x, z):
+            lights.append((x, height[x, z], z))
+    for (x, h, z) in lights:
+        world[x, h + 1, z] = STONE_LANTERN
+        world[x, h + 2, z] = LANTERN
+        set_block(world, x, h + 3, z, STONE_LANTERN)  # little stone roof
+
+    removed = remove_floating(world)
+
     canopy = (world == LEAVES).any(axis=1)
     shade = box_blur(canopy.astype(np.float32), 3)
     for x in range(W):
@@ -84,59 +201,10 @@ def build_world():
             h = height[x, z]
             if world[x, h, z] == GRASS and world[x, h + 1, z] == AIR and shade[x, z] > 0.10 and rng.random() < 0.30 + 0.7 * shade[x, z]:
                 world[x, h + 1, z] = PETALS
-    cam_y = height[cx, cz] + 4.6  # a little above the ground, like vanilla panoramas
-    return world, (cx + 0.5, cam_y, cz + 0.5)
-
-
-def box_blur(a, r):
-    out = a.copy()
-    for axis in (0, 1):
-        acc = np.zeros_like(out)
-        for k in range(-r, r + 1):
-            acc += np.roll(out, k, axis=axis)
-        out = acc / (2 * r + 1)
-    return out
-
-
-def grow_cherry_tree(world, x, y, z, rng):
-    trunk = int(rng.integers(5, 8))
-    lean = [(1, 0), (-1, 0), (0, 1), (0, -1)][int(rng.integers(0, 4))]
-    px, pz = x, z
-    for i in range(trunk):
-        if i == trunk - 2:
-            px, pz = px + lean[0], pz + lean[1]
-        set_block(world, px, y + i, pz, LOG)
-    top = y + trunk
-    canopies = [(px, top, pz, rng.uniform(3.6, 5.2))]
-    # a side branch with a second canopy
-    if rng.random() < 0.8:
-        bx, bz = x - lean[0] * 2, z - lean[1] * 2
-        by = y + trunk - 2
-        for i in range(3):
-            set_block(world, x - lean[0] * i, y + trunk - 3 + i // 2, z - lean[1] * i, LOG)
-        canopies.append((bx, by + 1, bz, rng.uniform(2.8, 4.0)))
-    for (ox, oy, oz, r) in canopies:
-        ri = int(math.ceil(r))
-        for dx in range(-ri - 1, ri + 2):
-            for dy in range(-2, 3):
-                for dz in range(-ri - 1, ri + 2):
-                    # flattened, slightly drooping dome like vanilla cherry trees
-                    d = (dx * dx + dz * dz) / (r * r) + ((dy - 0.3) * (dy - 0.3)) / 3.2
-                    if d < 1.0 and rng.random() > 0.06 + 0.3 * max(0, d - 0.75):
-                        set_block(world, ox + dx, oy + dy, oz + dz, LEAVES, replace_log=False)
-        # hanging blossoms
-        for _ in range(int(r * 5)):
-            ang = rng.uniform(0, 2 * math.pi)
-            hx, hz = int(round(ox + math.cos(ang) * (r - 0.4))), int(round(oz + math.sin(ang) * (r - 0.4)))
-            for dy in range(1, int(rng.integers(2, 4))):
-                set_block(world, hx, oy - 1 - dy, hz, LEAVES, replace_log=False)
-
-
-def set_block(world, x, y, z, block, replace_log=True):
-    if 0 <= x < W and 0 <= y < H and 0 <= z < D:
-        cur = world[x, y, z]
-        if cur == AIR or (replace_log and cur in (LEAVES,)):
-            world[x, y, z] = block
+    light_pos = np.array([(x + 0.5, h + 2.5, z + 0.5) for (x, h, z) in lights], dtype=np.float64)
+    cam_y = height[cx, cz] + 4.6
+    print(f"{len(trees)} trees, {len(lights)} lanterns, removed {removed} floating blocks")
+    return world, (cx + 0.5, cam_y, cz + 0.5), light_pos
 
 
 # ------------------------------------------------------------------ renderer
@@ -149,22 +217,35 @@ def hash3(a, b, c):
 
 
 @njit(cache=True)
-def sky(dx, dy, dz, sx, sy, sz):
+def sky(dx, dy, dz, mx, my, mz):
     t = max(0.0, dy)
-    # pastel morning sky: peach horizon -> soft blue
-    r = 0.98 * (1 - t) ** 3 + 0.48 * (1 - (1 - t) ** 3)
-    g = 0.80 * (1 - t) ** 3 + 0.66 * (1 - (1 - t) ** 3)
-    b = 0.80 * (1 - t) ** 3 + 0.95 * (1 - (1 - t) ** 3)
+    # night sky: violet-blue haze at the horizon, deep navy above
+    k = (1 - t) ** 4
+    r = 0.020 + 0.075 * k
+    g = 0.030 + 0.060 * k
+    b = 0.085 + 0.120 * k
     if dy < 0:
-        r, g, b = 0.93, 0.78, 0.80
-    sd = dx * sx + dy * sy + dz * sz
-    if sd > 0:
-        glow = sd ** 64 * 0.9 + sd ** 8 * 0.18
-        r += glow
-        g += glow * 0.85
-        b += glow * 0.6
-        if sd > 0.9992:
-            r, g, b = 1.6, 1.5, 1.3
+        return 0.05, 0.05, 0.10
+    # stars
+    sx, sy, sz = int(math.floor(dx * 420)), int(math.floor(dy * 420)), int(math.floor(dz * 420))
+    s = hash3(sx + 1000, sy + 2000, sz + 3000)
+    if s > 0.9965 and dy > 0.06:
+        tw = (s - 0.9965) / 0.0035
+        star = (0.6 + 1.8 * tw) * min(1.0, (dy - 0.06) * 6)
+        r += star * 0.9
+        g += star * 0.92
+        b += star
+    # moon + halo
+    md = dx * mx + dy * my + dz * mz
+    if md > 0:
+        halo = md ** 300 * 0.35 + md ** 24 * 0.10
+        r += halo * 0.75
+        g += halo * 0.85
+        b += halo * 1.0
+        if md > 0.99955:
+            spot = hash3(int(dx * 2200), int(dy * 2200), int(dz * 2200))  # craters
+            v = 2.6 - 0.5 * (spot > 0.75)
+            r, g, b = v * 0.95, v * 0.97, v
     return r, g, b
 
 
@@ -173,21 +254,23 @@ def texel(block, face, ix, iy, iz, tu, tv, near_pink):
     n = hash3(ix * 16 + tu, iy * 16 + tv, iz * 16 + face * 7)
     n2 = hash3(ix * 31 + tu * 3, iz * 17 + tv, iy + face)
     if block == GRASS:
-        if face == 2:  # top
-            r, g, b = 0.36 + 0.10 * n, 0.62 + 0.12 * n, 0.27 + 0.06 * n
+        if face == 2:
+            r, g, b = 0.30 + 0.08 * n, 0.55 + 0.10 * n, 0.25 + 0.06 * n
             if near_pink and n2 > 0.78:
                 r, g, b = 0.98, 0.70 + 0.1 * n, 0.82
             return r, g, b, 1.0
-        if face == 3:  # bottom
+        if face == 3:
             return 0.47 + 0.08 * n, 0.33 + 0.06 * n, 0.22 + 0.05 * n, 1.0
         if tv >= 13 or (tv == 12 and n2 > 0.5):
-            return 0.36 + 0.10 * n, 0.62 + 0.12 * n, 0.27 + 0.06 * n, 1.0
+            return 0.30 + 0.08 * n, 0.55 + 0.10 * n, 0.25 + 0.06 * n, 1.0
         return 0.47 + 0.08 * n, 0.33 + 0.06 * n, 0.22 + 0.05 * n, 1.0
     if block == DIRT:
         return 0.47 + 0.08 * n, 0.33 + 0.06 * n, 0.22 + 0.05 * n, 1.0
-    if block == STONE:
-        v = 0.48 + 0.12 * n
-        return v, v, v * 1.02, 1.0
+    if block == STONE or block == STONE_LANTERN:
+        v = 0.50 + 0.14 * n
+        if block == STONE_LANTERN and (tu == 0 or tu == 15 or tv == 0 or tv == 15):
+            v *= 0.75
+        return v, v, v * 1.03, 1.0
     if block == LOG:
         if face == 2 or face == 3:
             ring = (abs(tu - 7.5) + abs(tv - 7.5)) % 4 < 1.6
@@ -197,7 +280,7 @@ def texel(block, face, ix, iy, iz, tu, tv, near_pink):
         return (v * 1.25, v * 0.85, v * 1.0, 1.0) if stripe else (v * 1.55, v * 1.05, v * 1.15, 1.0)
     if block == LEAVES:
         if n2 < 0.13:
-            return 0.0, 0.0, 0.0, 0.0  # cut-out hole
+            return 0.0, 0.0, 0.0, 0.0
         if n < 0.30:
             return 0.92, 0.47, 0.68, 1.0
         if n < 0.72:
@@ -208,7 +291,12 @@ def texel(block, face, ix, iy, iz, tu, tv, near_pink):
             return 0.0, 0.0, 0.0, 0.0
         return 0.99, 0.72 + 0.12 * n, 0.86, 1.0
     if block == WATER:
-        return 0.25 + 0.05 * n, 0.45 + 0.05 * n, 0.85, 0.62
+        return 0.06, 0.12, 0.22, 0.75
+    if block == LANTERN:
+        # paper lantern: glowing panels with a dark frame
+        if tu <= 1 or tu >= 14 or tv <= 1 or tv >= 14 or tu == 7 or tu == 8:
+            return 0.18, 0.12, 0.10, 1.0
+        return 1.0, 1.0, 1.0, 1.0
     return 1.0, 0.0, 1.0, 1.0
 
 
@@ -220,32 +308,54 @@ def block_at(world, x, y, z):
 
 
 @njit(cache=True)
-def solid_for_shadow(b):
-    return b != AIR and b != WATER and b != PETALS
-
-
-@njit(cache=True)
-def in_shadow(world, ox, oy, oz, sx, sy, sz):
-    # cheap shadow ray: fixed steps toward the sun, leaves cast partial shade
-    t = 0.05
-    shade = 1.0
-    while t < 48.0:
-        x, y, z = ox + sx * t, oy + sy * t, oz + sz * t
+def occlusion(world, ox, oy, oz, dx, dy, dz, max_t, step):
+    """1 = free, 0 = blocked; leaves let some light through."""
+    t = step * 0.5
+    vis = 1.0
+    while t < max_t:
+        x, y, z = ox + dx * t, oy + dy * t, oz + dz * t
         if y >= world.shape[1]:
             break
         b = block_at(world, int(math.floor(x)), int(math.floor(y)), int(math.floor(z)))
         if b == LEAVES:
-            shade *= 0.80
-        elif solid_for_shadow(b):
+            vis *= 0.78
+        elif b != AIR and b != WATER and b != PETALS and b != LANTERN:
             return 0.0
-        if shade < 0.3:
-            return shade
-        t += 0.35
-    return shade
+        if vis < 0.2:
+            return vis
+        t += step
+    return vis
 
 
 @njit(cache=True)
-def trace(world, ox, oy, oz, dx, dy, dz, sx, sy, sz, pink_map):
+def lantern_light(world, lights, px, py, pz, nx, ny, nz):
+    r = g = b = 0.0
+    for i in range(lights.shape[0]):
+        lx, ly, lz = lights[i, 0] - px, lights[i, 1] - py, lights[i, 2] - pz
+        d2 = lx * lx + ly * ly + lz * lz
+        if d2 > 18.0 * 18.0:
+            continue
+        d = math.sqrt(d2) + 1e-6
+        lx, ly, lz = lx / d, ly / d, lz / d
+        ndl = nx * lx + ny * ly + nz * lz
+        if ndl <= 0:
+            continue
+        vis = occlusion(world, px, py, pz, lx, ly, lz, d - 0.6, 0.3)
+        if vis <= 0:
+            continue
+        att = 4.2 / (1.0 + 0.45 * d2)
+        e = att * ndl * vis
+        r += e * 1.00
+        g += e * 0.55
+        b += e * 0.22
+    return r, g, b
+
+
+@njit(cache=True)
+def march(world, lights, ox, oy, oz, dx, dy, dz, mx, my, mz, pink_map, allow_reflect, out):
+    """Returns color; when allow_reflect, out[0..6] receives the first water hit for a reflection ray:
+    (weight, px, py, pz, rdx, rdy, rdz)."""
+    out[0] = 0.0
     r_acc, g_acc, b_acc, trans = 0.0, 0.0, 0.0, 1.0
     x, y, z = int(math.floor(ox)), int(math.floor(oy)), int(math.floor(oz))
     step_x = 1 if dx > 0 else -1
@@ -260,14 +370,14 @@ def trace(world, ox, oy, oz, dx, dy, dz, sx, sy, sz, pink_map):
     tmz = ((z + 1 - oz) if dz > 0 else (oz - z)) * tdz if dz != 0 else inf
     t = 0.0
     face = -1
-    fog_r, fog_g, fog_b = 0.95, 0.83, 0.86
+    fog_r, fog_g, fog_b = 0.045, 0.050, 0.095
     max_t = 150.0
     in_water = False
     while t < max_t and trans > 0.02:
         if tmx < tmy and tmx < tmz:
-            x += step_x; t = tmx; tmx += tdx; face = 0 if step_x < 0 else 1  # hit +x / -x side
+            x += step_x; t = tmx; tmx += tdx; face = 0 if step_x < 0 else 1
         elif tmy < tmz:
-            y += step_y; t = tmy; tmy += tdy; face = 2 if step_y < 0 else 3  # top / bottom
+            y += step_y; t = tmy; tmy += tdy; face = 2 if step_y < 0 else 3
         else:
             z += step_z; t = tmz; tmz += tdz; face = 4 if step_z < 0 else 5
         if y < 0 or (y >= world.shape[1] and dy > 0):
@@ -286,55 +396,59 @@ def trace(world, ox, oy, oz, dx, dy, dz, sx, sy, sz, pink_map):
             u, v = fx, fz
         else:
             u, v = fx, fy
-        if b == PETALS:
-            # thin carpet: only the lowest 1/16 of the block
-            if face != 2 and fy > 0.0625:
-                continue
-            if face != 2:
-                continue
+        if b == PETALS and face != 2:
+            continue
         tu = min(15, max(0, int(u * 16)))
         tv = min(15, max(0, int(v * 16)))
         cr, cg, cb, ca = texel(b, face, x, y, z, tu, tv, pink_map[min(max(x, 0), pink_map.shape[0] - 1), min(max(z, 0), pink_map.shape[1] - 1)] > 0.1)
         if ca == 0.0:
             continue
-        # lighting
-        if face == 2:
-            light = 1.0
-        elif face == 3:
-            light = 0.55
-        elif face <= 1:
-            light = 0.78
-        else:
-            light = 0.86
         nx = 1.0 if face == 1 else (-1.0 if face == 0 else 0.0)
         ny = 1.0 if face == 2 else (-1.0 if face == 3 else 0.0)
         nz = 1.0 if face == 5 else (-1.0 if face == 4 else 0.0)
-        # step the hit point slightly outside the block
-        sh = in_shadow(world, hx + nx * 0.02, hy + ny * 0.02, hz + nz * 0.02, sx, sy, sz)
-        ndl = max(0.0, nx * sx + ny * sy + nz * sz)
-        lit = 0.55 + 0.55 * sh * ndl
-        if b == LEAVES:
-            lit = 0.80 + 0.35 * sh * ndl  # sunlight shines through thin cherry leaves
-        cr *= light * lit
-        cg *= light * lit
-        cb *= light * lit * 0.98
+        if b == LANTERN and cr > 0.9:
+            # emissive paper: warm glow, brighter than 1 so bloom picks it up
+            lr, lg, lb = 4.2, 2.6, 1.15
+        else:
+            px, py, pz = hx + nx * 0.02, hy + ny * 0.02, hz + nz * 0.02
+            # moonlight (cool) with shadows
+            ndl = max(0.0, nx * mx + ny * my + nz * mz)
+            if b == LEAVES:
+                ndl = 0.35 + 0.65 * ndl  # thin leaves are lit from both sides
+            moon = 0.0
+            if ndl > 0:
+                moon = ndl * occlusion(world, px, py, pz, mx, my, mz, 60.0, 0.35)
+            ar = 0.022 + 0.13 * moon
+            ag = 0.026 + 0.15 * moon
+            ab = 0.050 + 0.24 * moon
+            wr, wg, wb = lantern_light(world, lights, px, py, pz, nx, ny, nz)
+            lr = cr * (ar + wr)
+            lg = cg * (ag + wg)
+            lb = cb * (ab + wb)
         if b == WATER:
-            # reflect the sky a bit
-            rr, rg, rb = sky(dx, -dy, dz, sx, sy, sz)
-            cr = cr * 0.6 + rr * 0.4
-            cg = cg * 0.6 + rg * 0.4
-            cb = cb * 0.6 + rb * 0.4
+            # Fresnel reflection, traced by the caller
+            cosi = abs(dy)
+            fres = 0.06 + 0.94 * (1 - cosi) ** 5
+            fres = min(0.85, fres + 0.25)
+            if allow_reflect and face == 2:
+                out[0] = trans * fres
+                out[1], out[2], out[3] = hx, hy + 0.01, hz
+                out[4], out[5], out[6] = dx, -dy, dz
+            lr *= (1 - fres)
+            lg *= (1 - fres)
+            lb *= (1 - fres)
             in_water = True
-        fog = 1.0 - math.exp(-((t / 95.0) ** 2))
-        cr = cr * (1 - fog) + fog_r * fog
-        cg = cg * (1 - fog) + fog_g * fog
-        cb = cb * (1 - fog) + fog_b * fog
-        r_acc += trans * ca * cr
-        g_acc += trans * ca * cg
-        b_acc += trans * ca * cb
+        # ground mist: denser low over the terrain
+        fog = 1.0 - math.exp(-((t / 70.0) ** 2))
+        lr = lr * (1 - fog) + fog_r * fog
+        lg = lg * (1 - fog) + fog_g * fog
+        lb = lb * (1 - fog) + fog_b * fog
+        r_acc += trans * ca * lr
+        g_acc += trans * ca * lg
+        b_acc += trans * ca * lb
         trans *= (1 - ca)
     if trans > 0.0:
-        r, g, b = sky(dx, dy, dz, sx, sy, sz)
+        r, g, b = sky(dx, dy, dz, mx, my, mz)
         if t >= max_t:
             r, g, b = fog_r, fog_g, fog_b
         r_acc += trans * r
@@ -343,21 +457,36 @@ def trace(world, ox, oy, oz, dx, dy, dz, sx, sy, sz, pink_map):
     return r_acc, g_acc, b_acc
 
 
+@njit(cache=True)
+def shade_pixel(world, lights, cam, dx, dy, dz, moon, pink_map):
+    out = np.zeros(7)
+    r, g, b = march(world, lights, cam[0], cam[1], cam[2], dx, dy, dz, moon[0], moon[1], moon[2], pink_map, True, out)
+    if out[0] > 0:
+        out2 = np.zeros(7)
+        rr, rg, rb = march(world, lights, out[1], out[2], out[3], out[4], out[5], out[6], moon[0], moon[1], moon[2], pink_map, False, out2)
+        r += out[0] * rr
+        g += out[0] * rg
+        b += out[0] * rb
+    return r, g, b
+
+
 @njit(parallel=True, cache=True)
-def render_face(world, cam, fwd, right, up, size, sun, pink_map, ss):
-    img = np.zeros((size, size, 3), dtype=np.float32)
-    for py in prange(size):
-        for px in range(size):
+def render_face(world, lights, cam, fwd, right, up, size, pad, moon, pink_map, ss):
+    """Renders size+2*pad pixels; the inner size x size area is exactly the 90 degree face."""
+    full = size + 2 * pad
+    img = np.zeros((full, full, 3), dtype=np.float32)
+    for py in prange(full):
+        for px in range(full):
             r = g = b = 0.0
             for sy_ in range(ss):
                 for sx_ in range(ss):
-                    a = ((px + (sx_ + 0.5) / ss) / size) * 2 - 1
-                    c = 1 - ((py + (sy_ + 0.5) / ss) / size) * 2
+                    a = ((px - pad + (sx_ + 0.5) / ss) / size) * 2 - 1
+                    c = 1 - ((py - pad + (sy_ + 0.5) / ss) / size) * 2
                     dx = fwd[0] + right[0] * a + up[0] * c
                     dy = fwd[1] + right[1] * a + up[1] * c
                     dz = fwd[2] + right[2] * a + up[2] * c
                     l = math.sqrt(dx * dx + dy * dy + dz * dz)
-                    cr, cg, cb = trace(world, cam[0], cam[1], cam[2], dx / l, dy / l, dz / l, sun[0], sun[1], sun[2], pink_map)
+                    cr, cg, cb = shade_pixel(world, lights, cam, dx / l, dy / l, dz / l, moon, pink_map)
                     r += cr; g += cg; b += cb
             n = ss * ss
             img[py, px, 0] = r / n
@@ -367,7 +496,6 @@ def render_face(world, cam, fwd, right, up, size, sun, pink_map, ss):
 
 
 # Minecraft panorama layout: 0 front (-Z), 1 right (+X), 2 back (+Z), 3 left (-X), 4 top, 5 bottom.
-# The top of panorama_0 meets the bottom of panorama_4; the bottom of panorama_0 meets the top of panorama_5.
 FACES = [
     ((0, 0, -1), (1, 0, 0), (0, 1, 0)),
     ((1, 0, 0), (0, 0, 1), (0, 1, 0)),
@@ -378,24 +506,52 @@ FACES = [
 ]
 
 
-def tonemap(img):
-    img = np.clip(img, 0, None)
-    img = img / (1 + img * 0.12)  # soft highlight roll-off
-    img = np.clip(img ** (1 / 1.05), 0, 1)
+def gaussian_blur(img, sigma):
+    r = int(sigma * 3)
+    k = np.exp(-0.5 * (np.arange(-r, r + 1) / sigma) ** 2)
+    k /= k.sum()
+    out = img
+    for axis in (0, 1):
+        pad = [(0, 0)] * 3
+        pad[axis] = (r, r)
+        p = np.pad(out, pad, mode="edge")
+        acc = np.zeros_like(out)
+        for i, w in enumerate(k):
+            sl = [slice(None)] * 3
+            sl[axis] = slice(i, i + out.shape[axis])
+            acc += w * p[tuple(sl)]
+        out = acc
+    return out
+
+
+def post(img, size, pad):
+    # bloom: bright parts glow (computed on the padded image -> no seams between faces)
+    lum = img @ np.array([0.2126, 0.7152, 0.0722], dtype=np.float32)
+    bright = img * np.clip((lum - 0.75) / 1.5, 0, 1)[..., None]
+    s = size / 1024
+    bloom = 0.55 * gaussian_blur(bright, 6 * s) + 0.45 * gaussian_blur(bright, 22 * s) + 0.35 * gaussian_blur(bright, 60 * s)
+    img = img + 0.9 * bloom
+    img = img[pad:pad + size, pad:pad + size]
+    # filmic (ACES approximation) + slight lift of the shadows
+    img = img * 1.45
+    img = (img * (2.51 * img + 0.03)) / (img * (2.43 * img + 0.59) + 0.14)
+    img = np.clip(img, 0, 1) ** (1 / 1.12)
     return (img * 255 + 0.5).astype(np.uint8)
 
 
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "panorama"
     size = int(sys.argv[2]) if len(sys.argv) > 2 else 1024
+    ss = int(sys.argv[3]) if len(sys.argv) > 3 else 2
     os.makedirs(out, exist_ok=True)
-    world, cam = build_world()
+    world, cam, lights = build_world()
     pink = (world == PETALS).any(axis=1).astype(np.float32)
-    sun = np.array([0.45, 0.42, -0.79])
-    sun /= np.linalg.norm(sun)
+    moon = np.array([-0.30, 0.48, -0.82])
+    moon /= np.linalg.norm(moon)
+    pad = size // 8
     for i, (f, r, u) in enumerate(FACES):
-        img = render_face(world, np.array(cam), np.array(f, float), np.array(r, float), np.array(u, float), size, sun, pink, 2)
-        Image.fromarray(tonemap(img)).save(os.path.join(out, f"panorama_{i}.png"), optimize=True)
+        img = render_face(world, lights, np.array(cam), np.array(f, float), np.array(r, float), np.array(u, float), size, pad, moon, pink, ss)
+        Image.fromarray(post(img, size, pad)).save(os.path.join(out, f"panorama_{i}.png"), optimize=True)
         print("wrote", f"panorama_{i}.png")
 
 
