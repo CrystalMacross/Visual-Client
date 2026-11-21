@@ -358,3 +358,5 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .profile-pic:hover .profile-edit, .profile-pic.over .profile-edit { opacity: 1; }
 .profile-pic.over { outline: 2px dashed var(--accent); outline-offset: 3px; }
 .brand-version { font-size: 11px; font-weight: 600; color: var(--faint); padding: 2px 7px; border-radius: 999px; background: rgba(255, 255, 255, .06); }
+.pick-row { display: flex; align-items: center; gap: 14px; }
+.pick-row .thumb { width: 56px; height: 56px; border-radius: 16px; font-size: 24px; }

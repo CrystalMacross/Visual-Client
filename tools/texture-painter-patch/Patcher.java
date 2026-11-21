@@ -22,6 +22,8 @@ import java.util.zip.ZipOutputStream;
  *  - extra list entry "minecraft:placed_end_crystal" for the placed End Crystal texture
  *  - save() writes through TexturePainterExtras.resolveTexture so that entry lands in textures/entity/...
  *  - "Configs" module (ConfigsModule): named configs + shareable config codes
+ *  - "No Explosion Particles" module (Extra) via FpsBoostModule.dropParticle
+ *  - Totem Tweaks: "No Pop Animation" setting via TotemTweaksModule.popFactor
  * Steps that are already present in the input jar are skipped, so patched jars can be patched again.
  *
  * Usage (JDK 21):
@@ -35,6 +37,71 @@ public class Patcher implements Opcodes {
 	static final String EXTRAS = "net/visualclient/gui/TexturePainterExtras";
 	static final String MODULES = "net/visualclient/modules/Modules";
 	static final String CONFIGS = "net/visualclient/modules/misc/ConfigsModule";
+	static final String FPS_BOOST = "net/visualclient/modules/visuals/FpsBoostModule";
+	static final String NO_EXPLOSION = "net/visualclient/modules/extra/NoExplosionParticlesModule";
+	static final String TOTEM_TWEAKS = "net/visualclient/modules/combat/TotemTweaksModule";
+	static final String EXTRA_SETTINGS = "net/visualclient/core/ExtraSettings";
+	static final String NUMBER_SETTING = "net/visualclient/core/setting/NumberSetting";
+
+	static boolean references(MethodNode m, String owner) {
+		for (AbstractInsnNode n : m.instructions) if (n instanceof MethodInsnNode mi && mi.owner.equals(owner)) return true;
+		return false;
+	}
+
+	/** Replaces "getfield <field>; invokevirtual <getter>" with "getfield <field>; invokestatic helper". */
+	static int redirectGetter(MethodNode m, String field, String getter, String owner, String helper, String desc) {
+		int n = 0;
+		for (AbstractInsnNode i : m.instructions.toArray()) {
+			if (i instanceof FieldInsnNode f && f.getOpcode() == GETFIELD && f.name.equals(field)
+				&& f.getNext() instanceof MethodInsnNode call && call.name.equals(getter) && call.owner.equals(NUMBER_SETTING)) {
+				m.instructions.set(call, new MethodInsnNode(INVOKESTATIC, owner, helper, desc, false));
+				n++;
+			}
+		}
+		return n;
+	}
+
+	/** dropParticle: explosion particles go through NoExplosionParticlesModule, the rest keeps FPS Boost's logic. */
+	static byte[] patchFpsBoost(byte[] bytes) {
+		ClassNode cn = new ClassNode();
+		new ClassReader(bytes).accept(cn, 0);
+		MethodNode m = method(cn, "dropParticle");
+		if (references(m, NO_EXPLOSION)) { System.out.println("  No Explosion Particles already present"); return bytes; }
+		MethodInsnNode enabled = null;
+		for (AbstractInsnNode i : m.instructions) {
+			if (i instanceof MethodInsnNode mi && mi.name.equals("isEnabled") && mi.desc.equals("()Z")) { enabled = mi; break; }
+		}
+		if (enabled == null) throw new IllegalStateException("dropParticle: isEnabled not found");
+		m.instructions.set(enabled, new MethodInsnNode(INVOKESTATIC, NO_EXPLOSION, "filterActive", "(Lnet/visualclient/core/ClientModule;)Z", false));
+		String d = "(L" + NUMBER_SETTING + ";)D";
+		int a = redirectGetter(m, "explosionParticles", "asDouble", NO_EXPLOSION, "explosionPercent", d);
+		int b = redirectGetter(m, "particles", "asDouble", NO_EXPLOSION, "otherPercent", d);
+		int c = redirectGetter(m, "totemParticles", "asDouble", NO_EXPLOSION, "otherPercent", d);
+		if (a != 1 || b != 1 || c != 1) throw new IllegalStateException("dropParticle: unexpected pattern " + a + b + c);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	/** Totem Tweaks: register "No Pop Animation" and use it in popFactor. */
+	static byte[] patchTotemTweaks(byte[] bytes) {
+		ClassNode cn = new ClassNode();
+		new ClassReader(bytes).accept(cn, 0);
+		MethodNode init = method(cn, "<init>");
+		if (references(init, EXTRA_SETTINGS)) { System.out.println("  No Pop Animation already present"); return bytes; }
+		AbstractInsnNode ret = null;
+		for (AbstractInsnNode i : init.instructions) if (i.getOpcode() == RETURN) ret = i;
+		if (ret == null) throw new IllegalStateException("TotemTweaks <init>: no return");
+		InsnList add = new InsnList();
+		add.add(new VarInsnNode(ALOAD, 0));
+		add.add(new MethodInsnNode(INVOKESTATIC, EXTRA_SETTINGS, "totemTweaks", "(Lnet/visualclient/core/ClientModule;)V", false));
+		init.instructions.insertBefore(ret, add);
+		int n = redirectGetter(method(cn, "popFactor"), "popSize", "asFloat", EXTRA_SETTINGS, "popScale", "(L" + NUMBER_SETTING + ";)F");
+		if (n != 1) throw new IllegalStateException("popFactor: unexpected pattern " + n);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
 
 	/** Modules.ALL = List.of(...)  ->  ConfigsModule.withConfigs(...) (adds the Configs module). */
 	static byte[] patchModules(byte[] bytes) {
@@ -98,6 +165,12 @@ public class Patcher implements Opcodes {
 			}
 			if (name.equals(MODULES + ".class")) {
 				return patchModules(data);
+			}
+			if (name.equals(FPS_BOOST + ".class")) {
+				return patchFpsBoost(data);
+			}
+			if (name.equals(TOTEM_TWEAKS + ".class")) {
+				return patchTotemTweaks(data);
 			}
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);

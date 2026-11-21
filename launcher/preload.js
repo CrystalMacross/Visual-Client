@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('vl', {
   legal: { get: call('legal:get'), accept: call('legal:accept') },
   settings: { get: call('settings:get'), save: call('settings:save') },
   background: { choose: call('background:choose'), set: call('background:set') },
+  pickImage: call('dialog:pickImage'),
   auth: { list: call('auth:list'), login: call('auth:login'), logout: call('auth:logout'), select: call('auth:select') },
   versions: { list: call('versions:list') },
   instances: {

@@ -538,6 +538,7 @@ async function renderInstanceDetail() {
     <div class="detail-actions">
       <button class="btn" data-act="folder">Ordner öffnen</button>
       <button class="btn" data-act="rename">Umbenennen</button>
+      <button class="btn" data-act="pick-icon">Profilbild ändern</button>
       ${inst.customIcon ? '<button class="btn" data-act="clear-icon">Profilbild entfernen</button>' : ''}
       <button class="btn danger" data-act="delete">Löschen</button>
     </div></div>
@@ -555,6 +556,7 @@ async function renderInstanceDetail() {
   };
   const pic = $('[data-act=icon]', box);
   pic.onclick = () => setIcon();
+  $('[data-act=pick-icon]', box).onclick = () => setIcon();
   pic.addEventListener('dragover', (e) => { e.preventDefault(); pic.classList.add('over'); });
   pic.addEventListener('dragleave', () => pic.classList.remove('over'));
   pic.addEventListener('drop', (e) => {
@@ -604,6 +606,7 @@ async function renderInstanceDetail() {
 }
 
 $('#new-instance').addEventListener('click', async () => {
+  let pickedIcon = null;
   openModal('Neue Instanz', '<div class="spinner"></div>', null);
   let list;
   try { list = await loadVersions(); } catch (e) { closeModal(); toast('Versionen konnten nicht geladen werden: ' + e.message, 'error'); return; }
@@ -613,16 +616,29 @@ $('#new-instance').addEventListener('click', async () => {
     <div class="field"><label>Name</label><input id="m-name" class="input" maxlength="48" placeholder="Meine Welt"></div>
     <div class="field"><label>Minecraft-Version (Fabric)</label><select id="m-version" class="select">${options}</select></div>
     <p class="vc-hint">★ = Visual Client ${esc(state.info.visualClient || '')} wird automatisch installiert.</p>
+    <div class="field"><label>Profilbild (optional)</label>
+      <div class="pick-row"><button type="button" class="profile-pic" id="m-pic"><div class="thumb" id="m-pic-thumb">+</div></button>
+      <span class="muted small" id="m-pic-text">Klicken, um ein Bild zu wählen</span></div></div>
     <label class="toggle"><input type="checkbox" id="m-vc" checked><span></span>Visual Client installieren</label>`, async () => {
     const mcVersion = $('#m-version').value;
     const name = $('#m-name').value.trim() || `Minecraft ${mcVersion}`;
     const inst = await api(window.vl.instances.create({ name, mcVersion, visualClient: $('#m-vc').checked && supportsVc(mcVersion) }));
+    if (pickedIcon) await api(window.vl.instances.chooseIcon(inst.id, pickedIcon)).catch((e) => toast(e.message, 'error'));
     await loadInstances();
     await selectInstance(inst.id);
     renderInstances();
     toast(`Instanz „${inst.name}“ erstellt.`, 'ok');
   }, 'Erstellen');
   if (vcVersions.length) $('#m-version').value = vcVersions[0].id;
+  $('#m-pic').onclick = async () => {
+    try {
+      const res = await api(window.vl.pickImage());
+      if (!res) return;
+      pickedIcon = res.path;
+      $('#m-pic-thumb').outerHTML = `<img class="thumb" id="m-pic-thumb" src="${res.preview}" alt="">`;
+      $('#m-pic-text').textContent = 'Bild gewählt – klicken zum Ändern';
+    } catch (e) { toast(e.message, 'error'); }
+  };
   const sync = () => { const ok = supportsVc($('#m-version').value); $('#m-vc').disabled = !ok; $('#m-vc').checked = ok; };
   $('#m-version').addEventListener('change', sync);
   sync();

@@ -71,10 +71,11 @@ public final class ConfigsModule extends ClientModule {
 		return false;
 	}
 
-	/** Used by Modules: appends this module to the module list. */
+	/** Used by Modules: appends the modules added by the patcher (and this one) to the module list. */
 	public static List<ClientModule> withConfigs(Object[] modules) {
 		List<ClientModule> list = new ArrayList<>(modules.length + 1);
 		for (Object m : modules) list.add((ClientModule) m);
+		list.add(net.visualclient.modules.extra.NoExplosionParticlesModule.INSTANCE);
 		list.add(INSTANCE);
 		return Collections.unmodifiableList(list);
 	}

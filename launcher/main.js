@@ -197,6 +197,16 @@ function registerIpc() {
   handle('instances:removeContent', (id, type, file) => instances.removeContent(id, type, file));
   handle('instances:select', (id) => store.saveSettings({ selectedInstance: id }));
   handle('instances:chooseIcon', (id, filePath) => chooseProfilePicture(id, filePath));
+  handle('dialog:pickImage', async () => {
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Profilbild wählen',
+      properties: ['openFile'],
+      filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }]
+    });
+    if (res.canceled || !res.filePaths[0]) return null;
+    const file = res.filePaths[0];
+    return { path: file, preview: 'data:image/png;base64,' + squarePng(file).toString('base64') };
+  });
   handle('instances:clearIcon', (id) => instances.clearProfilePicture(id));
 
   handle('modrinth:search', (q) => modrinth.search(q));

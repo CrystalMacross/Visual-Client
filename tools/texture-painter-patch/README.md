@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> 1.12.1 -> 1.13.0)
+# Visual Client patches (1.12.0 -> 1.12.1 -> 1.13.0 -> 1.14.0)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -14,8 +14,13 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
   `VC1:...` code on the clipboard, *Import config code* applies a code from the text field or
   the clipboard. Codes contain all module settings and the HUD layout.
 
+* **No Explosion Particles** (1.14.0, category Extra): hides explosion particles; routed through
+  the particle filter in `FpsBoostModule.dropParticle`, independent of FPS Boost.
+* **Totem Tweaks → No Pop Animation** (1.14.0): hides the totem that flies over the screen on a pop
+  (`TotemTweaksModule.popFactor`), works while Totem Tweaks is enabled.
+
 ```
-tools/texture-painter-patch/patch.sh visual-client-1.12.1.jar visual-client-1.13.0.jar 1.13.0
+tools/texture-painter-patch/patch.sh visual-client-1.13.0.jar visual-client-1.14.0.jar 1.14.0
 ```
 Steps that are already in the input jar are skipped.
 
