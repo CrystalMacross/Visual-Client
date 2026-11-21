@@ -24,6 +24,7 @@ import java.util.zip.ZipOutputStream;
  *  - "Configs" module (ConfigsModule): named configs + shareable config codes
  *  - "No Explosion Particles" module (Extra) via FpsBoostModule.dropParticle
  *  - Totem Tweaks: "No Pop Animation" setting; NoPopAnimationMixin cancels the pop animation
+ *  - "Configs" tab in the menu: new Category CONFIGS + 7th tab in VisualGuiScreen (Configs module lives there)
  *  - Sakura forest title-screen panorama (resources/assets/minecraft/textures/gui/title/background)
  * Steps that are already present in the input jar are skipped, so patched jars can be patched again.
  *
@@ -45,6 +46,90 @@ public class Patcher implements Opcodes {
 	static final String NUMBER_SETTING = "net/visualclient/core/setting/NumberSetting";
 
 	static final String NO_POP_MIXIN = "net/visualclient/mixin/NoPopAnimationMixin";
+	static final String CATEGORY = "net/visualclient/core/Category";
+	static final String GUI_SCREEN = "net/visualclient/gui/VisualGuiScreen";
+
+	/** Adds the enum constant Category.CONFIGS("Configs") as the last constant. */
+	static byte[] patchCategory(byte[] bytes) {
+		ClassNode cn = new ClassNode();
+		new ClassReader(bytes).accept(cn, 0);
+		if (cn.fields.stream().anyMatch(f -> f.name.equals("CONFIGS"))) { System.out.println("  Configs category already present"); return bytes; }
+		String desc = "L" + CATEGORY + ";";
+		int ordinal = (int) cn.fields.stream().filter(f -> (f.access & ACC_ENUM) != 0).count();
+		cn.fields.add(new FieldNode(ACC_PUBLIC | ACC_STATIC | ACC_FINAL | ACC_ENUM, "CONFIGS", desc, null, null));
+		MethodNode clinit = method(cn, "<clinit>");
+		MethodInsnNode values = null;
+		for (AbstractInsnNode i : clinit.instructions) {
+			if (i instanceof MethodInsnNode m && m.name.equals("$values")) { values = m; break; }
+		}
+		if (values == null) throw new IllegalStateException("Category: $values call not found");
+		InsnList make = new InsnList();
+		make.add(new TypeInsnNode(NEW, CATEGORY));
+		make.add(new InsnNode(DUP));
+		make.add(new LdcInsnNode("CONFIGS"));
+		make.add(new IntInsnNode(BIPUSH, ordinal));
+		make.add(new LdcInsnNode("Configs"));
+		make.add(new MethodInsnNode(INVOKESPECIAL, CATEGORY, "<init>", "(Ljava/lang/String;ILjava/lang/String;)V", false));
+		make.add(new FieldInsnNode(PUTSTATIC, CATEGORY, "CONFIGS", desc));
+		clinit.instructions.insertBefore(values, make);
+		// $values(): one more slot, CONFIGS at the end
+		MethodNode vm = method(cn, "$values");
+		AbstractInsnNode areturn = null;
+		for (AbstractInsnNode i : vm.instructions) {
+			if (i.getOpcode() == ANEWARRAY) vm.instructions.set(i.getPrevious(), new IntInsnNode(BIPUSH, ordinal + 1));
+			if (i.getOpcode() == ARETURN) areturn = i;
+		}
+		InsnList add = new InsnList();
+		add.add(new InsnNode(DUP));
+		add.add(new IntInsnNode(BIPUSH, ordinal));
+		add.add(new FieldInsnNode(GETSTATIC, CATEGORY, "CONFIGS", desc));
+		add.add(new InsnNode(AASTORE));
+		vm.instructions.insertBefore(areturn, add);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	/** VisualGuiScreen: TAB_LABELS += "Configs", TAB_CATEGORY += Category.CONFIGS. */
+	static byte[] patchGuiTabs(byte[] bytes) {
+		ClassNode cn = new ClassNode();
+		new ClassReader(bytes).accept(cn, 0);
+		MethodNode clinit = method(cn, "<clinit>");
+		for (AbstractInsnNode i : clinit.instructions) {
+			if (i instanceof FieldInsnNode f && f.getOpcode() == GETSTATIC && f.name.equals("CONFIGS")) {
+				System.out.println("  Configs tab already present");
+				return bytes;
+			}
+		}
+		growArray(clinit, "TAB_LABELS", new LdcInsnNode("Configs"));
+		growArray(clinit, "TAB_CATEGORY", new FieldInsnNode(GETSTATIC, CATEGORY, "CONFIGS", "L" + CATEGORY + ";"));
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	/** For "size; anewarray; (dup; idx; value; aastore)*; putstatic field": size+1 and one more element. */
+	static void growArray(MethodNode m, String field, AbstractInsnNode value) {
+		FieldInsnNode put = null;
+		for (AbstractInsnNode i : m.instructions) {
+			if (i instanceof FieldInsnNode f && f.getOpcode() == PUTSTATIC && f.name.equals(field)) { put = f; break; }
+		}
+		if (put == null) throw new IllegalStateException("putstatic " + field + " not found");
+		AbstractInsnNode a = put;
+		int stores = 0;
+		while (a != null && a.getOpcode() != ANEWARRAY) { if (a.getOpcode() == AASTORE) stores++; a = a.getPrevious(); }
+		if (a == null) throw new IllegalStateException(field + ": anewarray not found");
+		AbstractInsnNode size = a.getPrevious();
+		int n = size instanceof IntInsnNode in ? in.operand : size.getOpcode() - ICONST_0;
+		if (n != stores) throw new IllegalStateException(field + ": unexpected array layout " + n + "/" + stores);
+		m.instructions.set(size, new IntInsnNode(BIPUSH, n + 1));
+		InsnList add = new InsnList();
+		add.add(new InsnNode(DUP));
+		add.add(new IntInsnNode(BIPUSH, n));
+		add.add(value);
+		add.add(new InsnNode(AASTORE));
+		m.instructions.insertBefore(put, add);
+	}
 
 	/** Adds a mixin class name to the "client" list of visualclient.mixins.json (once). */
 	static byte[] addMixin(byte[] json, String mixin) {
@@ -251,6 +336,12 @@ public class Patcher implements Opcodes {
 			}
 			if (name.equals(TOTEM_TWEAKS + ".class")) {
 				return patchTotemTweaks(data);
+			}
+			if (name.equals(CATEGORY + ".class")) {
+				return patchCategory(data);
+			}
+			if (name.equals(GUI_SCREEN + ".class")) {
+				return patchGuiTabs(data);
 			}
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);

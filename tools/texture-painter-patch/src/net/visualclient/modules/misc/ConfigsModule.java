@@ -49,7 +49,7 @@ public final class ConfigsModule extends ClientModule {
 	private final ActionSetting importCode;
 
 	private ConfigsModule() {
-		super("Configs", "Save and load your settings as named configs, or share them with a config code.", Category.MISC);
+		super("Configs", "Save and load your settings as named configs, or share them with a config code.", configsCategory());
 		name = add(new TextSetting("Config name", "default", 32, "e.g. pvp"));
 		save = add(new ActionSetting("Save config", this::saveConfig));
 		load = add(new ActionSetting("Load config", this::loadConfig));
@@ -64,6 +64,15 @@ public final class ConfigsModule extends ClientModule {
 		delete.describe("Deletes the config with this name.");
 		copyCode.describe("Copies a code of your current settings to the clipboard.");
 		importCode.describe("Applies a config code from the field above or the clipboard.");
+	}
+
+	/** The "Configs" tab (Category.CONFIGS, added by the patcher); MISC if it is missing. */
+	private static Category configsCategory() {
+		try {
+			return Category.valueOf("CONFIGS");
+		} catch (IllegalArgumentException e) {
+			return Category.MISC;
+		}
 	}
 
 	@Override
