@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('vl', {
     launchLog: on('launch:log'),
     launchStarted: on('launch:started'),
     launchClosed: on('launch:closed'),
-    installProgress: on('install:progress')
+    installProgress: on('install:progress'),
+    instancesChanged: on('instances:changed')
   }
 });

@@ -65,6 +65,7 @@ function create({ name, mcVersion, loaderVersion = null, visualClient = true, ic
     source,
     created: Date.now(),
     lastPlayed: null,
+    playTime: 0,
     installed: {}
   };
   for (const dir of Object.values(CONTENT_DIRS)) fs.mkdirSync(path.join(instanceDir(meta.id), dir), { recursive: true });
@@ -76,6 +77,14 @@ function update(id, patch) {
   const allowed = ['name', 'visualClient', 'icon', 'lastPlayed', 'loaderVersion', 'installed'];
   for (const k of allowed) if (k in patch) meta[k] = patch[k];
   return write(meta);
+}
+
+/** Adds played milliseconds to an instance. */
+function addPlayTime(id, ms) {
+  if (!(ms > 0)) return;
+  const meta = read(id);
+  meta.playTime = (meta.playTime || 0) + Math.round(ms);
+  write(meta);
 }
 
 function remove(id) {
@@ -149,6 +158,6 @@ function recordInstall(id, key, info) {
 }
 
 module.exports = {
-  CONTENT_DIRS, sharedRoot, instancesRoot, instanceDir, list, read, create, update, remove, openFolder,
+  CONTENT_DIRS, sharedRoot, instancesRoot, instanceDir, list, read, create, update, addPlayTime, remove, openFolder,
   content, toggleContent, removeContent, recordInstall
 };

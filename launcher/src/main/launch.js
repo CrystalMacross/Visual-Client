@@ -65,7 +65,18 @@ async function launch(instanceId, send) {
   running = child;
   instances.update(inst.id, { lastPlayed: Date.now() });
   send('launch:started', { instanceId: inst.id });
+
+  // play time: flushed every minute so it survives a closed launcher or a crash
+  let lastFlush = Date.now();
+  const flush = () => {
+    const now = Date.now();
+    try { instances.addPlayTime(inst.id, now - lastFlush); } catch { /* instance deleted */ }
+    lastFlush = now;
+  };
+  const timer = setInterval(() => { flush(); send('instances:changed', { instanceId: inst.id }); }, 60000);
   child.on('close', (code) => {
+    clearInterval(timer);
+    flush();
     running = null;
     send('launch:closed', { code });
   });

@@ -75,7 +75,6 @@ function initials(name) {
 /** Draws the face of a Minecraft skin (with hat layer) into a canvas. */
 function skinHead(url, fallbackName) {
   const wrap = document.createElement('div');
-  wrap.style.cssText = 'width:100%;height:100%;display:grid;place-items:center';
   wrap.innerHTML = initials(fallbackName);
   if (!url) return wrap;
   const img = new Image();
@@ -454,6 +453,11 @@ function renderHome() {
 }
 $('#home-instance').addEventListener('change', (e) => e.target.value && selectInstance(e.target.value));
 
+async function refreshInstanceViews() {
+  await loadInstances();
+  if ($('.page[data-page=instances]').classList.contains('active')) renderInstances();
+}
+
 function supportsVc(v) {
   const m = /^(\d+)\.(\d+)(?:\.(\d+))?$/.exec(v || '');
   if (!m) return false;
@@ -461,10 +465,26 @@ function supportsVc(v) {
   return (a === 1 && b === 21 && c >= 4) || (a === 26 && b >= 1 && b <= 3);
 }
 
+const CLOCK = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+
+/** "12 Min.", "3 Std. 5 Min.", "2 T. 4 Std." */
+function fmtPlaytime(ms) {
+  const min = Math.floor((ms || 0) / 60000);
+  if (min < 1) return 'Noch nicht gespielt';
+  const d = Math.floor(min / 1440), hrs = Math.floor((min % 1440) / 60), m = min % 60;
+  if (d) return `${d} T. ${hrs} Std.`;
+  if (hrs) return m ? `${hrs} Std. ${m} Min.` : `${hrs} Std.`;
+  return `${m} Min.`;
+}
+
+function playtimeBadge(i) {
+  return `<span class="playtime" title="Gespielte Zeit">${CLOCK}${esc(fmtPlaytime(i.playTime))}</span>`;
+}
+
 function instanceCard(i) {
   const el = h(`<div class="card glass ${i.id === state.selectedInstance ? 'selected' : ''}">
     ${thumb(i.icon, i.name)}
-    <div class="body"><div class="title">${esc(i.name)}</div>
+    <div class="body"><div class="title-row"><div class="title">${esc(i.name)}</div>${playtimeBadge(i)}</div>
     <div class="meta">${esc(i.mcVersion)} · Fabric${i.visualClient && supportsVc(i.mcVersion) ? ' · Visual Client' : ''}</div></div></div>`);
   el.addEventListener('click', () => { selectInstance(i.id); if ($('.page[data-page=instances]').classList.contains('active')) renderInstances(); });
   el.addEventListener('dblclick', () => { selectInstance(i.id); showPage('home'); });
@@ -483,7 +503,7 @@ async function renderInstanceDetail() {
   if (!inst) { box.hidden = true; return; }
   box.hidden = false;
   box.innerHTML = `<div class="detail-head">${thumb(inst.icon, inst.name)}
-    <div><h2>${esc(inst.name)}</h2><div class="muted">Minecraft ${esc(inst.mcVersion)} · Fabric ${esc(inst.loaderVersion || 'neueste')}</div></div>
+    <div><h2>${esc(inst.name)}${playtimeBadge(inst)}</h2><div class="muted">Minecraft ${esc(inst.mcVersion)} · Fabric ${esc(inst.loaderVersion || 'neueste')}</div></div>
     <div class="detail-actions">
       <button class="btn" data-act="folder">Ordner öffnen</button>
       <button class="btn" data-act="rename">Umbenennen</button>
@@ -639,7 +659,9 @@ window.vl.events.launchStarted(async () => {
   toast('Minecraft startet …', 'ok');
   await loadInstances();
 });
+window.vl.events.instancesChanged(() => refreshInstanceViews());
 window.vl.events.launchClosed(({ code }) => {
+  refreshInstanceViews();
   state.running = false;
   updatePlayButton();
   if (code && code !== 0) {
