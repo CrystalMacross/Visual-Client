@@ -21,6 +21,8 @@ import java.util.zip.ZipOutputStream;
  *  - "Export ZIP" button in the footer (TexturePainterExtras.exportZip)
  *  - extra list entry "minecraft:placed_end_crystal" for the placed End Crystal texture
  *  - save() writes through TexturePainterExtras.resolveTexture so that entry lands in textures/entity/...
+ *  - "Configs" module (ConfigsModule): named configs + shareable config codes
+ * Steps that are already present in the input jar are skipped, so patched jars can be patched again.
  *
  * Usage (JDK 21):
  *   java --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
@@ -31,6 +33,32 @@ public class Patcher implements Opcodes {
 	static final String SCREEN = "net/visualclient/gui/TexturePainterScreen";
 	static final String ENTRY = SCREEN + "$ItemEntry";
 	static final String EXTRAS = "net/visualclient/gui/TexturePainterExtras";
+	static final String MODULES = "net/visualclient/modules/Modules";
+	static final String CONFIGS = "net/visualclient/modules/misc/ConfigsModule";
+
+	/** Modules.ALL = List.of(...)  ->  ConfigsModule.withConfigs(...) (adds the Configs module). */
+	static byte[] patchModules(byte[] bytes) {
+		ClassNode cn = new ClassNode();
+		new ClassReader(bytes).accept(cn, 0);
+		MethodNode clinit = method(cn, "<clinit>");
+		for (AbstractInsnNode n : clinit.instructions) {
+			if (n instanceof MethodInsnNode m && m.owner.equals(CONFIGS)) {
+				System.out.println("  Configs module already present");
+				return bytes;
+			}
+		}
+		for (AbstractInsnNode n : clinit.instructions) {
+			if (n instanceof MethodInsnNode m && m.owner.equals("java/util/List") && m.name.equals("of")
+				&& m.desc.equals("([Ljava/lang/Object;)Ljava/util/List;")
+				&& m.getNext() instanceof FieldInsnNode f && f.name.equals("ALL")) {
+				clinit.instructions.set(m, new MethodInsnNode(INVOKESTATIC, CONFIGS, "withConfigs", "([Ljava/lang/Object;)Ljava/util/List;", false));
+				ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+				cn.accept(cw);
+				return cw.toByteArray();
+			}
+		}
+		throw new IllegalStateException("Modules.ALL = List.of(...) not found");
+	}
 
 	public static void main(String[] args) throws Exception {
 		Path in = Path.of(args[0]), out = Path.of(args[1]), extras = Path.of(args[2]);
@@ -67,6 +95,9 @@ public class Patcher implements Opcodes {
 			if (name.equals(SCREEN + ".class")) {
 				found[0] = true;
 				return patchScreen(data);
+			}
+			if (name.equals(MODULES + ".class")) {
+				return patchModules(data);
 			}
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);
@@ -119,7 +150,8 @@ public class Patcher implements Opcodes {
 		ClassNode cn = new ClassNode();
 		new ClassReader(bytes).accept(cn, 0);
 		if (cn.methods.stream().anyMatch(m -> m.name.equals("vc$addExtra"))) {
-			throw new IllegalStateException("Already patched");
+			System.out.println("  Texture Painter already patched");
+			return bytes;
 		}
 		MethodNode allItems = method(cn, "allItems");
 		MethodNode save = method(cn, "save");
