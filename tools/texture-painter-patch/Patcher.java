@@ -25,6 +25,7 @@ import java.util.zip.ZipOutputStream;
  *  - "No Explosion Particles" module (Extra) via FpsBoostModule.dropParticle
  *  - Totem Tweaks: "No Pop Animation" setting; NoPopAnimationMixin cancels the pop animation
  *  - "Configs" tab in the menu: new Category CONFIGS + 7th tab in VisualGuiScreen (Configs module lives there)
+ *  - New menu ("UI: New" in GUI Style): NewGui + a generated NewGuiScreen per build, GuiOpener picks Old/New
  *  - Sakura forest title-screen panorama (resources/assets/minecraft/textures/gui/title/background)
  * Steps that are already present in the input jar are skipped, so patched jars can be patched again.
  *
@@ -46,6 +47,318 @@ public class Patcher implements Opcodes {
 	static final String NUMBER_SETTING = "net/visualclient/core/setting/NumberSetting";
 
 	static final String NO_POP_MIXIN = "net/visualclient/mixin/NoPopAnimationMixin";
+	static final String NEW_SCREEN = "net/visualclient/gui/NewGuiScreen";
+	static final String NEW_GUI = "net/visualclient/gui/NewGui";
+	static final String COMPAT_SCREEN = "net/visualclient/compat/CompatScreen";
+	static final String COMPAT = "net/visualclient/compat/Compat";
+	static final String GUI_OPENER = "net/visualclient/gui/GuiOpener";
+	static final String GUI_STYLE = "net/visualclient/modules/misc/GuiStyleModule";
+	static final String CLIENT_MODULE = "net/visualclient/core/ClientModule";
+
+	static Map<String, byte[]> readJar(byte[] jar) throws IOException {
+		Map<String, byte[]> out = new HashMap<>();
+		try (ZipInputStream zin = new ZipInputStream(new java.io.ByteArrayInputStream(jar))) {
+			ZipEntry e;
+			while ((e = zin.getNextEntry()) != null) {
+				if (!e.isDirectory()) out.put(e.getName(), zin.readAllBytes());
+			}
+		}
+		return out;
+	}
+
+	static ClassNode readClass(byte[] bytes) {
+		ClassNode cn = new ClassNode();
+		new ClassReader(bytes).accept(cn, 0);
+		return cn;
+	}
+
+	static MethodNode findMethod(ClassNode cn, java.util.function.Predicate<MethodNode> p, String what) {
+		List<MethodNode> found = cn.methods.stream().filter(p).toList();
+		if (found.size() != 1) throw new IllegalStateException(cn.name + ": expected one " + what + ", found " + found.size());
+		return found.get(0);
+	}
+
+	static boolean is(MethodNode m, int flag) {
+		return (m.access & flag) != 0;
+	}
+
+	/**
+	 * Generates NewGuiScreen (extends CompatScreen): forwards init/render/input/scroll/close to NewGui
+	 * and offers a few static bridges (scissor, current screen, open menu, close). Every Minecraft
+	 * name is taken from the old menu (VisualGuiScreen) of the same build, so it fits each build.
+	 */
+	static byte[] newGuiScreen(byte[] vgsBytes, byte[] compatBytes, byte[] openerBytes) {
+		ClassNode vgs = readClass(vgsBytes);
+		ClassNode compat = readClass(compatBytes);
+		ClassNode opener = readClass(openerBytes);
+
+		// constructor pieces: Component.literal("Visual Client") and the CompatScreen super call
+		MethodNode vctor = method(vgs, "<init>");
+		MethodInsnNode literal = null, superInit = null;
+		for (AbstractInsnNode n : vctor.instructions) {
+			if (literal == null && n instanceof LdcInsnNode l && "Visual Client".equals(l.cst) && n.getNext() instanceof MethodInsnNode m) literal = m;
+			if (superInit == null && n instanceof MethodInsnNode m && m.getOpcode() == INVOKESPECIAL && m.owner.equals(COMPAT_SCREEN) && m.name.equals("<init>")) superInit = m;
+		}
+		require(literal, superInit);
+
+		MethodNode init = findMethod(vgs, m -> is(m, ACC_PROTECTED) && !is(m, ACC_STATIC) && m.desc.equals("()V") && !m.name.startsWith("<") && !m.name.startsWith("lambda$"), "init()");
+		MethodNode pause = findMethod(vgs, m -> is(m, ACC_PUBLIC) && !is(m, ACC_STATIC) && m.desc.equals("()Z"), "isPauseScreen()");
+		MethodNode scroll = findMethod(vgs, m -> is(m, ACC_PUBLIC) && !is(m, ACC_STATIC) && m.desc.equals("(DDDD)Z"), "mouseScrolled()");
+		MethodNode close = findMethod(vgs, m -> is(m, ACC_PUBLIC) && !is(m, ACC_STATIC) && m.desc.equals("()V") && !m.name.startsWith("<"), "onClose()");
+		List<MethodNode> draws = vgs.methods.stream().filter(m -> is(m, ACC_PUBLIC) && !is(m, ACC_STATIC) && m.desc.endsWith("IIF)V")
+			&& Type.getArgumentTypes(m.desc).length == 4).toList();
+		if (draws.size() != 2) throw new IllegalStateException("VisualGuiScreen: expected background + render, found " + draws.size());
+		MethodNode background = draws.stream().filter(m -> callsMethod(m, "blurBackground")).findFirst().orElseThrow();
+		MethodNode render = draws.get(0) == background ? draws.get(1) : draws.get(0);
+		String gfx = Type.getArgumentTypes(render.desc)[0].getInternalName();
+
+		// font = Minecraft.getInstance().font ; width/height fields ; scissor calls
+		MethodInsnNode getInstance = null;
+		FieldInsnNode fontField = null;
+		for (AbstractInsnNode n : render.instructions) {
+			if (n instanceof MethodInsnNode m && m.getOpcode() == INVOKESTATIC && n.getNext() instanceof FieldInsnNode f && f.getOpcode() == GETFIELD) {
+				getInstance = m;
+				fontField = f;
+				break;
+			}
+		}
+		require(getInstance, fontField);
+		FieldInsnNode widthField = intField(vgs, "width", "field_22789");
+		FieldInsnNode heightField = intField(vgs, "height", "field_22790");
+		// enableScissor(IIII) and the first no-argument call on the graphics object after it (disableScissor)
+		MethodInsnNode scissorOn = null, scissorOff = null;
+		for (MethodNode m : vgs.methods) {
+			MethodInsnNode on = null;
+			for (AbstractInsnNode n : m.instructions) {
+				if (n instanceof MethodInsnNode mi && mi.owner.equals(gfx) && mi.getOpcode() == INVOKEVIRTUAL) {
+					if (mi.desc.equals("(IIII)V")) on = mi;
+					else if (on != null && mi.desc.equals("()V")) { scissorOn = on; scissorOff = mi; break; }
+				}
+			}
+			if (scissorOff != null) break;
+		}
+		require(scissorOn, scissorOff);
+		MethodNode screenOf = method(compat, "screen");
+		MethodNode setScreen = method(compat, "setScreen");
+		MethodNode open = method(opener, "open");
+
+		ClassNode cn = new ClassNode();
+		cn.version = vgs.version;
+		cn.access = ACC_PUBLIC | ACC_SUPER;
+		cn.name = NEW_SCREEN;
+		cn.superName = COMPAT_SCREEN;
+		cn.sourceFile = "NewGuiScreen.java";
+		String guiDesc = "L" + NEW_GUI + ";";
+		cn.fields.add(new FieldNode(ACC_PRIVATE | ACC_FINAL, "gui", guiDesc, null, null));
+
+		MethodNode ctor = new MethodNode(ACC_PUBLIC, "<init>", "()V", null, null);
+		InsnList c = ctor.instructions;
+		c.add(new VarInsnNode(ALOAD, 0));
+		c.add(new LdcInsnNode("Visual Client"));
+		c.add(literal.clone(null));
+		c.add(superInit.clone(null));
+		c.add(new VarInsnNode(ALOAD, 0));
+		c.add(new TypeInsnNode(NEW, NEW_GUI));
+		c.add(new InsnNode(DUP));
+		c.add(new VarInsnNode(ALOAD, 0));
+		c.add(new MethodInsnNode(INVOKESPECIAL, NEW_GUI, "<init>", "(Ljava/lang/Object;)V", false));
+		c.add(new FieldInsnNode(PUTFIELD, NEW_SCREEN, "gui", guiDesc));
+		c.add(new InsnNode(RETURN));
+		cn.methods.add(ctor);
+
+		MethodNode mInit = new MethodNode(ACC_PROTECTED, init.name, "()V", null, null);
+		gui(mInit.instructions, guiDesc);
+		mInit.instructions.add(new VarInsnNode(ALOAD, 0));
+		mInit.instructions.add(owned(widthField));
+		mInit.instructions.add(new VarInsnNode(ALOAD, 0));
+		mInit.instructions.add(owned(heightField));
+		mInit.instructions.add(new MethodInsnNode(INVOKEVIRTUAL, NEW_GUI, "init", "(II)V", false));
+		mInit.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(mInit);
+
+		MethodNode mPause = new MethodNode(ACC_PUBLIC, pause.name, "()Z", null, null);
+		mPause.instructions.add(new InsnNode(ICONST_0));
+		mPause.instructions.add(new InsnNode(IRETURN));
+		cn.methods.add(mPause);
+
+		cn.methods.add(copyRemapped(background, GUI_SCREEN, NEW_SCREEN));
+
+		MethodNode mRender = new MethodNode(ACC_PUBLIC, render.name, render.desc, null, null);
+		InsnList rd = mRender.instructions;
+		gui(rd, guiDesc);
+		rd.add(new VarInsnNode(ALOAD, 1));
+		rd.add(getInstance.clone(null));
+		rd.add(fontField.clone(null));
+		rd.add(new VarInsnNode(ALOAD, 0));
+		rd.add(owned(widthField));
+		rd.add(new VarInsnNode(ALOAD, 0));
+		rd.add(owned(heightField));
+		rd.add(new VarInsnNode(ILOAD, 2));
+		rd.add(new VarInsnNode(ILOAD, 3));
+		rd.add(new VarInsnNode(FLOAD, 4));
+		rd.add(new MethodInsnNode(INVOKEVIRTUAL, NEW_GUI, "render", "(Ljava/lang/Object;Ljava/lang/Object;IIIIF)V", false));
+		rd.add(new InsnNode(RETURN));
+		cn.methods.add(mRender);
+
+		cn.methods.add(forward(ACC_PROTECTED, "onKey", "(III)Z", "key", guiDesc));
+		cn.methods.add(forward(ACC_PROTECTED, "onChar", "(Ljava/lang/String;)Z", "chr", guiDesc));
+		cn.methods.add(forward(ACC_PROTECTED, "onMouseDown", "(DDI)Z", "mouseDown", guiDesc));
+		cn.methods.add(forward(ACC_PROTECTED, "onMouseDrag", "(DDIDD)Z", "mouseDrag", guiDesc));
+		cn.methods.add(forward(ACC_PROTECTED, "onMouseUp", "(DDI)Z", "mouseUp", guiDesc));
+		cn.methods.add(forward(ACC_PUBLIC, scroll.name, "(DDDD)Z", "scroll", guiDesc));
+
+		MethodNode mClose = new MethodNode(ACC_PUBLIC, close.name, "()V", null, null);
+		gui(mClose.instructions, guiDesc);
+		mClose.instructions.add(new MethodInsnNode(INVOKEVIRTUAL, NEW_GUI, "close", "()V", false));
+		mClose.instructions.add(new VarInsnNode(ALOAD, 0));
+		mClose.instructions.add(new MethodInsnNode(INVOKESPECIAL, COMPAT_SCREEN, close.name, "()V", false));
+		mClose.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(mClose);
+
+		// static bridges used by NewGui / ExtraSettings
+		MethodNode bOn = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$scissor", "(Ljava/lang/Object;IIII)V", null, null);
+		bOn.instructions.add(new VarInsnNode(ALOAD, 0));
+		bOn.instructions.add(new TypeInsnNode(CHECKCAST, gfx));
+		for (int i = 1; i <= 4; i++) bOn.instructions.add(new VarInsnNode(ILOAD, i));
+		bOn.instructions.add(scissorOn.clone(null));
+		bOn.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(bOn);
+
+		MethodNode bOff = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$unscissor", "(Ljava/lang/Object;)V", null, null);
+		bOff.instructions.add(new VarInsnNode(ALOAD, 0));
+		bOff.instructions.add(new TypeInsnNode(CHECKCAST, gfx));
+		bOff.instructions.add(scissorOff.clone(null));
+		bOff.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(bOff);
+
+		MethodNode bCur = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$currentScreen", "()Ljava/lang/Object;", null, null);
+		bCur.instructions.add(getInstance.clone(null));
+		bCur.instructions.add(new MethodInsnNode(INVOKESTATIC, COMPAT, "screen", screenOf.desc, false));
+		bCur.instructions.add(new InsnNode(ARETURN));
+		cn.methods.add(bCur);
+
+		MethodNode bOpen = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$openMenu", "()V", null, null);
+		bOpen.instructions.add(getInstance.clone(null));
+		bOpen.instructions.add(new MethodInsnNode(INVOKESTATIC, GUI_OPENER, "open", open.desc, false));
+		bOpen.instructions.add(new MethodInsnNode(INVOKESTATIC, COMPAT, "setScreen", setScreen.desc, false));
+		bOpen.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(bOpen);
+
+		MethodNode bClose = new MethodNode(ACC_PUBLIC | ACC_STATIC, "vc$close", "(Ljava/lang/Object;)V", null, null);
+		bClose.instructions.add(new VarInsnNode(ALOAD, 0));
+		bClose.instructions.add(new TypeInsnNode(CHECKCAST, NEW_SCREEN));
+		bClose.instructions.add(new MethodInsnNode(INVOKEVIRTUAL, NEW_SCREEN, close.name, "()V", false));
+		bClose.instructions.add(new InsnNode(RETURN));
+		cn.methods.add(bClose);
+
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	static void gui(InsnList l, String guiDesc) {
+		l.add(new VarInsnNode(ALOAD, 0));
+		l.add(new FieldInsnNode(GETFIELD, NEW_SCREEN, "gui", guiDesc));
+	}
+
+	static MethodNode forward(int access, String name, String desc, String target, String guiDesc) {
+		MethodNode m = new MethodNode(access, name, desc, null, null);
+		gui(m.instructions, guiDesc);
+		int slot = 1;
+		for (Type t : Type.getArgumentTypes(desc)) {
+			m.instructions.add(new VarInsnNode(t.getOpcode(ILOAD), slot));
+			slot += t.getSize();
+		}
+		m.instructions.add(new MethodInsnNode(INVOKEVIRTUAL, NEW_GUI, target, desc, false));
+		m.instructions.add(new InsnNode(Type.getReturnType(desc).getOpcode(IRETURN)));
+		return m;
+	}
+
+	static FieldInsnNode intField(ClassNode vgs, String official, String intermediary) {
+		for (MethodNode m : vgs.methods) {
+			for (AbstractInsnNode n : m.instructions) {
+				if (n instanceof FieldInsnNode f && f.getOpcode() == GETFIELD && f.desc.equals("I")
+					&& (f.name.equals(official) || f.name.equals(intermediary))) return f;
+			}
+		}
+		throw new IllegalStateException("VisualGuiScreen: field " + official + " not found");
+	}
+
+	static FieldInsnNode owned(FieldInsnNode f) {
+		return new FieldInsnNode(GETFIELD, NEW_SCREEN, f.name, f.desc);
+	}
+
+	static boolean callsMethod(MethodNode m, String name) {
+		for (AbstractInsnNode n : m.instructions) if (n instanceof MethodInsnNode mi && mi.name.equals(name)) return true;
+		return false;
+	}
+
+	/** Copies a method and replaces every reference to one class by another (owners, descriptors, frames). */
+	static MethodNode copyRemapped(MethodNode src, String from, String to) {
+		MethodNode m = new MethodNode(src.access, src.name, src.desc, src.signature, src.exceptions.toArray(new String[0]));
+		src.accept(m);
+		for (AbstractInsnNode n : m.instructions) {
+			if (n instanceof MethodInsnNode mi) {
+				if (mi.owner.equals(from)) mi.owner = to;
+				mi.desc = mi.desc.replace("L" + from + ";", "L" + to + ";");
+			} else if (n instanceof FieldInsnNode fi) {
+				if (fi.owner.equals(from)) fi.owner = to;
+				fi.desc = fi.desc.replace("L" + from + ";", "L" + to + ";");
+			} else if (n instanceof TypeInsnNode ti) {
+				if (ti.desc.equals(from)) ti.desc = to;
+			} else if (n instanceof FrameNode fr) {
+				if (fr.local != null) fr.local.replaceAll(o -> from.equals(o) ? to : o);
+				if (fr.stack != null) fr.stack.replaceAll(o -> from.equals(o) ? to : o);
+			}
+		}
+		if (m.localVariables != null) {
+			for (LocalVariableNode lv : m.localVariables) lv.desc = lv.desc.replace("L" + from + ";", "L" + to + ";");
+		}
+		return m;
+	}
+
+	/** GuiOpener.open(): "UI: New" -> new NewGuiScreen(), otherwise the old menu. */
+	static byte[] patchGuiOpener(byte[] bytes) {
+		ClassNode cn = readClass(bytes);
+		MethodNode open = method(cn, "open");
+		for (AbstractInsnNode n : open.instructions) {
+			if (n instanceof TypeInsnNode t && t.desc.equals(NEW_SCREEN)) { System.out.println("  New UI already present"); return bytes; }
+		}
+		InsnList pre = new InsnList();
+		LabelNode old = new LabelNode();
+		pre.add(new MethodInsnNode(INVOKESTATIC, EXTRA_SETTINGS, "useNewUi", "()Z", false));
+		pre.add(new JumpInsnNode(IFEQ, old));
+		pre.add(new TypeInsnNode(NEW, NEW_SCREEN));
+		pre.add(new InsnNode(DUP));
+		pre.add(new MethodInsnNode(INVOKESPECIAL, NEW_SCREEN, "<init>", "()V", false));
+		pre.add(new InsnNode(ARETURN));
+		pre.add(old);
+		pre.add(new FrameNode(F_SAME, 0, null, 0, null));
+		open.instructions.insert(pre);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	/** GuiStyleModule: register "UI" (Old/New) as its first setting. */
+	static byte[] patchGuiStyle(byte[] bytes) {
+		ClassNode cn = readClass(bytes);
+		MethodNode init = method(cn, "<init>");
+		if (callsMethod(init, "guiStyle")) { System.out.println("  UI setting already present"); return bytes; }
+		MethodInsnNode sup = null;
+		for (AbstractInsnNode n : init.instructions) {
+			if (n instanceof MethodInsnNode m && m.getOpcode() == INVOKESPECIAL && m.owner.equals(CLIENT_MODULE) && m.name.equals("<init>")) { sup = m; break; }
+		}
+		if (sup == null) throw new IllegalStateException("GuiStyleModule: super constructor not found");
+		InsnList add = new InsnList();
+		add.add(new VarInsnNode(ALOAD, 0));
+		add.add(new MethodInsnNode(INVOKESTATIC, EXTRA_SETTINGS, "guiStyle", "(L" + CLIENT_MODULE + ";)V", false));
+		init.instructions.insert(sup, add);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
 	static final String CATEGORY = "net/visualclient/core/Category";
 	static final String GUI_SCREEN = "net/visualclient/gui/VisualGuiScreen";
 
@@ -323,6 +636,9 @@ public class Patcher implements Opcodes {
 		boolean official = jarName.contains("-mc26.");
 		Map<String, byte[]> add = new TreeMap<>(extraClasses);
 		add.put(NO_POP_MIXIN + ".class", noPopMixin(official));
+		Map<String, byte[]> entries = readJar(jar);
+		add.put(NEW_SCREEN + ".class", newGuiScreen(entries.get(GUI_SCREEN + ".class"), entries.get(COMPAT + ".class"),
+			entries.get(GUI_OPENER + ".class")));
 		byte[] result = rewriteJar(jar, (name, data) -> {
 			if (name.equals(SCREEN + ".class")) {
 				found[0] = true;
@@ -342,6 +658,12 @@ public class Patcher implements Opcodes {
 			}
 			if (name.equals(GUI_SCREEN + ".class")) {
 				return patchGuiTabs(data);
+			}
+			if (name.equals(GUI_OPENER + ".class")) {
+				return patchGuiOpener(data);
+			}
+			if (name.equals(GUI_STYLE + ".class")) {
+				return patchGuiStyle(data);
 			}
 			if (name.equals("fabric.mod.json")) {
 				return setVersion(data, version);

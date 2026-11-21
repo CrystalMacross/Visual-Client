@@ -179,7 +179,11 @@ function registerIpc() {
   handle('auth:list', () => ({ accounts: auth.list(), selected: store.getSettings().selectedAccount }));
   handle('auth:login', () => auth.login());
   handle('auth:logout', (uuid) => auth.logout(uuid));
-  handle('auth:select', (uuid) => store.saveSettings({ selectedAccount: uuid }));
+  handle('auth:select', (uuid) => {
+    const settings = store.saveSettings({ selectedAccount: uuid });
+    auth.prepare(uuid); // background: have a fresh session ready before "Play"
+    return settings;
+  });
 
   handle('versions:list', () => versions.listVersions());
 
@@ -234,6 +238,8 @@ if (!single) {
     presence.configure(() => store.getSettings().discord);
     registerIpc();
     createWindow();
+    // background: refresh an expiring Minecraft session now instead of when "Play" is pressed
+    setTimeout(() => auth.prepare(store.getSettings().selectedAccount), 1500);
     app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
   });
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

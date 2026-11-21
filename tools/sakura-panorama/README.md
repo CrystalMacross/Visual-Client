@@ -1,11 +1,13 @@
 # Sakura title-screen panorama
 
-`render_panorama.py` renders a Minecraft-style cherry blossom forest (procedural, no game assets)
-as the 6 cube faces Minecraft uses for the title-screen background:
+`render_panorama.py` renders a Minecraft-style cherry blossom garden at night (procedural, no game
+assets) as the 6 cube faces Minecraft uses for the title-screen background. It is a small path
+tracer: moonlight with soft shadows, one bounce of indirect light, glowing lanterns, volumetric
+mist, reflective water with ripples, a starry sky, denoising, bloom and a filmic tone curve.
 
 ```
 python -m venv venv && venv/bin/pip install numpy numba pillow
-venv/bin/python render_panorama.py out 1024
+venv/bin/python render_panorama.py out 1024 24      # size, samples per pixel (about 5 min)
 cp out/panorama_*.png ../texture-painter-patch/resources/assets/minecraft/textures/gui/title/background/
 ```
 

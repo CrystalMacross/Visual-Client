@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> ... -> 1.16.0 -> 1.17.0)
+# Visual Client patches (1.12.0 -> ... -> 1.17.0 -> 1.18.0)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -22,11 +22,24 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
   (`NoPopAnimationMixin`) cancels `GameRenderer.displayItemActivation` (intermediary
   `class_757.method_3189` on 1.21.x), so the pop animation never starts.
 
-* **Sakura garden at night title screen** (1.15.0, night + shader look since 1.16.0): `resources/assets/minecraft/textures/gui/title/background/panorama_*.png`
+* **Sakura garden at night title screen** (1.15.0, night + shader look since 1.16.0, path-traced
+  realistic lighting since 1.18.0): `resources/assets/minecraft/textures/gui/title/background/panorama_*.png`
   (rendered with `tools/sakura-panorama`), stored once in the bundle jar.
 
+* **New menu UI** (1.18.0): `GUI Style → UI: Old / New` (default New). `GuiOpener.open()` returns
+  the generated `NewGuiScreen` when New is selected; the sidebar of the new menu has an "Old UI"
+  button. Switching the setting while a menu is open reopens it in the chosen style.
+  - `src/.../gui/NewGui.java`: the whole menu (sidebar with categories, global search, module
+    cards with switches, settings page with switches, sliders, mode pickers, color picker, text
+    fields and buttons). It only uses the mod's own helpers, reached through
+    `src/.../gui/Gfx.java` (method handles with the Minecraft types erased to `Object`), so the
+    same class works in every Minecraft build.
+  - `NewGuiScreen` is generated per build by `Patcher.java` from `VisualGuiScreen`'s own
+    bytecode (method names, background, scissor calls), so intermediary (1.21.x) and official
+    (26.x) names both work.
+
 ```
-tools/texture-painter-patch/patch.sh visual-client-1.16.0.jar visual-client-1.17.0.jar 1.17.0
+tools/texture-painter-patch/patch.sh visual-client-1.17.0.jar visual-client-1.18.0.jar 1.18.0
 ```
 Steps that are already in the input jar are skipped.
 

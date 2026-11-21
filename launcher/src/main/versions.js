@@ -47,8 +47,21 @@ async function versionJson(mcVersion) {
   return getJson(entry.url);
 }
 
-/** Installs the Fabric profile json and returns its version id. */
+function readJsonFile(file) {
+  try {
+    return JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+/** Installs the Fabric profile json and returns its version id (no network once installed). */
 async function installFabric(root, mcVersion, loaderVersion) {
+  if (loaderVersion) {
+    const id = `fabric-loader-${loaderVersion}-${mcVersion}`;
+    const cached = readJsonFile(path.join(root, 'versions', id, id + '.json'));
+    if (cached && cached.id === id && cached.mainClass) return { id, loader: loaderVersion };
+  }
   let loader = loaderVersion;
   if (!loader) {
     const loaders = await getJson(`${FABRIC_META}/versions/loader/${encodeURIComponent(mcVersion)}`);
@@ -60,6 +73,26 @@ async function installFabric(root, mcVersion, loaderVersion) {
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, profile.id + '.json'), JSON.stringify(profile, null, 2));
   return { id: profile.id, loader };
+}
+
+/**
+ * The Java runtime component Mojang wants for a version ("java-runtime-delta", ...).
+ * Read from the local version json when the game was started before; otherwise the json is
+ * fetched once and stored where minecraft-launcher-core looks for it, which saves it the
+ * manifest download as well.
+ */
+async function javaComponent(root, mcVersion, versionId) {
+  const target = path.join(root, 'versions', versionId, `${mcVersion}.json`);
+  let json = readJsonFile(target);
+  if (!json || json.id !== mcVersion) json = readJsonFile(path.join(root, 'versions', mcVersion, `${mcVersion}.json`));
+  if (!json || json.id !== mcVersion || !json.downloads) {
+    json = await versionJson(mcVersion);
+    try {
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, JSON.stringify(json, null, 2));
+    } catch { /* only a cache */ }
+  }
+  return (json.javaVersion && json.javaVersion.component) || 'java-runtime-delta';
 }
 
 // ---------------------------------------------------------------- Visual Client
@@ -118,6 +151,6 @@ async function ensureFabricApi(instanceDir, mcVersion) {
 }
 
 module.exports = {
-  listVersions, versionJson, installFabric, visualClientSupports,
+  listVersions, versionJson, javaComponent, installFabric, visualClientSupports,
   bundledVisualClient, installVisualClient, ensureFabricApi, request
 };

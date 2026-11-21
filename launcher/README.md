@@ -8,6 +8,9 @@ Moderner Minecraft-Launcher mit eingebautem **Visual Client**.
 - **Design**: Hintergrund als Verlauf / Farbe per Hex-Code oder eigener Screenshot, Akzentfarbe, Abdunkeln, Unschärfe
 - **Discord Rich Presence** (abschaltbar): „Playing: <Server-IP>“ / Einzelspieler, erkannt aus dem Spielprotokoll – ohne Mod
 - **Java automatisch**: lädt die offizielle Mojang-Java-Laufzeit passend zur Version
+- **Schnellstart**: Anmeldung wird bis kurz vor Ablauf wiederverwendet (und im Hintergrund erneuert), Fabric-/Versionsdaten
+  und die Java-Prüfung werden zwischengespeichert, Assets werden über Größe statt per Prüfsumme geprüft, Java-Klassen-Cache
+  (AppCDS) ab Java 21 – abschaltbar in den Einstellungen
 - **Keine Daten an den Entwickler**: keine Telemetrie, kein eigener Server – siehe `legal/PRIVACY.md`
 
 ## Entwickeln

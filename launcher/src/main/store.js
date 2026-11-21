@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS = {
     dim: 35,
     blur: 0
   },
-  java: { minMemory: 1024, maxMemory: 4096, customPath: '', jvmArgs: '' },
+  java: { minMemory: 1024, maxMemory: 4096, customPath: '', jvmArgs: '', fastStart: true },
   game: { width: 1280, height: 720, fullscreen: false, closeLauncher: false },
   discord: { enabled: true, showServer: true, clientId: '' },
   selectedInstance: null,

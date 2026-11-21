@@ -385,6 +385,7 @@ function renderSettings() {
   $('#ram').value = s.java.maxMemory; $('#ram-val').textContent = (s.java.maxMemory / 1024).toFixed(1) + ' GB';
   $('#java-path').value = s.java.customPath || '';
   $('#jvm-args').value = s.java.jvmArgs || '';
+  $('#fast-start').checked = s.java.fastStart !== false;
   $('#win-w').value = s.game.width;
   $('#win-h').value = s.game.height;
   $('#fullscreen').checked = s.game.fullscreen;
@@ -409,6 +410,7 @@ $('#ram').addEventListener('input', (e) => {
 $('#ram').addEventListener('change', () => saveSetting({ java: state.settings.java }));
 $('#java-path').addEventListener('change', (e) => { state.settings.java.customPath = e.target.value.trim(); saveSetting({ java: state.settings.java }); });
 $('#jvm-args').addEventListener('change', (e) => { state.settings.java.jvmArgs = e.target.value.trim(); saveSetting({ java: state.settings.java }); });
+$('#fast-start').addEventListener('change', (e) => { state.settings.java.fastStart = e.target.checked; saveSetting({ java: state.settings.java }); });
 $('#win-w').addEventListener('change', (e) => { state.settings.game.width = Math.max(640, Number(e.target.value) || 1280); saveSetting({ game: state.settings.game }); });
 $('#win-h').addEventListener('change', (e) => { state.settings.game.height = Math.max(480, Number(e.target.value) || 720); saveSetting({ game: state.settings.game }); });
 $('#fullscreen').addEventListener('change', (e) => { state.settings.game.fullscreen = e.target.checked; saveSetting({ game: state.settings.game }); });

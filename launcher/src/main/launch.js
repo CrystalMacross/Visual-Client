@@ -8,49 +8,67 @@ const instances = require('./instances');
 const versions = require('./versions');
 const { ensureJava } = require('./java');
 const { presence } = require('./discord');
+const fastlaunch = require('./fastlaunch');
+
+fastlaunch.install();
 
 let running = null;
+let starting = false;
 
 function isRunning() {
   return !!running;
 }
 
 async function launch(instanceId, send) {
-  if (running) throw new Error('Minecraft läuft bereits.');
+  if (running || starting) throw new Error('Minecraft läuft bereits.');
+  starting = true;
+  try {
+    return await start(instanceId, send);
+  } finally {
+    starting = false;
+  }
+}
+
+async function start(instanceId, send) {
   const settings = store.getSettings();
   const inst = instances.read(instanceId);
   const root = instances.sharedRoot();
   const gameDir = instances.instanceDir(inst.id);
   const progress = (p) => send('launch:progress', p);
 
-  progress({ stage: 'Anmeldung wird geprüft', current: 0, total: 1 });
-  const authorization = await auth.launchAuth(settings.selectedAccount);
+  progress({ stage: 'Start wird vorbereitet', current: 0, total: 1 });
+  // the login (usually cached) and the game files are prepared at the same time
+  const authorization = auth.launchAuth(settings.selectedAccount);
+  const files = (async () => {
+    const fabric = await versions.installFabric(root, inst.mcVersion, inst.loaderVersion);
+    if (!inst.loaderVersion) instances.update(inst.id, { loaderVersion: fabric.loader });
+    if (inst.visualClient && versions.visualClientSupports(inst.mcVersion)) {
+      versions.installVisualClient(gameDir);
+      await versions.ensureFabricApi(gameDir, inst.mcVersion);
+    }
+    let javaPath = settings.java.customPath && fs.existsSync(settings.java.customPath) ? settings.java.customPath : null;
+    let component = null;
+    if (!javaPath) {
+      component = await versions.javaComponent(root, inst.mcVersion, fabric.id);
+      javaPath = await ensureJava(root, component, progress);
+    }
+    return { fabric, javaPath, component };
+  })();
+  authorization.catch(() => {}); // reported by Promise.all below
+  files.catch(() => {});
+  const [session, { fabric, javaPath, component }] = await Promise.all([authorization, files]);
 
-  progress({ stage: 'Fabric wird installiert', current: 0, total: 1 });
-  const fabric = await versions.installFabric(root, inst.mcVersion, inst.loaderVersion);
-  if (!inst.loaderVersion) instances.update(inst.id, { loaderVersion: fabric.loader });
-
-  if (inst.visualClient && versions.visualClientSupports(inst.mcVersion)) {
-    progress({ stage: 'Visual Client wird eingebunden', current: 0, total: 1 });
-    versions.installVisualClient(gameDir);
-    await versions.ensureFabricApi(gameDir, inst.mcVersion);
-  }
-
-  let javaPath = settings.java.customPath && fs.existsSync(settings.java.customPath) ? settings.java.customPath : null;
-  if (!javaPath) {
-    const vjson = await versions.versionJson(inst.mcVersion);
-    const component = (vjson.javaVersion && vjson.javaVersion.component) || 'java-runtime-delta';
-    javaPath = await ensureJava(root, component, progress);
-  }
+  const userArgs = settings.java.jvmArgs ? settings.java.jvmArgs.split(/\s+/).filter(Boolean) : [];
+  const fastArgs = settings.java.fastStart === false ? [] : fastlaunch.jvmFlags(root, fabric.id, component);
 
   const launcher = new Client();
   const opts = {
     root,
-    authorization,
+    authorization: session,
     version: { number: inst.mcVersion, type: 'release', custom: fabric.id },
     memory: { max: `${settings.java.maxMemory}M`, min: `${settings.java.minMemory}M` },
     javaPath,
-    customArgs: settings.java.jvmArgs ? settings.java.jvmArgs.split(/\s+/).filter(Boolean) : [],
+    customArgs: fastArgs.concat(userArgs),
     window: settings.game.fullscreen ? { fullscreen: true } : { width: settings.game.width, height: settings.game.height },
     overrides: { gameDirectory: gameDir, detached: false, maxSockets: 8 }
   };
