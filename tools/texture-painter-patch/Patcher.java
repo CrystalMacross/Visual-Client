@@ -444,6 +444,101 @@ public class Patcher implements Opcodes {
 		m.instructions.insertBefore(put, add);
 	}
 
+	static final String XP_ORB_MIXIN = "net/visualclient/mixin/XpOrbRendererMixin";
+	static final String ITEM_SIZE_MIXIN = "net/visualclient/mixin/ItemSizeMixin";
+	static final String ITEM_SIZE = "net/visualclient/modules/extra/ItemSizeModule";
+
+	/**
+	 * Builds ItemSizeMixin from the mod's own XpOrbRendererMixin of the same build: that mixin
+	 * hooks ExperienceOrbRenderer.extractRenderState (capture) and submit/render (scale) with the
+	 * right names and descriptors for the build. Swapping orb -> item entity, orb state -> item
+	 * state and orb renderer -> item renderer, and routing its calls to ItemSizeModule, gives the
+	 * same two hooks for ItemEntityRenderer.
+	 */
+	static byte[] itemSizeMixin(byte[] xpMixin, boolean official) {
+		if (xpMixin == null) throw new IllegalStateException("XpOrbRendererMixin not found");
+		Map<String, String> map = new java.util.LinkedHashMap<>();
+		map.put(XP_ORB_MIXIN, ITEM_SIZE_MIXIN);
+		if (official) {
+			map.put("net/minecraft/client/renderer/entity/state/ExperienceOrbRenderState", "net/minecraft/client/renderer/entity/state/ItemEntityRenderState");
+			map.put("net/minecraft/client/renderer/entity/ExperienceOrbRenderer", "net/minecraft/client/renderer/entity/ItemEntityRenderer");
+			map.put("net/minecraft/world/entity/ExperienceOrb", "net/minecraft/world/entity/item/ItemEntity");
+		} else {
+			map.put("net/minecraft/class_10022", "net/minecraft/class_10039");
+			map.put("net/minecraft/class_902", "net/minecraft/class_916");
+			map.put("net/minecraft/class_1303", "net/minecraft/class_1542");
+		}
+		java.util.function.UnaryOperator<String> sw = v -> {
+			if (v == null) return null;
+			for (var e : map.entrySet()) v = v.replace(e.getKey() + ";", e.getValue() + ";").replace(e.getKey() + ".", e.getValue() + ".");
+			if (!official) {
+				// EntityRenderer.render / updateRenderState in intermediary (yarn: method_3936, method_62354)
+				v = v.replace("method_3966(", "method_3936(").replace("method_62434(", "method_62354(");
+			}
+			String exact = map.get(v);
+			return exact != null ? exact : v;
+		};
+		ClassNode cn = new ClassNode();
+		new ClassReader(xpMixin).accept(cn, 0);
+		cn.name = ITEM_SIZE_MIXIN;
+		cn.sourceFile = "ItemSizeMixin.java";
+		cn.visibleAnnotations = remapAnnotations(cn.visibleAnnotations, sw);
+		cn.invisibleAnnotations = remapAnnotations(cn.invisibleAnnotations, sw);
+		int hooks = 0;
+		for (MethodNode m : cn.methods) {
+			m.desc = sw.apply(m.desc);
+			m.signature = sw.apply(m.signature);
+			m.visibleAnnotations = remapAnnotations(m.visibleAnnotations, sw);
+			m.invisibleAnnotations = remapAnnotations(m.invisibleAnnotations, sw);
+			if (m.localVariables != null) for (var lv : m.localVariables) lv.desc = sw.apply(lv.desc);
+			for (AbstractInsnNode in : m.instructions) {
+				if (in instanceof MethodInsnNode mi) {
+					if (mi.owner.startsWith("net/visualclient/modules/") && mi.getOpcode() == INVOKESTATIC) {
+						mi.owner = ITEM_SIZE;
+						mi.name = mi.name.contains("capture") ? "captureState" : "scale";
+						mi.desc = "(Ljava/lang/Object;Ljava/lang/Object;)V";
+						hooks++;
+					} else {
+						mi.owner = sw.apply(mi.owner);
+						mi.desc = sw.apply(mi.desc);
+					}
+				} else if (in instanceof TypeInsnNode ti) {
+					ti.desc = sw.apply(ti.desc);
+				} else if (in instanceof FieldInsnNode fi) {
+					fi.owner = sw.apply(fi.owner);
+					fi.desc = sw.apply(fi.desc);
+				}
+			}
+		}
+		if (hooks != 2) throw new IllegalStateException("XpOrbRendererMixin: expected 2 hooks, found " + hooks);
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	static List<AnnotationNode> remapAnnotations(List<AnnotationNode> list, java.util.function.UnaryOperator<String> sw) {
+		if (list == null) return null;
+		for (AnnotationNode a : list) a.values = remapValues(a.values, sw);
+		return list;
+	}
+
+	@SuppressWarnings("unchecked")
+	static List<Object> remapValues(List<Object> values, java.util.function.UnaryOperator<String> sw) {
+		if (values == null) return null;
+		List<Object> out = new ArrayList<>();
+		for (Object v : values) out.add(remapValue(v, sw));
+		return out;
+	}
+
+	@SuppressWarnings("unchecked")
+	static Object remapValue(Object v, java.util.function.UnaryOperator<String> sw) {
+		if (v instanceof String s) return sw.apply(s);
+		if (v instanceof Type t) return t.getSort() == Type.OBJECT ? Type.getObjectType(sw.apply(t.getInternalName())) : t;
+		if (v instanceof AnnotationNode a) { a.values = remapValues(a.values, sw); return a; }
+		if (v instanceof List<?> l) return remapValues((List<Object>) l, sw);
+		return v;
+	}
+
 	/** Adds a mixin class name to the "client" list of visualclient.mixins.json (once). */
 	static byte[] addMixin(byte[] json, String mixin) {
 		String s = new String(json, StandardCharsets.UTF_8);
@@ -637,6 +732,7 @@ public class Patcher implements Opcodes {
 		Map<String, byte[]> add = new TreeMap<>(extraClasses);
 		add.put(NO_POP_MIXIN + ".class", noPopMixin(official));
 		Map<String, byte[]> entries = readJar(jar);
+		add.put(ITEM_SIZE_MIXIN + ".class", itemSizeMixin(entries.get(XP_ORB_MIXIN + ".class"), official));
 		add.put(NEW_SCREEN + ".class", newGuiScreen(entries.get(GUI_SCREEN + ".class"), entries.get(COMPAT + ".class"),
 			entries.get(GUI_OPENER + ".class")));
 		byte[] result = rewriteJar(jar, (name, data) -> {
@@ -669,7 +765,7 @@ public class Patcher implements Opcodes {
 				return setVersion(data, version);
 			}
 			if (name.equals("visualclient.mixins.json")) {
-				return addMixin(data, "NoPopAnimationMixin");
+				return addMixin(addMixin(data, "NoPopAnimationMixin"), "ItemSizeMixin");
 			}
 			return data;
 		}, add);

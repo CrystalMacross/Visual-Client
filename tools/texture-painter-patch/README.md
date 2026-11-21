@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> ... -> 1.17.0 -> 1.18.0)
+# Visual Client patches (1.12.0 -> ... -> 1.18.0 -> 1.19.0)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -26,6 +26,11 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
   realistic lighting since 1.18.0): `resources/assets/minecraft/textures/gui/title/background/panorama_*.png`
   (rendered with `tools/sakura-panorama`), stored once in the bundle jar.
 
+* **Item Size** (1.19.0, category Extra): size of dropped items on the ground, one size for all
+  plus "Per item" overrides (`diamond=2, totem_of_undying=3`). `ItemSizeMixin` is generated per build
+  from the mod's `XpOrbRendererMixin` (renderer state capture + scale at the start of submit/render),
+  retargeted to `ItemEntityRenderer` (intermediary `class_916.method_62354/method_3936` on 1.21.x).
+
 * **New menu UI** (1.18.0): `GUI Style → UI: Old / New` (default New). `GuiOpener.open()` returns
   the generated `NewGuiScreen` when New is selected; the sidebar of the new menu has an "Old UI"
   button. Switching the setting while a menu is open reopens it in the chosen style.
@@ -39,7 +44,7 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
     (26.x) names both work.
 
 ```
-tools/texture-painter-patch/patch.sh visual-client-1.17.0.jar visual-client-1.18.0.jar 1.18.0
+tools/texture-painter-patch/patch.sh visual-client-1.18.0.jar visual-client-1.19.0.jar 1.19.0
 ```
 Steps that are already in the input jar are skipped.
 

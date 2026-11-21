@@ -85,6 +85,7 @@ public final class ConfigsModule extends ClientModule {
 		List<ClientModule> list = new ArrayList<>(modules.length + 1);
 		for (Object m : modules) list.add((ClientModule) m);
 		list.add(net.visualclient.modules.extra.NoExplosionParticlesModule.INSTANCE);
+		list.add(net.visualclient.modules.extra.ItemSizeModule.INSTANCE);
 		list.add(INSTANCE);
 		return Collections.unmodifiableList(list);
 	}
