@@ -12,7 +12,6 @@ import net.visualclient.modules.combat.ArmorHudModule;
 import net.visualclient.modules.combat.DamageTintModule;
 import net.visualclient.modules.combat.PotionHudModule;
 import net.visualclient.modules.combat.TotemCounterModule;
-import net.visualclient.modules.misc.DiscordRpcModule;
 import net.visualclient.modules.misc.FpsModule;
 import net.visualclient.modules.misc.PingModule;
 import net.visualclient.modules.misc.ThemeModule;
@@ -48,7 +47,6 @@ public final class Modules {
 			// Misc
 			new FpsModule(),
 			new PingModule(),
-			DiscordRpcModule.INSTANCE,
 			ThemeModule.INSTANCE);
 
 	private static final Map<Category, List<ClientModule>> BY_CATEGORY = new EnumMap<>(Category.class);
