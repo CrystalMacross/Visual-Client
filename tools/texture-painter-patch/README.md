@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> ... -> 1.20.1 -> 1.20.2)
+# Visual Client patches (1.12.0 -> ... -> 1.20.2 -> 1.20.3)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -39,6 +39,10 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
   `ItemSizeMixin` is only an empty @Mixin on that class. Compiled against `lib/asm-*.jar` and the
   stand-in interfaces in `stubs/` (both compile-only). The editor shows whether the hook runs.
 
+* **Music HUD removed** (1.20.3): the module asked lrclib.net for song lyrics. `Modules.<clinit>` no longer
+  creates `MusicHudModule` (ConfigsModule.withConfigs skips the null), `VisualClient.onTick` no longer calls
+  `CoverArt.tick()`, and `MusicHudModule` plus the whole `net/visualclient/media/` package are left out of every build.
+
 * **New menu UI** (1.18.0): `GUI Style → UI: Old / New` (default New). `GuiOpener.open()` returns
   the generated `NewGuiScreen` when New is selected; the sidebar of the new menu has an "Old UI"
   button. Switching the setting while a menu is open reopens it in the chosen style.
@@ -52,7 +56,7 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
     (26.x) names both work.
 
 ```
-tools/texture-painter-patch/patch.sh visual-client-1.20.1.jar visual-client-1.20.2.jar 1.20.2
+tools/texture-painter-patch/patch.sh visual-client-1.20.2.jar visual-client-1.20.3.jar 1.20.3
 ```
 Steps that are already in the input jar are skipped.
 

@@ -587,6 +587,62 @@ public class Patcher implements Opcodes {
 		return v;
 	}
 
+	static final String MUSIC_HUD = "net/visualclient/modules/misc/MusicHudModule";
+
+	/** Modules.<clinit>: "new MusicHudModule()" becomes null (ConfigsModule.withConfigs skips nulls). */
+	static byte[] removeMusicHud(byte[] bytes) {
+		ClassNode cn = readClass(bytes);
+		MethodNode clinit = method(cn, "<clinit>");
+		int removed = 0;
+		for (AbstractInsnNode n = clinit.instructions.getFirst(); n != null; ) {
+			AbstractInsnNode next = n.getNext();
+			if (n instanceof TypeInsnNode t && t.getOpcode() == NEW && t.desc.equals(MUSIC_HUD)
+				&& next != null && next.getOpcode() == DUP && next.getNext() instanceof MethodInsnNode init
+				&& init.owner.equals(MUSIC_HUD) && init.name.equals("<init>") && init.desc.equals("()V")) {
+				AbstractInsnNode after = init.getNext();
+				clinit.instructions.insertBefore(n, new InsnNode(ACONST_NULL));
+				clinit.instructions.remove(init);
+				clinit.instructions.remove(next);
+				clinit.instructions.remove(n);
+				removed++;
+				n = after;
+				continue;
+			}
+			n = next;
+		}
+		for (AbstractInsnNode n : clinit.instructions) {
+			if (n instanceof TypeInsnNode t && t.desc.equals(MUSIC_HUD) || n instanceof MethodInsnNode m && m.owner.equals(MUSIC_HUD)) {
+				throw new IllegalStateException("Modules still references MusicHudModule");
+			}
+		}
+		System.out.println(removed > 0 ? "  Music HUD removed" : "  Music HUD already removed");
+		if (removed == 0) return bytes;
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
+	/** VisualClient.onTick: drop the CoverArt.tick() call (part of the removed Music HUD). */
+	static byte[] removeCoverArtTick(byte[] bytes) {
+		ClassNode cn = readClass(bytes);
+		int removed = 0;
+		for (MethodNode m : cn.methods) {
+			for (AbstractInsnNode n = m.instructions.getFirst(); n != null; ) {
+				AbstractInsnNode next = n.getNext();
+				if (n instanceof MethodInsnNode mi && mi.owner.startsWith("net/visualclient/media/")) {
+					if (mi.getOpcode() != INVOKESTATIC || !mi.desc.equals("()V")) throw new IllegalStateException("unexpected media call " + mi.name + mi.desc);
+					m.instructions.remove(n);
+					removed++;
+				}
+				n = next;
+			}
+		}
+		if (removed == 0) return bytes;
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cn.accept(cw);
+		return cw.toByteArray();
+	}
+
 	/** Registers VisualMixinPlugin in visualclient.mixins.json (once). */
 	static byte[] addPlugin(byte[] json) {
 		String s = new String(json, StandardCharsets.UTF_8);
@@ -802,7 +858,13 @@ public class Patcher implements Opcodes {
 				return patchScreen(data);
 			}
 			if (name.equals(MODULES + ".class")) {
-				return patchModules(data);
+				return removeMusicHud(patchModules(data));
+			}
+			if (name.startsWith(MUSIC_HUD) || name.startsWith("net/visualclient/media/")) {
+				return null; // Music HUD removed completely (it sent song data to lrclib.net)
+			}
+			if (name.equals("net/visualclient/VisualClient.class")) {
+				return removeCoverArtTick(data);
 			}
 			if (name.equals(FPS_BOOST + ".class")) {
 				return patchFpsBoost(data);
@@ -853,6 +915,7 @@ public class Patcher implements Opcodes {
 				byte[] data = zin.readAllBytes();
 				if (!e.isDirectory()) data = fn.apply(e.getName(), data);
 				if (add.containsKey(e.getName())) data = add.get(e.getName());
+				if (data == null) continue; // entry removed
 				ZipEntry ne = new ZipEntry(e.getName());
 				ne.setTime(e.getTime());
 				zout.putNextEntry(ne);

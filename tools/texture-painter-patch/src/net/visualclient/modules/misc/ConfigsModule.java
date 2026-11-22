@@ -83,7 +83,7 @@ public final class ConfigsModule extends ClientModule {
 	/** Used by Modules: appends the modules added by the patcher (and this one) to the module list. */
 	public static List<ClientModule> withConfigs(Object[] modules) {
 		List<ClientModule> list = new ArrayList<>(modules.length + 1);
-		for (Object m : modules) list.add((ClientModule) m);
+		for (Object m : modules) if (m != null) list.add((ClientModule) m); // null = removed by the patcher (Music HUD)
 		list.add(net.visualclient.modules.extra.NoExplosionParticlesModule.INSTANCE);
 		list.add(net.visualclient.modules.extra.ItemSizeModule.INSTANCE);
 		list.add(INSTANCE);
