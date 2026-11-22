@@ -16,6 +16,17 @@ fastlaunch.install();
 let running = null;
 let starting = false;
 
+/**
+ * Log lines are shown in the launcher (and can end up in screenshots), so secrets are removed:
+ * the Minecraft access token (after --accessToken or as a JWT) and the Microsoft refresh token.
+ */
+function redact(line) {
+  return String(line)
+    .replace(/(--accessToken\s+)\S+/g, '$1<verborgen>')
+    .replace(/eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/g, '<verborgen>')
+    .replace(/M\.[CR]\d{3}_[A-Za-z0-9!*$._-]{20,}/g, '<verborgen>');
+}
+
 // The game runs independently of the launcher: it is started detached with its output going
 // to a log file (no pipes), so closing the launcher does not stop Minecraft. The running game
 // is remembered here so a reopened launcher can keep counting its play time.
@@ -154,8 +165,8 @@ async function start(instanceId, send) {
     return mc;
   };
 
-  launcher.on('debug', (line) => send('launch:log', String(line)));
-  launcher.on('data', (line) => { send('launch:log', String(line)); presence.feed(line); });
+  launcher.on('debug', (line) => send('launch:log', redact(line)));
+  launcher.on('data', (line) => { send('launch:log', redact(line)); presence.feed(line); });
   launcher.on('progress', (e) => progress({ stage: stageName(e.type), current: e.task, total: e.total }));
   launcher.on('download-status', () => {});
 
