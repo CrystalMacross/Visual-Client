@@ -1,4 +1,4 @@
-# Visual Client patches (1.12.0 -> ... -> 1.20.2 -> 1.20.3)
+# Visual Client patches (1.12.0 -> ... -> 1.20.3 -> 1.20.4)
 
 The 1.12.x source of the Texture Painter is not in this repository, so these features
 are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM):
@@ -42,6 +42,20 @@ are added to the released bundle jar with a bytecode patch (JDK 21 built-in ASM)
 * **Music HUD removed** (1.20.3): the module asked lrclib.net for song lyrics. `Modules.<clinit>` no longer
   creates `MusicHudModule` (ConfigsModule.withConfigs skips the null), `VisualClient.onTick` no longer calls
   `CoverArt.tick()`, and `MusicHudModule` plus the whole `net/visualclient/media/` package are left out of every build.
+
+* **Armor HUD in hotbar slots** (1.20.4): the armor sits in hotbar slots drawn with the game's own
+  `hud/hotbar` sprite (resource packs restyle it too), each piece with the vanilla durability bar
+  (`renderItemDecorations`), and an empty slot shows the inventory's `container/slot/<piece>` sprite.
+  The old look (Vertical/Horizontal layout, percent/value text, thin bars, background box) is gone;
+  only "Show held items" is left. This is not a Patcher step: `ArmorHudModule` was recompiled for each
+  of the 8 builds against that Minecraft version plus the 1.20.3 build of the bundle, and only that
+  class was swapped in (everything else is byte-identical to 1.20.3). Sources in `armor-hud/`:
+  intermediary names for 1.21.6+ (`blitSprite` = `method_70846` / `method_52706` with
+  `RenderPipelines.GUI_TEXTURED`) and for 1.21.4/1.21.5 (`method_52708` / `method_52706` with
+  `RenderType::guiTextured`); the 26.x builds come from the 1.21.6+ file via ToMojang + the rename26
+  rules (plus `method_70846` / `method_52706` -> `blitSprite`). LinkCheck OK for 1.21.4 - 1.21.11 and
+  26.1 - 26.3; Fabric loader test OK on 1.21.4, 1.21.11 and 26.1. Readable version:
+  `src/main/java/net/visualclient/modules/combat/ArmorHudModule.java`.
 
 * **New menu UI** (1.18.0): `GUI Style → UI: Old / New` (default New). `GuiOpener.open()` returns
   the generated `NewGuiScreen` when New is selected; the sidebar of the new menu has an "Old UI"

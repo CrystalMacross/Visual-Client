@@ -1,79 +1,60 @@
 package net.visualclient.modules.combat;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.resources.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.player.LocalPlayer;
 import net.visualclient.core.Category;
 import net.visualclient.core.setting.BoolSetting;
-import net.visualclient.core.setting.ModeSetting;
 import net.visualclient.hud.HudModule;
-import net.visualclient.render.Render2D;
-import net.visualclient.util.ColorUtil;
 
 /**
- * Shows the armor you wear (and optionally what is in your hands) with its durability.
- * The texts are built once per tick, so drawing a frame allocates nothing.
+ * Armor HUD (1.20.4): the armor pieces sit in hotbar slots drawn with the game's own hotbar
+ * texture, so resource packs restyle it too. Each piece shows the vanilla durability bar;
+ * an empty slot shows the faint armor outline of the inventory.
  */
 public final class ArmorHudModule extends HudModule {
-	private final ModeSetting layout = add(new ModeSetting("Layout", "Vertical", "Vertical", "Horizontal"));
-	private final ModeSetting durability = add(new ModeSetting("Durability", "Percent", "Percent", "Value", "Off"));
-	private final BoolSetting bars = add(new BoolSetting("Durability bars", true));
-	private final BoolSetting hands = add(new BoolSetting("Show held items", false));
-
+	private static final Identifier HOTBAR = Identifier.withDefaultNamespace("hud/hotbar");
+	private static final Identifier[] EMPTY_SLOT = new Identifier[]{
+		Identifier.withDefaultNamespace("container/slot/helmet"),
+		Identifier.withDefaultNamespace("container/slot/chestplate"),
+		Identifier.withDefaultNamespace("container/slot/leggings"),
+		Identifier.withDefaultNamespace("container/slot/boots"),
+		null,
+		Identifier.withDefaultNamespace("container/slot/shield")
+	};
+	private final BoolSetting hands = this.add(new BoolSetting("Show held items", false));
 	private final ItemStack[] stacks = new ItemStack[6];
-	private final String[] labels = new String[6];
-	private final float[] fractions = new float[6];
-
 	private ItemStack[] preview;
-	private final String[] previewLabels = new String[6];
-	private final float[] previewFractions = new float[6];
 
 	public ArmorHudModule() {
-		super("Armor HUD", "Shows your armor pieces and how much durability is left.", Category.COMBAT);
-		for (int i = 0; i < stacks.length; i++) {
-			stacks[i] = ItemStack.EMPTY;
-			fractions[i] = 1f;
+		super("Armor HUD", "Shows your armor in hotbar slots with the durability bar of each piece.", Category.COMBAT);
+
+		for (int i = 0; i < this.stacks.length; i++) {
+			this.stacks[i] = ItemStack.EMPTY;
 		}
-		defaultEnabled(true);
-		commonSettings();
+
+		this.defaultEnabled(true);
+		this.commonSettings();
 	}
 
 	@Override
 	protected void tick() {
 		LocalPlayer p = Minecraft.getInstance().player;
-		if (p == null) {
-			return;
+		if (p != null) {
+			this.stacks[0] = p.getItemBySlot(EquipmentSlot.HEAD);
+			this.stacks[1] = p.getItemBySlot(EquipmentSlot.CHEST);
+			this.stacks[2] = p.getItemBySlot(EquipmentSlot.LEGS);
+			this.stacks[3] = p.getItemBySlot(EquipmentSlot.FEET);
+			this.stacks[4] = p.getMainHandItem();
+			this.stacks[5] = p.getOffhandItem();
 		}
-		stacks[0] = p.getItemBySlot(EquipmentSlot.HEAD);
-		stacks[1] = p.getItemBySlot(EquipmentSlot.CHEST);
-		stacks[2] = p.getItemBySlot(EquipmentSlot.LEGS);
-		stacks[3] = p.getItemBySlot(EquipmentSlot.FEET);
-		stacks[4] = p.getMainHandItem();
-		stacks[5] = p.getOffhandItem();
-		for (int i = 0; i < stacks.length; i++) {
-			describe(stacks[i], labels, fractions, i);
-		}
-	}
-
-	/** Works out the durability fraction and the text for one stack. */
-	private void describe(ItemStack stack, String[] outLabels, float[] outFractions, int i) {
-		float fraction = 1f;
-		String label = null;
-		if (stack != null && stack.isDamageableItem()) {
-			int max = stack.getMaxDamage();
-			int left = max - stack.getDamageValue();
-			fraction = max <= 0 ? 1f : Math.max(0f, Math.min(1f, left / (float) max));
-			if (!durability.is("Off")) {
-				label = durability.is("Percent") ? Math.round(fraction * 100f) + "%" : Integer.toString(left);
-			}
-		}
-		outLabels[i] = label;
-		outFractions[i] = fraction;
 	}
 
 	@Override
@@ -83,18 +64,23 @@ public final class ArmorHudModule extends HudModule {
 
 	@Override
 	protected int defaultY(int sw, int sh) {
-		return sh / 2 - 40;
+		return sh / 2 - 11;
 	}
 
+	/** Shown in the HUD editor while you wear nothing: a worn helmet, an empty chest slot, new leggings, used boots. */
 	private ItemStack[] demoStacks() {
-		if (preview == null) {
-			preview = new ItemStack[] {
-					damaged(Items.NETHERITE_HELMET, 60), damaged(Items.NETHERITE_CHESTPLATE, 180),
-					damaged(Items.NETHERITE_LEGGINGS, 300), damaged(Items.NETHERITE_BOOTS, 40),
-					ItemStack.EMPTY, ItemStack.EMPTY
+		if (this.preview == null) {
+			this.preview = new ItemStack[]{
+				damaged(Items.NETHERITE_HELMET, 380),
+				ItemStack.EMPTY,
+				damaged(Items.NETHERITE_LEGGINGS, 0),
+				damaged(Items.NETHERITE_BOOTS, 120),
+				ItemStack.EMPTY,
+				ItemStack.EMPTY
 			};
 		}
-		return preview;
+
+		return this.preview;
 	}
 
 	private static ItemStack damaged(Item item, int damage) {
@@ -105,84 +91,54 @@ public final class ArmorHudModule extends HudModule {
 
 	@Override
 	protected void renderContent(GuiGraphics g, Minecraft mc, boolean editing) {
-		ItemStack[] source = stacks;
-		String[] text = labels;
-		float[] fraction = fractions;
-		if (editing) {
-			boolean any = false;
-			for (int i = 0; i < 4; i++) {
-				any |= !stacks[i].isEmpty();
-			}
-			if (!any) {
-				source = demoStacks();
-				for (int i = 0; i < source.length; i++) {
-					describe(source[i], previewLabels, previewFractions, i);
-				}
-				text = previewLabels;
-				fraction = previewFractions;
-			}
+		int slots = this.hands.on() ? 6 : 4;
+		ItemStack[] source = this.stacks;
+		boolean any = false;
+
+		for (int i = 0; i < slots; i++) {
+			any |= !source[i].isEmpty();
 		}
-		int limit = hands.on() ? 6 : 4;
-		int shown = 0;
-		for (int i = 0; i < limit; i++) {
-			if (!source[i].isEmpty()) {
-				shown++;
-			}
+
+		if (!any && editing) {
+			source = this.demoStacks();
+			any = true;
 		}
-		if (shown == 0) {
-			contentWidth = 0;
-			contentHeight = 0;
+
+		if (!any) {
+			this.contentWidth = 0;
+			this.contentHeight = 0;
 			return;
 		}
+
+		// hotbar texture (182 x 22): 1 px border, then one 20 px cell per slot, then the 1 px right border
+		int cells = 1 + slots * 20;
+		this.contentWidth = cells + 1;
+		this.contentHeight = 22;
+		sprite(g, HOTBAR, 182, 22, 0, 0, 0, 0, cells, 22);
+		sprite(g, HOTBAR, 182, 22, 181, 0, cells, 0, 1, 22);
 		Font font = mc.font;
-		boolean vertical = layout.is("Vertical");
-		boolean showText = !durability.is("Off");
-		int rowH = 20;
-		int textW = 0;
-		if (showText) {
-			textW = durability.is("Percent") ? font.width("100%") : font.width("2031");
-		}
-		int cellW = vertical ? 8 + 16 + (showText ? 5 + textW : 0) + 5 : 8 + Math.max(16, textW) + 4;
-		int cellH = vertical ? rowH : 16 + (showText ? 11 : 0) + 8;
-		int w = vertical ? cellW : cellW * shown - (shown > 0 ? 4 : 0) + 4;
-		int h = vertical ? rowH * shown + 4 : cellH;
-		contentWidth = w;
-		contentHeight = h;
-		box(g, w, h);
-		int index = 0;
-		for (int i = 0; i < limit; i++) {
+
+		for (int i = 0; i < slots; i++) {
+			int x = 3 + i * 20;
 			ItemStack stack = source[i];
 			if (stack.isEmpty()) {
-				continue;
-			}
-			int cx = vertical ? 7 : 6 + index * cellW;
-			int cy = vertical ? 4 + index * rowH : 4;
-			g.renderItem(stack, cx, cy);
-			if (!stack.isDamageableItem() && stack.getCount() > 1) {
-				g.renderItemDecorations(font, stack, cx, cy);
-			}
-			float f = fraction[i];
-			int color = ColorUtil.hsv(f * 0.33f, 0.72f, 1f);
-			String label = text[i];
-			boolean bar = bars.on() && stack.isDamageableItem();
-			if (vertical) {
-				if (label != null) {
-					Render2D.text(g, font, label, cx + 16 + 5, cy + 4, color);
-				}
-				if (bar) {
-					Render2D.rect(g, cx, cy + 17, 16, 1, 0x66000000);
-					Render2D.rect(g, cx, cy + 17, Math.max(1, Math.round(16 * f)), 1, color);
+				if (EMPTY_SLOT[i] != null) {
+					sprite(g, EMPTY_SLOT[i], x, 3, 16, 16);
 				}
 			} else {
-				if (label != null) {
-					Render2D.textCenter(g, font, label, cx + 8, cy + 17, color);
-				}
-				if (bar) {
-					Render2D.rect(g, cx, cy + 16, 16, 1, 0x66000000);
-					Render2D.rect(g, cx, cy + 16, Math.max(1, Math.round(16 * f)), 1, color);
-				}
+				g.renderItem(stack, x, 3);
+				g.renderItemDecorations(font, stack, x, 3);
 			}
-			index++;
 		}
+	}
+
+	/** A section of a GUI sprite (GuiGraphics.blitSprite with texture size and offset). */
+	private static void sprite(GuiGraphics g, Identifier id, int texW, int texH, int u, int v, int x, int y, int w, int h) {
+		g.blitSprite(RenderPipelines.GUI_TEXTURED, id, texW, texH, u, v, x, y, w, h);
+	}
+
+	/** A whole GUI sprite (GuiGraphics.blitSprite). */
+	private static void sprite(GuiGraphics g, Identifier id, int x, int y, int w, int h) {
+		g.blitSprite(RenderPipelines.GUI_TEXTURED, id, x, y, w, h);
 	}
 }
