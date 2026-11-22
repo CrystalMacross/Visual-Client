@@ -39,12 +39,29 @@ class DeviceCard(Card):
         t.setStyleSheet("font-weight: 650; font-size: 10.5pt;")
         col.addWidget(t)
         leds = sum(dev.zones[z].led_count for z in zones)
-        col.addWidget(label(" · ".join(x for x in (dev.vendor, dev.type_name, f"{leds} LEDs") if x), "faint"))
+        extra = "" if dev.per_led else "nur eine Farbe gleichzeitig"
+        col.addWidget(label(" · ".join(x for x in (dev.vendor, dev.type_name, f"{leds} LEDs", extra) if x), "faint"))
         head.addLayout(col, 1)
         self.lay.addLayout(head)
 
+        # ARGB-Anschlüsse mit 0 LEDs: deutlich anzeigen, sonst leuchtet dort nie etwas
+        for z in zones:
+            zone = dev.zones[z]
+            if zone.resizable:
+                row = QHBoxLayout()
+                txt = (f"„{zone.name}“: LED-Anzahl ist 0 – angeschlossene Lüfter/Streifen leuchten erst nach dem "
+                       "Festlegen." if zone.led_count == 0 else f"„{zone.name}“: {zone.led_count} LEDs eingestellt.")
+                lb = label(txt, "" if zone.led_count == 0 else "faint", wrap=True)
+                if zone.led_count == 0:
+                    lb.setStyleSheet("color: #FFB020;")
+                row.addWidget(lb, 1)
+                b = button("LEDs festlegen", "primary" if zone.led_count == 0 else "ghost")
+                b.clicked.connect(lambda _=False, z=z: self._ask_size(z))
+                row.addWidget(b)
+                self.lay.addLayout(row)
+
         self.zone_buttons: dict[int, QPushButton] = {}
-        if len(zones) > 1 or any(dev.zones[z].resizable or dev.zones[z].led_count == 0 for z in zones):
+        if len(zones) > 1:
             zl = QHBoxLayout()
             zl.setSpacing(6)
             for z in zones:
@@ -91,11 +108,18 @@ class DeviceCard(Card):
         act = m.addAction("LED-Anzahl festlegen …")
         act.setEnabled(zone.resizable)
         if m.exec(b.mapToGlobal(pos)) == act:
-            n, ok = QInputDialog.getInt(self, "LED-Anzahl", f"Wie viele LEDs hängen an „{zone.name}“?\n"
-                                        "(z. B. 3 Lüfter × 16 LEDs = 48)", max(zone.led_count, zone.leds_min),
-                                        zone.leds_min, zone.leds_max)
-            if ok:
-                self.resizeRequested.emit(self.dev.index, z, n)
+            self._ask_size(z)
+
+    def _ask_size(self, z):
+        zone = self.dev.zones[z]
+        default = zone.led_count or min(zone.leds_max, max(zone.leds_min, 48))
+        n, ok = QInputDialog.getInt(self, "LED-Anzahl", f"Wie viele LEDs hängen an „{zone.name}“?\n\n"
+                                    "Typisch: ein ARGB-Lüfter hat 8–24 LEDs (oft 16).\n"
+                                    "Beispiel: 3 Lüfter × 16 LEDs = 48.\n"
+                                    "Zu viele schadet nicht – zu wenige lassen LEDs dunkel.",
+                                    default, max(1, zone.leds_min), zone.leds_max)
+        if ok:
+            self.resizeRequested.emit(self.dev.index, z, n)
 
     def disabled_zones(self) -> set[int]:
         return {z for z, b in self.zone_buttons.items() if not b.isChecked()}

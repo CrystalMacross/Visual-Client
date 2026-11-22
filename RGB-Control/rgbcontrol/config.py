@@ -25,8 +25,8 @@ class Settings:
     start_minimized: bool = False
     minimize_to_tray: bool = True
     restore_last_on_start: bool = True
-    demo_mode: bool = False
     read_aio_sensors: bool = True
+    zone_sizes: dict = field(default_factory=dict)   # "Gerät|Ort|Zone" -> LED-Anzahl
     last_state: dict = field(default_factory=dict)
 
     @classmethod

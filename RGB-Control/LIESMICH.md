@@ -22,7 +22,9 @@ du auch im Gerät speichern.
 Werkzeuge: **Andere Apps** findet iCUE, Armoury Crate, Mystic Light & Co. und beendet bzw.
 deinstalliert sie · **Hardware-Scan** · **Profile** · **Einstellungen** (Autostart, Tray …).
 
-Ohne Hardware ausprobieren: Einstellungen → **Demo-Modus**, oder `python main.py --demo`.
+**Leuchtet nichts?** Einstellungen → **Diagnose**: „Testblitz“ lässt alle erkannten Geräte 2 Sekunden rot
+leuchten. Die Diagnose zeigt zudem Verbindung, Adminrechte, PawnIO-Treiber und Fehler pro Gerät. Die
+Logdatei liegt in `%APPDATA%\RGBControl\rgbcontrol.log` (OpenRGB-Ausgabe: `openrgb.log`).
 
 ## Woher die Daten kommen
 
@@ -47,14 +49,17 @@ einem Windows-Rechner von GitHub. Er bindet LibreHardwareMonitor ein, führt all
 
 **Lokal:** Python 3.10+ und das .NET SDK 8 installieren, dann `build_exe.bat` doppelklicken.
 
-**OpenRGB dazulegen:** Die Windows-Version von https://openrgb.org/releases.html entpacken, sodass
-`OpenRGB\OpenRGB.exe` neben `RGBControl.exe` liegt. Alternativ OpenRGB installieren oder im
-Workflow die Variable `OPENRGB_ZIP_URL` setzen.
+Der GitHub-Build legt **OpenRGB** (Ordner `OpenRGB`) und den **PawnIO-Installer** (Ordner `drivers`)
+automatisch dazu. Immer die komplette ZIP entpacken, nicht nur die .exe kopieren. Beim lokalen Bauen
+OpenRGB selbst von https://openrgb.org/releases.html entpacken, sodass `OpenRGB\OpenRGB.exe` neben
+`RGBControl.exe` liegt.
 
 ## Wichtig für beste Ergebnisse
 
 - **Als Administrator starten.** Die .exe fragt automatisch danach. Ohne Adminrechte fehlen RAM, Mainboard und Temperaturen.
-- **Andere RGB-Programme beenden oder deinstallieren** (Seite „Andere Apps“), sonst flackert es.
+- **PawnIO installieren** (Knopf in der App). Ohne PawnIO findet OpenRGB keine RAM- und Mainboard-Beleuchtung, und die CPU-Temperatur fehlt. Danach den PC neu starten.
+- **Andere RGB-Programme beenden oder deinstallieren** (Seite „Andere Apps“). Sonst überschreiben sie die Farben.
+- **ARGB-Lüfter am Mainboard:** Auf der Seite *Fans* bei Anschlüssen mit „0 LEDs“ auf **LEDs festlegen** klicken. Die App merkt sich die Anzahl.
 - Einige AIOs werden gleichzeitig von OpenRGB (RGB) und LibreHardwareMonitor (Sensoren) angesprochen. Bei Problemen: Einstellungen → „Wasserkühlung direkt auslesen“ ausschalten.
 
 Einstellungen und Profile liegen in `%APPDATA%\RGBControl`.

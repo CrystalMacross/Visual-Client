@@ -264,11 +264,38 @@ class SettingsPage(QWidget):
     reconnectRequested = Signal()
     changed = Signal()
     adminRequested = Signal()
+    flashRequested = Signal()
+    logRequested = Signal()
+    diagRequested = Signal()
+    restartOpenrgbRequested = Signal()
+    pawnioRequested = Signal()
 
     def __init__(self, settings, parent=None):
         super().__init__(parent)
         self.s = settings
         lay = page_body(self)
+
+        diag = Card(accent=WARN)
+        diag.lay.addWidget(label("Diagnose – leuchtet nichts?", "h2"))
+        diag.lay.addWidget(label("„Testblitz“ lässt alle erkannten Geräte 2 Sekunden rot leuchten. Leuchtet dabei "
+                                 "etwas, funktioniert die Verbindung. Leuchtet nichts, steht der Grund meist unten "
+                                 "(Admin, PawnIO, andere RGB-Programme).", "faint", wrap=True))
+        self.diag_text = label("", "muted", wrap=True)
+        self.diag_text.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.diag_text.setStyleSheet("font-family: Consolas, 'Cascadia Mono', monospace; font-size: 9pt;")
+        diag.lay.addWidget(self.diag_text)
+        drow = QHBoxLayout()
+        for text, sig, obj, ic in (("Testblitz", self.flashRequested, "primary", "bolt"),
+                                   ("Aktualisieren", self.diagRequested, "ghost", "refresh"),
+                                   ("OpenRGB neu starten", self.restartOpenrgbRequested, "ghost", "power"),
+                                   ("PawnIO installieren", self.pawnioRequested, "ghost", "shield"),
+                                   ("Log-Ordner öffnen", self.logRequested, "ghost", "")):
+            b = button(text, obj, ic)
+            b.clicked.connect(sig.emit)
+            drow.addWidget(b)
+        drow.addStretch()
+        diag.lay.addLayout(drow)
+        lay.addWidget(diag)
 
         gen = Card()
         gen.lay.addWidget(label("Allgemein", "h2"))
@@ -311,8 +338,6 @@ class SettingsPage(QWidget):
         self.port.setRange(1, 65535)
         f.addRow("Host", self.host)
         f.addRow("Port", self.port)
-        self.c_demo = QCheckBox("Demo-Modus (simulierte Geräte, zum Ausprobieren ohne Hardware)")
-        f.addRow(self.c_demo)
         con.lay.addLayout(f)
         brow = QHBoxLayout()
         b_re = button("Neu verbinden", "primary", "refresh")
@@ -335,6 +360,9 @@ class SettingsPage(QWidget):
         for c in (self.c_autostart, self.c_min, self.c_tray, self.c_restore, self.c_openrgb, self.c_aio):
             c.toggled.connect(self._store)
 
+    def set_diagnostics(self, text: str):
+        self.diag_text.setText(text)
+
     def load(self):
         s = self.s
         try:
@@ -344,7 +372,7 @@ class SettingsPage(QWidget):
             auto = False
         for w, v in ((self.c_autostart, auto), (self.c_min, s.start_minimized), (self.c_tray, s.minimize_to_tray),
                      (self.c_restore, s.restore_last_on_start), (self.c_openrgb, s.autostart_openrgb),
-                     (self.c_demo, s.demo_mode), (self.c_aio, s.read_aio_sensors)):
+                     (self.c_aio, s.read_aio_sensors)):
             w.blockSignals(True)
             w.setChecked(v)
             w.blockSignals(False)
@@ -364,7 +392,6 @@ class SettingsPage(QWidget):
         s.minimize_to_tray = self.c_tray.isChecked()
         s.restore_last_on_start = self.c_restore.isChecked()
         s.autostart_openrgb = self.c_openrgb.isChecked()
-        s.demo_mode = self.c_demo.isChecked()
         s.read_aio_sensors = self.c_aio.isChecked()
         s.openrgb_path = self.path.text().strip()
         s.host = self.host.text().strip() or "127.0.0.1"

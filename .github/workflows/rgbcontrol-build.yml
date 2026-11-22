@@ -66,7 +66,45 @@ jobs:
           --collect-all pythonnet --collect-all clr_loader --hidden-import clr
           main.py
 
-      - name: Self-test of the built EXE (Sensoren, Akku, Oberflaeche)
+      - name: Download OpenRGB (Hardware-Treiber, Pflicht)
+        shell: pwsh
+        env:
+          OPENRGB_ZIP_URL: ${{ vars.OPENRGB_ZIP_URL }}
+        run: |
+          $url = $env:OPENRGB_ZIP_URL
+          if (-not $url) {
+            $rel = Invoke-RestMethod -Uri "https://codeberg.org/api/v1/repos/OpenRGB/OpenRGB/releases/latest" -Headers @{ "User-Agent" = "rgbcontrol-build" }
+            Write-Host "OpenRGB-Release: $($rel.tag_name)"
+            $rel.assets | ForEach-Object { Write-Host "  Asset: $($_.name)" }
+            $asset = $rel.assets | Where-Object { $_.name -match 'Windows' -and $_.name -match '64' -and $_.name -notmatch 'arm|32' -and $_.name -match '\.zip$' } | Select-Object -First 1
+            if ($asset) { $url = $asset.browser_download_url }
+            else {
+              $m = [regex]::Matches($rel.body, 'https?://[^\s\)\]"]+Windows[^\s\)\]"]*64[^\s\)\]"]*\.zip')
+              if ($m.Count -gt 0) { $url = $m[0].Value }
+            }
+          }
+          if (-not $url) { throw "Keine Windows-64-ZIP von OpenRGB gefunden - Repo-Variable OPENRGB_ZIP_URL setzen" }
+          Write-Host "Lade OpenRGB: $url"
+          Invoke-WebRequest -Uri $url -OutFile openrgb.zip -Headers @{ "User-Agent" = "rgbcontrol-build" }
+          Expand-Archive -Path openrgb.zip -DestinationPath openrgb_tmp -Force
+          $exe = Get-ChildItem -Path openrgb_tmp -Recurse -Filter OpenRGB.exe | Select-Object -First 1
+          if (-not $exe) { throw "OpenRGB.exe nicht im ZIP gefunden" }
+          New-Item -ItemType Directory -Force -Path dist\RGBControl\OpenRGB | Out-Null
+          Copy-Item -Path "$($exe.DirectoryName)\*" -Destination dist\RGBControl\OpenRGB -Recurse -Force
+          Get-ChildItem dist\RGBControl\OpenRGB | Select-Object -First 15 | Format-Table Name, Length
+
+      - name: Download PawnIO installer (Treiber fuer RAM/Mainboard/CPU-Temperatur, optional)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $rel = Invoke-RestMethod -Uri "https://api.github.com/repos/namazso/PawnIO.Setup/releases/latest" -Headers @{ "User-Agent" = "rgbcontrol-build" }
+          $asset = $rel.assets | Where-Object { $_.name -match '\.exe$' } | Select-Object -First 1
+          if (-not $asset) { Write-Host "Kein PawnIO-Installer gefunden"; exit 0 }
+          New-Item -ItemType Directory -Force -Path dist\RGBControl\drivers | Out-Null
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile dist\RGBControl\drivers\PawnIO_setup.exe
+          Write-Host "PawnIO $($rel.tag_name) beigelegt"
+
+      - name: Self-test of the built EXE (OpenRGB, Sensoren, Akku, Oberflaeche)
         shell: pwsh
         run: |
           $out = Join-Path $PWD "selftest.json"
@@ -75,27 +113,14 @@ jobs:
           Get-Content $out
           $r = Get-Content $out -Raw | ConvertFrom-Json
           if (-not $r.ok) { throw "Selbsttest fehlgeschlagen - siehe 'errors' oben" }
+          if (-not $r.openrgb.protocol) { throw "Keine SDK-Verbindung zu OpenRGB" }
+          if ($r.openrgb.devices.Count -gt 0) {
+            if ($r.openrgb.failed.Count -gt 0) { throw "Farben kamen nicht bei OpenRGB an: $($r.openrgb.failed -join '; ')" }
+            Write-Host "Ende-zu-Ende OK: Farben bei $($r.openrgb.verified.Count) OpenRGB-Testgeraeten angekommen"
+          } else { Write-Host "::warning::OpenRGB hat keine Testgeraete erzeugt - Farbweg nicht Ende-zu-Ende geprueft" }
           if ($r.sensors.source -ne "LibreHardwareMonitor") { throw "LibreHardwareMonitor wurde in der EXE nicht geladen" }
-          if ($r.ui.devices -lt 1) { throw "Oberflaeche hat im Demo-Modus keine Geraete geladen" }
-          Write-Host "Selbsttest OK: $($r.sensors.readings) Sensorwerte, UI mit $($r.ui.pages) Seiten"
-
-      - name: Add OpenRGB (optional)
-        shell: pwsh
-        # Optional: Repo-Variable OPENRGB_ZIP_URL (Settings > Secrets and variables > Actions > Variables)
-        # auf die Windows-ZIP von openrgb.org setzen, dann wird OpenRGB mitgeliefert.
-        env:
-          OPENRGB_ZIP_URL: ${{ vars.OPENRGB_ZIP_URL }}
-        run: |
-          if (-not $env:OPENRGB_ZIP_URL) {
-            Write-Host "OPENRGB_ZIP_URL nicht gesetzt - OpenRGB wird nicht mitgeliefert."
-            exit 0
-          }
-          Invoke-WebRequest -Uri $env:OPENRGB_ZIP_URL -OutFile openrgb.zip
-          Expand-Archive -Path openrgb.zip -DestinationPath openrgb_tmp -Force
-          $exe = Get-ChildItem -Path openrgb_tmp -Recurse -Filter OpenRGB.exe | Select-Object -First 1
-          if (-not $exe) { throw "OpenRGB.exe nicht im ZIP gefunden" }
-          New-Item -ItemType Directory -Force -Path dist\RGBControl\OpenRGB | Out-Null
-          Copy-Item -Path "$($exe.DirectoryName)\*" -Destination dist\RGBControl\OpenRGB -Recurse -Force
+          if (-not $r.ui.connected) { throw "Die Oberflaeche hat sich nicht mit OpenRGB verbunden: $($r.ui.connection_text)" }
+          Write-Host "Selbsttest OK: OpenRGB-SDK Protokoll $($r.openrgb.protocol), $($r.sensors.readings) Sensorwerte"
 
       - name: Package ZIP
         shell: pwsh

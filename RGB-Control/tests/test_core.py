@@ -2,9 +2,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from rgbcontrol import conflicts, hwscan  # noqa: E402
-from rgbcontrol.backend import DemoBackend  # noqa: E402
+from fakes import FakeBackend  # noqa: E402
 from rgbcontrol.colors import blend, hex_to_rgb, rgb_to_hex  # noqa: E402
 from rgbcontrol.effects import EFFECTS, EffectParams, render  # noqa: E402
 from rgbcontrol.engine import EffectEngine, build_targets  # noqa: E402
@@ -25,8 +26,8 @@ def test_all_effects_render_valid_colors():
             assert all(0 <= c <= 128 for rgb in cols for c in rgb), e.key
 
 
-def test_engine_with_demo_backend():
-    b = DemoBackend()
+def test_engine_with_fake_backend():
+    b = FakeBackend()
     b.connect()
     devs = b.list_devices()
     targets = build_targets(devs, {(d.index, z.index) for d in devs for z in d.zones})

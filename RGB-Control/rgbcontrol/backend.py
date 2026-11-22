@@ -1,18 +1,19 @@
-"""Geräte-Backends.
+"""Hardware-Anbindung über das OpenRGB-SDK.
 
-* OpenRGBBackend: spricht über das offene OpenRGB-SDK-Protokoll mit dem
-  OpenRGB-Dienst. OpenRGB enthält die eigentlichen Hardware-Treiber für
-  hunderte Geräte (Mainboards, RAM, Grafikkarten, Lüfter-Controller,
-  Tastaturen, Mäuse, LED-Streifen ...).
-* DemoBackend: simulierte Geräte, damit die Oberfläche auch ohne
-  Hardware ausprobiert werden kann.
+OpenRGB enthält die eigentlichen Treiber für hunderte Geräte (Mainboards,
+RAM, Grafikkarten, Lüfter-Controller, AIOs, Tastaturen, Mäuse ...). Diese
+App startet OpenRGB unsichtbar als Dienst und steuert es über das SDK.
 """
 from __future__ import annotations
 
+import logging
 import threading
+import time
 from dataclasses import dataclass, field
 
 from .colors import RGB
+
+log = logging.getLogger(__name__)
 
 DEVICE_TYPE_DE = {
     "MOTHERBOARD": "Mainboard", "DRAM": "Arbeitsspeicher (RAM)", "GPU": "Grafikkarte",
@@ -56,6 +57,7 @@ class LightDevice:
     zones: list[LightZone] = field(default_factory=list)
     modes: list[str] = field(default_factory=list)
     active_mode: int = 0
+    per_led: bool = True     # hat einen Modus mit Einzel-LED-Steuerung ("Direct")
 
     @property
     def type_name(self) -> str:
@@ -76,7 +78,11 @@ class LightDevice:
 
 
 class BackendError(Exception):
-    pass
+    """Schwerer Fehler: Verbindung zum Hardware-Dienst ist weg."""
+
+
+class DeviceError(BackendError):
+    """Fehler bei einem einzelnen Gerät - die anderen laufen weiter."""
 
 
 class Backend:
@@ -93,6 +99,40 @@ class Backend:
     def set_hardware_mode(self, dev: int, mode_name: str, color: RGB | None = None) -> None: ...
     def save_to_device(self, dev: int) -> None: ...
     def resize_zone(self, dev: int, zone: int, size: int) -> None: ...
+    def info(self) -> dict: return {}
+
+
+PER_LED = 1        # utils.ModeColors.PER_LED
+MODE_SPECIFIC = 2  # utils.ModeColors.MODE_SPECIFIC
+
+
+def choose_mode(modes) -> tuple[int | None, bool]:
+    """Wählt den besten Modus zum Steuern durch die App.
+
+    -> (index, per_led). Bevorzugt "Direct" (Einzel-LED, ohne Flash-Schreiben),
+    sonst irgendeinen Einzel-LED-Modus, sonst "Static" mit Modusfarbe.
+    """
+    names = [str(m.name).lower() for m in modes]
+    if "direct" in names:
+        return names.index("direct"), True
+    for i, m in enumerate(modes):
+        if int(getattr(m, "color_mode", 0)) == PER_LED:
+            return i, True
+    for wanted in ("static", "custom"):
+        if wanted in names:
+            i = names.index(wanted)
+            return i, int(getattr(modes[i], "color_mode", 0)) == PER_LED
+    for i, m in enumerate(modes):
+        if int(getattr(m, "color_mode", 0)) == MODE_SPECIFIC:
+            return i, False
+    return None, False
+
+
+def average(colors: list[RGB]) -> RGB:
+    if not colors:
+        return (0, 0, 0)
+    n = len(colors)
+    return (sum(c[0] for c in colors) // n, sum(c[1] for c in colors) // n, sum(c[2] for c in colors) // n)
 
 
 class OpenRGBBackend(Backend):
@@ -102,22 +142,40 @@ class OpenRGBBackend(Backend):
         self.host, self.port = host, port
         self._client = None
         self._lock = threading.RLock()
+        self._per_led: dict[int, bool] = {}
+        self._mode_idx: dict[int, int] = {}
+        self._last_mode_color: dict[int, tuple[RGB, float]] = {}
 
     @property
     def connected(self) -> bool:
         return self._client is not None
 
+    def info(self) -> dict:
+        c = self._client
+        if c is None:
+            return {"connected": False}
+        try:
+            proto = c.comms._protocol_version
+        except Exception:
+            proto = "?"
+        return {"connected": True, "host": self.host, "port": self.port, "protocol": proto,
+                "devices": len(c.devices)}
+
     def connect(self) -> None:
         try:
             from openrgb import OpenRGBClient
         except ImportError as e:  # pragma: no cover
-            raise BackendError("Python-Paket 'openrgb-python' fehlt (pip install openrgb-python).") from e
+            raise BackendError("Python-Paket 'openrgb-python' fehlt.") from e
         with self._lock:
             try:
                 self._client = OpenRGBClient(self.host, self.port, name="RGB Control")
+                log.info("Mit OpenRGB verbunden (%s:%s), Protokoll %s, %d Geräte", self.host, self.port,
+                         self._client.comms._protocol_version, len(self._client.devices))
             except Exception as e:
                 self._client = None
                 raise BackendError(f"Keine Verbindung zum OpenRGB-Dienst ({self.host}:{self.port}): {e}") from e
+            self._per_led.clear()
+            self._mode_idx.clear()
 
     def disconnect(self) -> None:
         with self._lock:
@@ -131,19 +189,29 @@ class OpenRGBBackend(Backend):
     def _dev(self, i: int):
         if self._client is None:
             raise BackendError("Nicht verbunden")
-        return self._client.devices[i]
+        try:
+            return self._client.devices[i]
+        except IndexError as e:
+            raise DeviceError(f"Gerät {i} existiert nicht mehr") from e
 
     def _guard(self, fn, *a):
+        from openrgb.utils import OpenRGBDisconnected
         with self._lock:
             try:
                 return fn(*a)
             except BackendError:
                 raise
-            except (ConnectionError, OSError, BrokenPipeError) as e:
+            except (OpenRGBDisconnected, ConnectionError, BrokenPipeError, TimeoutError) as e:
                 self._client = None
+                log.error("Verbindung zu OpenRGB verloren: %r", e)
+                raise BackendError(f"Verbindung zu OpenRGB verloren: {e}") from e
+            except OSError as e:
+                self._client = None
+                log.error("Socket-Fehler: %r", e)
                 raise BackendError(f"Verbindung zu OpenRGB verloren: {e}") from e
             except Exception as e:
-                raise BackendError(str(e)) from e
+                log.warning("Gerätefehler: %r", e)
+                raise DeviceError(str(e) or e.__class__.__name__) from e
 
     def list_devices(self) -> list[LightDevice]:
         def run():
@@ -151,17 +219,20 @@ class OpenRGBBackend(Backend):
                 return []
             out = []
             for i, d in enumerate(self._client.devices):
+                if d is None:
+                    continue
                 zones = []
                 for zi, z in enumerate(d.zones):
                     zd = d.data.zones[zi] if hasattr(d, "data") else None
                     zones.append(LightZone(zi, z.name, len(z.leds),
                                            getattr(zd, "leds_min", 0), getattr(zd, "leds_max", 0)))
                 md = d.metadata
+                _idx, per_led = choose_mode(d.modes)
                 out.append(LightDevice(
                     index=i, name=d.name, type_key=getattr(d.type, "name", str(d.type)),
                     vendor=getattr(md, "vendor", ""), description=getattr(md, "description", ""),
                     location=getattr(md, "location", ""), serial=getattr(md, "serial", ""),
-                    zones=zones, modes=[m.name for m in d.modes], active_mode=d.active_mode))
+                    zones=zones, modes=[m.name for m in d.modes], active_mode=d.active_mode, per_led=per_led))
             return out
         return self._guard(run)
 
@@ -170,28 +241,58 @@ class OpenRGBBackend(Backend):
             if self._client is None:
                 raise BackendError("Nicht verbunden")
             self._client.update()  # Geräteliste vom OpenRGB-Dienst neu laden
+            self._per_led.clear()
+            self._mode_idx.clear()
         self._guard(run)
         return self.list_devices()
+
+    def _send_mode(self, d, mode) -> None:
+        """Modus senden, ohne auf Bestätigung zu warten (schnell, für Effekte)."""
+        from openrgb.utils import PacketType
+        data = mode.pack(d.comms._protocol_version)
+        d.comms.send_header(d.id, PacketType.RGBCONTROLLER_UPDATEMODE, len(data))
+        d.comms.send_data(data)
 
     def prepare_direct(self, dev: int) -> None:
         def run():
             d = self._dev(dev)
-            names = [m.name.lower() for m in d.modes]
-            for wanted in ("direct", "custom", "static"):
-                if wanted in names:
-                    d.set_mode(names.index(wanted))
-                    return
-            d.set_custom_mode()
+            idx, per_led = choose_mode(d.modes)
+            if idx is None:
+                d.set_custom_mode()
+                per_led = True
+                idx = d.active_mode
+            else:
+                self._send_mode(d, d.modes[idx])
+                d.active_mode = idx
+            self._per_led[dev] = per_led
+            self._mode_idx[dev] = idx
+            log.info("Gerät %d (%s): Modus '%s', Einzel-LED=%s", dev, d.name, d.modes[idx].name, per_led)
         self._guard(run)
 
     def set_zone_colors(self, dev: int, zone: int, colors: list[RGB]) -> None:
         from openrgb.utils import RGBColor
 
         def run():
-            z = self._dev(dev).zones[zone]
-            if not colors or not z.leds:
+            d = self._dev(dev)
+            z = d.zones[zone]
+            n = len(z.leds)
+            if not colors or not n:
                 return
-            z.set_colors([RGBColor(*c) for c in colors[:len(z.leds)]], fast=True)
+            if self._per_led.get(dev, True):
+                cols = list(colors[:n]) + [colors[-1]] * max(0, n - len(colors))
+                z.set_colors([RGBColor(*c) for c in cols], fast=True)
+                return
+            # Gerät kann keine Einzel-LEDs: Modusfarbe setzen (Durchschnitt, max. 8x pro Sekunde)
+            c = average(list(colors))
+            last = self._last_mode_color.get(dev)
+            now = time.monotonic()
+            if last and (last[0] == c or now - last[1] < 0.12):
+                return
+            mode = d.modes[self._mode_idx.get(dev, d.active_mode)]
+            if getattr(mode, "colors", None):
+                mode.colors = [RGBColor(*c) for _ in mode.colors]
+                self._send_mode(d, mode)
+            self._last_mode_color[dev] = (c, now)
         self._guard(run)
 
     def set_hardware_mode(self, dev: int, mode_name: str, color: RGB | None = None) -> None:
@@ -203,9 +304,10 @@ class OpenRGBBackend(Backend):
             mode = d.modes[idx]
             if color is not None and getattr(mode, "colors", None):
                 mode.colors = [RGBColor(*color) for _ in mode.colors]
-            d.set_mode(mode)
-            if color is not None and mode.name.lower() in ("static", "direct", "custom"):
-                d.set_color(RGBColor(*color))
+            d.set_mode(mode, force=True)
+            if color is not None and int(getattr(mode, "color_mode", 0)) == PER_LED:
+                d.set_color(RGBColor(*color), fast=True)
+            self._per_led.pop(dev, None)
         self._guard(run)
 
     def save_to_device(self, dev: int) -> None:
@@ -216,57 +318,3 @@ class OpenRGBBackend(Backend):
             self._dev(dev).zones[zone].resize(size)
             self._client.update()
         self._guard(run)
-
-
-class DemoBackend(Backend):
-    """Simulierte Hardware zum Ausprobieren."""
-    name = "Demo"
-
-    def __init__(self):
-        self._connected = False
-        self.frames: dict[tuple[int, int], list[RGB]] = {}
-        self._devices = [
-            LightDevice(0, "ASUS ROG STRIX B650-A (Demo)", "MOTHERBOARD", "ASUS", location="SMBus",
-                        zones=[LightZone(0, "Aura Mainboard", 6), LightZone(1, "ARGB Header 1", 24, 0, 120)],
-                        modes=["Direct", "Static", "Breathing", "Spectrum Cycle", "Rainbow"]),
-            LightDevice(1, "G.Skill Trident Z5 RGB DIMM 1 (Demo)", "DRAM", "G.Skill", location="SMBus 0x5A",
-                        zones=[LightZone(0, "DRAM", 8)], modes=["Direct", "Static", "Breathing", "Rainbow"]),
-            LightDevice(2, "G.Skill Trident Z5 RGB DIMM 2 (Demo)", "DRAM", "G.Skill", location="SMBus 0x5B",
-                        zones=[LightZone(0, "DRAM", 8)], modes=["Direct", "Static", "Breathing", "Rainbow"]),
-            LightDevice(3, "MSI GeForce RTX 4070 Gaming X (Demo)", "GPU", "MSI", location="I2C",
-                        zones=[LightZone(0, "GPU", 12)], modes=["Direct", "Static", "Breathing", "Rainbow", "Off"]),
-            LightDevice(4, "Lian Li UNI FAN SL120 (Demo)", "COOLER", "Lian Li", location="HID",
-                        zones=[LightZone(i, f"Lüfter {i + 1}", 16) for i in range(3)],
-                        modes=["Direct", "Static", "Rainbow", "Breathing"]),
-            LightDevice(5, "Corsair K70 RGB (Demo)", "KEYBOARD", "Corsair", location="HID",
-                        zones=[LightZone(0, "Tastatur", 104)], modes=["Direct", "Static", "Wave"]),
-            LightDevice(6, "Logitech G502 X Plus (Demo)", "MOUSE", "Logitech", location="HID",
-                        zones=[LightZone(0, "Logo", 1), LightZone(1, "Lichtleiste", 8)],
-                        modes=["Direct", "Static", "Cycle", "Breathing"]),
-            LightDevice(7, "Lian Li Galahad II Trinity (Demo)", "COOLER", "Lian Li", location="HID",
-                        zones=[LightZone(0, "Pump Ring", 24), LightZone(1, "Fan 1", 16), LightZone(2, "Fan 2", 16)],
-                        modes=["Direct", "Static", "Rainbow", "Breathing"]),
-        ]
-
-    @property
-    def connected(self) -> bool:
-        return self._connected
-
-    def connect(self) -> None:
-        self._connected = True
-
-    def disconnect(self) -> None:
-        self._connected = False
-
-    def list_devices(self) -> list[LightDevice]:
-        return list(self._devices) if self._connected else []
-
-    def set_zone_colors(self, dev: int, zone: int, colors: list[RGB]) -> None:
-        n = self._devices[dev].zones[zone].led_count
-        self.frames[(dev, zone)] = list(colors[:n])
-
-    def set_hardware_mode(self, dev: int, mode_name: str, color: RGB | None = None) -> None:
-        self._devices[dev].active_mode = self._devices[dev].modes.index(mode_name)
-
-    def resize_zone(self, dev: int, zone: int, size: int) -> None:
-        self._devices[dev].zones[zone].led_count = size

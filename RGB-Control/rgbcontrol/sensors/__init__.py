@@ -161,34 +161,3 @@ class SensorHub:
         s.mice = list(self._mice)
         return s
 
-
-class DemoSensorHub(SensorHub):
-    """Simulierte Sensorwerte für den Demo-Modus (RAM ist echt)."""
-
-    def __init__(self, on_update=None):
-        super().__init__(on_update, enable_hardware=False)
-        self._t0 = time.monotonic()
-
-    def _battery_loop(self) -> None:
-        self._mice = [MouseBattery("Logitech G Pro X Superlight 2 (Demo)", 78, False, "Logitech"),
-                      MouseBattery("Razer Viper V3 Pro (Demo)", 23, True, "Razer")]
-
-    def build_snapshot(self, readings):
-        import math
-        t = time.monotonic() - self._t0
-        demo = [
-            Reading("Cpu", "AMD Ryzen 7 7800X3D (Demo)", "Temperature", "Core (Tctl/Tdie)", 52 + 9 * math.sin(t / 7)),
-            Reading("Cpu", "AMD Ryzen 7 7800X3D (Demo)", "Load", "CPU Total", 30 + 20 * math.sin(t / 5)),
-            Reading("GpuNvidia", "NVIDIA GeForce RTX 4070 (Demo)", "Temperature", "GPU Core", 61 + 6 * math.sin(t / 9)),
-            Reading("GpuNvidia", "NVIDIA GeForce RTX 4070 (Demo)", "Load", "GPU Core", 55 + 30 * math.sin(t / 6)),
-            Reading("GpuNvidia", "NVIDIA GeForce RTX 4070 (Demo)", "SmallData", "GPU Memory Used", 5200),
-            Reading("GpuNvidia", "NVIDIA GeForce RTX 4070 (Demo)", "SmallData", "GPU Memory Total", 12288),
-            Reading("Cooler", "Lian Li Galahad II (Demo)", "Temperature", "Liquid", 33.5 + 1.5 * math.sin(t / 15)),
-            Reading("Cooler", "Lian Li Galahad II (Demo)", "Fan", "Pump", 2650),
-            Reading("SuperIO", "Nuvoton (Demo)", "Fan", "Fan #1", 1180),
-            Reading("SuperIO", "Nuvoton (Demo)", "Fan", "Fan #2", 1210),
-            Reading("SuperIO", "Nuvoton (Demo)", "Fan", "Fan #3", 1195),
-        ]
-        s = super().build_snapshot(demo)
-        s.temp_source = "Demo"
-        return s

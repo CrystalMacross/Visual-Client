@@ -2,8 +2,10 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from rgbcontrol.backend import DemoBackend, LightDevice, LightZone  # noqa: E402
+from fakes import FakeBackend  # noqa: E402
+from rgbcontrol.backend import LightDevice, LightZone  # noqa: E402
 from rgbcontrol.categories import classify_zone, group_zones  # noqa: E402
 from rgbcontrol.effects import EffectParams  # noqa: E402
 from rgbcontrol.engine import EffectEngine, build_targets  # noqa: E402
@@ -31,7 +33,7 @@ def test_categories():
 
 
 def test_groups_cover_every_zone():
-    b = DemoBackend()
+    b = FakeBackend()
     b.connect()
     devs = b.list_devices()
     g = group_zones(devs)
@@ -40,7 +42,7 @@ def test_groups_cover_every_zone():
 
 
 def test_engine_groups_independent():
-    b = DemoBackend()
+    b = FakeBackend()
     b.connect()
     devs = b.list_devices()
     g = group_zones(devs)

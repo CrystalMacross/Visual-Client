@@ -1,6 +1,7 @@
 """Hauptfenster: verbindet Oberfläche, Hardware-Backend, Effekt-Engine und Sensoren."""
 from __future__ import annotations
 
+import logging
 import sys
 import time
 import webbrowser
@@ -11,11 +12,11 @@ from PySide6.QtWidgets import (QApplication, QButtonGroup, QHBoxLayout, QMainWin
                                QPushButton, QStackedWidget, QSystemTrayIcon, QVBoxLayout, QWidget)
 
 from .. import APP_NAME, APP_VERSION, config, openrgb_service as svc
-from ..backend import Backend, BackendError, DemoBackend, LightDevice, OpenRGBBackend
+from ..backend import Backend, BackendError, LightDevice, OpenRGBBackend
 from ..categories import BY_KEY, CATEGORIES, OTHER, group_zones
 from ..effects import EFFECTS_BY_KEY, EffectParams
 from ..engine import EffectEngine, build_targets
-from ..sensors import DemoSensorHub, SensorHub, Snapshot
+from ..sensors import SensorHub, Snapshot
 from . import icons
 from .async_task import run_async
 from .category_page import CategoryPage
@@ -24,6 +25,12 @@ from .dashboard import Dashboard
 from .theme import (ACCENT, BG, DANGER, FAINT, MUTED, STYLESHEET, SUCCESS, TEXT, WARN, battery_color,
                     load_color, temp_color)
 from .tools_pages import ConflictsPage, ProfilesPage, ScanPage, SettingsPage
+
+log = logging.getLogger(__name__)
+
+
+def zone_size_key(d: LightDevice, zone_name: str) -> str:
+    return f"{d.name}|{d.location}|{zone_name}"
 
 DEFAULT_STATE = {"enabled": True, "effect": "rainbow_wave",
                  "params": EffectParams((0, 120, 255), (255, 0, 160), 1.0, 1.0), "disabled": set()}
@@ -87,7 +94,7 @@ class MainWindow(QMainWindow):
     def __init__(self, settings: config.Settings, start_minimized: bool = False):
         super().__init__()
         self.settings = settings
-        self.backend: Backend = DemoBackend()
+        self.backend: Backend = OpenRGBBackend(settings.host, settings.port)
         self.devices: list[LightDevice] = []
         self.zones_by_cat: dict[str, list[tuple[int, int]]] = {}
         self.cat_states: dict[str, dict] = {c.key: self._default_state() for c in CATEGORIES + [OTHER]}
@@ -109,6 +116,11 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1080, 700)
         self.setStyleSheet(STYLESHEET)
         self._build_ui()
+
+        self._device_sig = ()
+        self._watch_count = 0
+        self.device_watch = QTimer(self)
+        self.device_watch.timeout.connect(self._watch_devices)
 
         self.preview_timer = QTimer(self)
         self.preview_timer.timeout.connect(self._update_preview)
@@ -267,6 +279,11 @@ class MainWindow(QMainWindow):
         self.settings_page.reconnectRequested.connect(self._reconnect_all)
         self.settings_page.changed.connect(self.settings.save)
         self.settings_page.adminRequested.connect(self.restart_as_admin)
+        self.settings_page.flashRequested.connect(self.flash_test)
+        self.settings_page.logRequested.connect(self.open_log_folder)
+        self.settings_page.diagRequested.connect(self.update_diagnostics)
+        self.settings_page.restartOpenrgbRequested.connect(lambda: self.connect_backend(kill_foreign=True))
+        self.settings_page.pawnioRequested.connect(self.install_pawnio)
         self.settings_page.b_admin.setVisible(sys.platform == "win32" and not svc.is_admin())
         self.show_page("dashboard")
 
@@ -291,6 +308,8 @@ class MainWindow(QMainWindow):
         else:
             self.page_title.setText(titles.get(key, key))
             self.page_sub.setText(self.SUBTITLES.get(key, ""))
+        if key == "settings":
+            self.update_diagnostics()
 
     def show_banner(self, text: str, buttons=()):
         while self.banner_btns.count():
@@ -378,10 +397,7 @@ class MainWindow(QMainWindow):
     def start_sensors(self):
         if self.sensors:
             self.sensors.stop()
-        if self.settings.demo_mode:
-            self.sensors = DemoSensorHub(self.bridge.snapshot.emit)
-        else:
-            self.sensors = SensorHub(self.bridge.snapshot.emit, read_controllers=self.settings.read_aio_sensors)
+        self.sensors = SensorHub(self.bridge.snapshot.emit, read_controllers=self.settings.read_aio_sensors)
         self.sensors.start()
 
     def _on_snapshot(self, s: Snapshot):
@@ -405,34 +421,45 @@ class MainWindow(QMainWindow):
         self.connect_backend()
         self.start_sensors()
 
-    def connect_backend(self):
+    def connect_backend(self, kill_foreign: bool = False):
         if self._connecting:
             return
         self._connecting = True
         self.banner_wrap.hide()
+        self.engine.clear()
         try:
             self.backend.disconnect()
         except Exception:
             pass
         s = self.settings
-        if s.demo_mode:
-            self._use_backend(DemoBackend())
-            return
         backend = OpenRGBBackend(s.host, s.port)
         local = s.host in ("127.0.0.1", "localhost")
-        self.set_connection("busy", "Verbinde mit dem Hardware-Dienst …")
+        self.set_connection("busy", "Starte Hardware-Dienst und suche Geräte …")
 
         def work():
             started = False
+            if kill_foreign:
+                svc.stop_server()
+                time.sleep(1)
             if local and not svc.server_running(s.host, s.port):
+                foreign = svc.foreign_openrgb_pids()
+                if foreign and kill_foreign:
+                    log.info("Beende fremde OpenRGB-Prozesse %s", foreign)
+                    svc.kill_pids(foreign)
+                    time.sleep(1)
+                elif foreign:
+                    raise RuntimeError("openrgb-foreign")
                 exe = svc.find_openrgb(s.openrgb_path) if s.autostart_openrgb else None
                 if exe is None:
                     raise FileNotFoundError("openrgb-missing")
+                svc.stop_server()
                 svc.start_server(exe, s.port)
                 started = True
-            deadline = time.monotonic() + (40 if started else 5)
+            deadline = time.monotonic() + (60 if started else 8)
             last = None
             while time.monotonic() < deadline:
+                if started and svc.server_process_alive() is False:
+                    raise RuntimeError("openrgb-died")
                 if svc.server_running(s.host, s.port):
                     try:
                         backend.connect()
@@ -441,68 +468,137 @@ class MainWindow(QMainWindow):
                         last = e
                 time.sleep(0.5)
             else:
-                raise last or BackendError("OpenRGB-Dienst antwortet nicht.")
-            prev, stable, t_end = -1, 0, time.monotonic() + (25 if started else 3)
+                raise last or BackendError("OpenRGB-Dienst antwortet nicht (Zeitüberschreitung).")
+            # OpenRGB findet Geräte nach und nach -> warten, bis die Anzahl stabil ist
+            prev, stable, t_end = -1, 0, time.monotonic() + (45 if started else 4)
             while time.monotonic() < t_end:
                 n = len(backend.rescan())
-                stable = stable + 1 if n == prev and n > 0 else 0
+                stable = stable + 1 if n == prev else 0
                 prev = n
-                if stable >= 3:
+                if (n > 0 and stable >= 4) or stable >= 12:
                     break
                 time.sleep(1)
+            # gespeicherte LED-Anzahlen von ARGB-Anschlüssen wieder setzen (OpenRGB merkt sie sich nicht)
+            sizes = dict(s.zone_sizes)
+            changed = False
+            for d in backend.list_devices():
+                for z in d.zones:
+                    want = sizes.get(zone_size_key(d, z.name))
+                    if z.resizable and want and want != z.led_count:
+                        try:
+                            backend.resize_zone(d.index, z.index, int(want))
+                            changed = True
+                            log.info("LED-Anzahl %s › %s auf %s gesetzt", d.name, z.name, want)
+                        except BackendError as e:
+                            log.warning("LED-Anzahl setzen fehlgeschlagen: %s", e)
+            if changed:
+                backend.rescan()
             return backend
 
         run_async(work, on_done=self._use_backend, on_error=self._connect_failed)
 
+    def _openrgb_log_tail(self) -> str:
+        try:
+            lines = (config.data_dir() / "openrgb.log").read_text(encoding="utf-8", errors="replace").splitlines()
+            return " | ".join(l.strip() for l in lines[-4:] if l.strip())
+        except OSError:
+            return ""
+
     def _connect_failed(self, msg: str):
         self._connecting = False
+        log.error("Verbindung fehlgeschlagen: %s", msg)
         self.set_connection("error", "Nicht verbunden")
-        demo = ("Demo-Modus testen", self._enable_demo)
+        retry = ("Neu verbinden", self.connect_backend)
         if "openrgb-missing" in msg:
-            self.show_banner("Der Hardware-Dienst OpenRGB wurde nicht gefunden. Lege den Ordner „OpenRGB“ (mit "
-                             "OpenRGB.exe) neben diese App oder installiere OpenRGB – dann „Neu verbinden“.",
-                             [("OpenRGB herunterladen", lambda: webbrowser.open(svc.DOWNLOAD_URL)),
-                              ("Neu verbinden", self.connect_backend), demo])
+            self.show_banner("Der Hardware-Dienst OpenRGB fehlt. Er gehört in den Ordner „OpenRGB“ neben "
+                             "RGBControl.exe. Bitte die komplette ZIP aus GitHub verwenden (nicht nur die .exe).",
+                             [("OpenRGB herunterladen", lambda: webbrowser.open(svc.DOWNLOAD_URL)), retry])
+        elif "openrgb-foreign" in msg:
+            self.show_banner("OpenRGB läuft bereits, aber ohne SDK-Server – darüber kann diese App nicht steuern. "
+                             "Soll RGB Control das laufende OpenRGB beenden und selbst starten?",
+                             [("OpenRGB neu starten", lambda: self.connect_backend(kill_foreign=True))])
+        elif "openrgb-died" in msg:
+            tail = self._openrgb_log_tail()
+            self.show_banner("OpenRGB hat sich direkt nach dem Start beendet." + (f" Meldung: {tail}" if tail else "") +
+                             " Evtl. fehlt die Microsoft Visual C++ Runtime.",
+                             [("VC++ Runtime laden", lambda: webbrowser.open(
+                                 "https://aka.ms/vs/17/release/vc_redist.x64.exe")), retry])
         else:
-            self.show_banner(f"Keine Verbindung zu OpenRGB: {msg}", [("Neu verbinden", self.connect_backend), demo])
-
-    def _enable_demo(self):
-        self.settings.demo_mode = True
-        self.settings.save()
-        self.settings_page.load()
-        self._reconnect_all()
+            self.show_banner(f"Keine Verbindung zu OpenRGB: {msg}", [retry])
 
     def _use_backend(self, backend: Backend):
         self._connecting = False
-        try:
-            if not backend.connected:
-                backend.connect()
-        except BackendError as e:
-            self._connect_failed(str(e))
-            return
         self.backend = backend
         self.engine.set_backend(backend)
         self._load_devices(backend.list_devices())
-        mode = "Demo-Modus" if isinstance(backend, DemoBackend) else "OpenRGB"
-        self.set_connection("ok", f"Verbunden · {mode}\n{len(self.devices)} Geräte · "
+        info = backend.info()
+        log.info("Backend bereit: %s, %d Geräte: %s", info, len(self.devices),
+                 "; ".join(f"{d.index}:{d.name} [{d.type_key}] zones={[(z.name, z.led_count) for z in d.zones]} "
+                           f"per_led={d.per_led}" for d in self.devices))
+        self.set_connection("ok", f"Verbunden mit OpenRGB\n{len(self.devices)} Geräte · "
                                   f"{sum(d.led_count for d in self.devices)} LEDs")
-        warn = []
-        if sys.platform == "win32" and not svc.is_admin() and not isinstance(backend, DemoBackend):
-            warn.append("Ohne Administratorrechte werden RAM und Mainboard oft nicht erkannt.")
-        if not self.devices:
-            warn.append("Keine RGB-Geräte gefunden. Andere RGB-Programme beenden und „Neu scannen“.")
-        if warn:
-            btns = []
-            if sys.platform == "win32" and not svc.is_admin():
-                btns.append(("Als Admin neu starten", self.restart_as_admin))
-            btns.append(("Andere Apps", lambda: self.show_page("apps")))
-            self.show_banner(" ".join(warn), btns)
+        self._check_setup_problems()
+        self._device_sig = self._signature(self.devices)
+        self._watch_count = 0
+        self.device_watch.start(10000)
         if not self._restored:
             self._restored = True
             if self.settings.restore_last_on_start and self.settings.last_state.get("version") == 2:
                 self.apply_state(self.settings.last_state)
                 return
         self.apply_all()
+
+    def _check_setup_problems(self):
+        warn, btns = [], []
+        if sys.platform == "win32" and not svc.is_admin():
+            warn.append("Die App läuft ohne Administratorrechte – RAM, Mainboard und Temperaturen fehlen dann.")
+            btns.append(("Als Admin neu starten", self.restart_as_admin))
+        if svc.pawnio_installed() is False:
+            warn.append("Der Treiber PawnIO fehlt: ohne ihn findet OpenRGB keine RAM-/Mainboard-Beleuchtung "
+                        "und die CPU-Temperatur bleibt leer.")
+            btns.append(("PawnIO installieren", self.install_pawnio))
+        zero = [f"{d.name} › {z.name}" for d in self.devices for z in d.zones if z.led_count == 0 and z.resizable]
+        if zero:
+            warn.append(f"{len(zero)} ARGB-Anschluss/Anschlüsse haben 0 LEDs eingestellt (z. B. {zero[0]}) – "
+                        "dort angeschlossene Lüfter leuchten erst nach „LEDs festlegen“ auf der Seite Fans.")
+            btns.append(("Zu Fans", lambda: self.show_page("fans")))
+        if not self.devices:
+            warn.append("OpenRGB hat keine Geräte gefunden. Andere RGB-Programme beenden, PC neu starten und "
+                        "„Neu scannen“.")
+            btns.append(("Andere Apps", lambda: self.show_page("apps")))
+        if warn:
+            self.show_banner(" ".join(warn), btns)
+
+    def install_pawnio(self):
+        if not svc.run_pawnio_installer():
+            webbrowser.open("https://pawnio.eu")
+        QMessageBox.information(self, "PawnIO", "Nach der Installation von PawnIO bitte den PC neu starten "
+                                                "und RGB Control erneut öffnen.")
+
+    @staticmethod
+    def _signature(devices: list[LightDevice]):
+        return tuple((d.name, d.location, tuple((z.name, z.led_count) for z in d.zones)) for d in devices)
+
+    def _watch_devices(self):
+        """Prüft regelmäßig, ob OpenRGB neue Geräte gefunden hat (Erkennung läuft verzögert)."""
+        if not self.backend.connected or self._connecting:
+            return
+        self._watch_count += 1
+        if self._watch_count == 12:
+            self.device_watch.setInterval(60000)
+
+        def done(devs):
+            sig = self._signature(devs)
+            if sig != self._device_sig:
+                log.info("Geräteliste hat sich geändert (%d -> %d Geräte)", len(self.devices), len(devs))
+                self._device_sig = sig
+                self._load_devices(devs)
+                self.engine.release()
+                self.apply_all()
+                self.set_connection("ok", f"Verbunden mit OpenRGB\n{len(self.devices)} Geräte · "
+                                          f"{sum(d.led_count for d in self.devices)} LEDs")
+
+        run_async(self.backend.rescan, on_done=done, on_error=self._engine_error)
 
     def _load_devices(self, devices: list[LightDevice]):
         self.devices = devices
@@ -527,12 +623,19 @@ class MainWindow(QMainWindow):
             self.connect_backend()
             return
         self.hw_devices.clear()
-        run_async(self.backend.rescan,
-                  on_done=lambda d: (self._load_devices(d), self.engine.release(), self.apply_all()),
-                  on_error=self._engine_error)
+
+        def done(d):
+            self._device_sig = self._signature(d)
+            self._load_devices(d)
+            self.engine.release()
+            self.apply_all()
+
+        run_async(self.backend.rescan, on_done=done, on_error=self._engine_error)
 
     def _engine_error(self, msg: str):
+        log.error("Engine/Backend-Fehler: %s", msg)
         if not self.backend.connected:
+            self.device_watch.stop()
             self.set_connection("error", "Verbindung verloren")
             self.show_banner(f"Verbindung zum Hardware-Dienst verloren: {msg}",
                              [("Neu verbinden", self.connect_backend)])
@@ -544,17 +647,60 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Administrator", "Neustart mit Administratorrechten nicht möglich.")
 
     def _startup_conflict_check(self):
-        if self.settings.demo_mode:
-            return
         from ..conflicts import find_conflicts
         run_async(find_conflicts, on_done=self._startup_conflicts)
 
     def _startup_conflicts(self, found):
         running = [f for f in found if f.running]
-        if running and not self.banner_wrap.isVisible():
-            self.show_banner("Andere RGB-Programme laufen und können Flackern verursachen: " +
-                             ", ".join(f.app.name for f in running),
-                             [("Anzeigen", lambda: (self.show_page("apps"), self.conflicts.show_found(found)))])
+        if running:
+            log.info("Laufende RGB-Programme: %s", [f.app.name for f in running])
+            self.show_banner("Andere RGB-Programme laufen und überschreiben deine Farben: " +
+                             ", ".join(f.app.name for f in running) + ". Bitte beenden.",
+                             [("Jetzt beenden", lambda: self._kill_conflicts(running)),
+                              ("Anzeigen", lambda: (self.show_page("apps"), self.conflicts.show_found(found)))])
+
+    def _kill_conflicts(self, running):
+        from ..conflicts import kill_processes
+        for f in running:
+            kill_processes(f)
+        self.banner_wrap.hide()
+        self.engine.release()
+        self.apply_all()
+
+    # ================================================================ Diagnose
+    def flash_test(self):
+        """Lässt alle erkannten Zonen 2 Sekunden rot leuchten."""
+        zones = [(d.index, z.index) for d in self.devices for z in d.zones]
+        targets = build_targets(self.devices, zones)
+        self.engine.flash(targets, (255, 0, 0), 2.0)
+        log.info("Testblitz an %d Zonen", len(targets))
+        QTimer.singleShot(2600, self.update_diagnostics)
+
+    def update_diagnostics(self):
+        info = self.backend.info()
+        lines = [f"Verbindung: {'verbunden' if info.get('connected') else 'NICHT verbunden'}"
+                 + (f" (Port {info.get('port')}, SDK-Protokoll {info.get('protocol')})" if info.get("connected") else "")]
+        exe = svc.find_openrgb(self.settings.openrgb_path)
+        lines.append(f"OpenRGB: {exe if exe else 'nicht gefunden'}")
+        alive = svc.server_process_alive()
+        lines.append("OpenRGB-Prozess: " + {None: "nicht von dieser App gestartet", True: "läuft",
+                                             False: "beendet!"}[alive])
+        lines.append(f"Administrator: {'ja' if svc.is_admin() else 'NEIN'}")
+        pawn = svc.pawnio_installed()
+        lines.append("PawnIO-Treiber: " + {None: "unbekannt", True: "installiert", False: "FEHLT"}[pawn])
+        lines.append(f"Geräte: {len(self.devices)} · LEDs: {sum(d.led_count for d in self.devices)} · "
+                     f"gesendete Bilder: {self.engine.frames_sent}")
+        for d in self.devices:
+            err = self.engine.device_errors.get(d.index)
+            mode = "Einzel-LED" if d.per_led else "nur Modusfarbe"
+            lines.append(f"  • {d.name} [{d.type_name}] – {d.led_count} LEDs, {mode}" + (f" – FEHLER: {err}" if err else ""))
+        lines.append(f"Logdatei: {config.data_dir() / 'rgbcontrol.log'}")
+        self.settings_page.set_diagnostics("\n".join(lines))
+
+    def open_log_folder(self):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(config.data_dir())))
 
     # ================================================================ Beleuchtung
     def apply_category(self, key: str):
@@ -623,9 +769,14 @@ class MainWindow(QMainWindow):
 
     def resize_zone(self, dev: int, zone: int, size: int):
         try:
+            d = next(x for x in self.devices if x.index == dev)
+            self.settings.zone_sizes[zone_size_key(d, d.zones[zone].name)] = size
+            self.settings.save()
             self.backend.resize_zone(dev, zone, size)
             self.engine.release({dev})
-            self._load_devices(self.backend.list_devices())
+            devs = self.backend.list_devices()
+            self._device_sig = self._signature(devs)
+            self._load_devices(devs)
             self.apply_all()
         except BackendError as e:
             QMessageBox.warning(self, "LED-Anzahl", str(e))
