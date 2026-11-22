@@ -1,82 +1,65 @@
-# RGB Control – eine App für alle RGB-Geräte im PC
+# RGB Control 2
 
-Steuert die Beleuchtung von **Lüftern, Arbeitsspeicher (RAM), Grafikkarte, Mainboard,
-LED-Streifen, AIO-Kühlern, Tastatur, Maus, Headset …** – alles in **einer** App.
-Danach können Hersteller-Programme wie iCUE, Armoury Crate, Mystic Light,
-RGB Fusion, NZXT CAM, G HUB oder Synapse weg.
+Eine App für die Beleuchtung **und** die wichtigsten Live-Werte deines PCs.
 
-## Funktionen
+## Was die App zeigt und steuert
 
-| Seite | Was sie macht |
+| Bereich | Inhalt |
 |---|---|
-| **Beleuchtung** | Zeigt alle erkannten RGB-Geräte mit ihren Zonen (z. B. „Lüfter 1–3“). Haken setzen, Effekt + Farbe wählen. Effekte laufen **synchron über alle Geräte** (z. B. eine Regenbogen-Welle von RAM über Grafikkarte bis zu den Lüftern). Live-Vorschau aller LEDs. |
-| | Effekte: Statisch, Atmen, Regenbogen, Regenbogen-Welle, Farbwechsel, Farbverlauf, Welle, Komet/Lauflicht, Blinken, Aus. Dazu Helligkeit, Tempo, 2 Farben und Schnellfarben. |
-| | **Hardware-Modus**: die eingebauten Modi eines Geräts nutzen und auf Wunsch **im Gerät speichern** (läuft dann auch ohne App). |
-| | Rechtsklick auf eine Zone → **LED-Anzahl festlegen** (für ARGB-Anschlüsse am Mainboard). |
-| **Hardware-Scan** | Durchsucht den PC (Mainboard, Grafikkarte, RAM-Riegel, USB-Geräte von über 30 RGB-Herstellern) und zeigt, was RGB hat und ob es in der App steuerbar ist. |
-| **Andere RGB-Apps** | Findet über 25 RGB-Programme (installiert und/oder laufend). Mit einem Klick **beenden** oder **deinstallieren** (startet den offiziellen Deinstaller, immer mit Rückfrage). Beim Start wird automatisch gewarnt, wenn so ein Programm läuft. |
-| **Profile** | Zustände speichern/laden („Gaming“, „Nacht“ …), auch über das Tray-Symbol. |
-| **Einstellungen** | Mit Windows starten (ohne UAC-Abfrage), im Tray weiterlaufen, letzte Beleuchtung beim Start wiederherstellen, Demo-Modus. |
+| **Dashboard** | CPU-, GPU- und Wasserpumpen-Temperatur als Anzeigen mit Verlauf · RAM-Auslastung (GB und %) · Maus-Akku · alle Kategorien mit Live-Vorschau und Ein/Aus-Schalter · „Alles synchronisieren“ |
+| **GPU** | RGB der Grafikkarte · Temperatur, Auslastung, VRAM |
+| **RAM** | RGB der RAM-Riegel · belegter, freier und gesamter Speicher |
+| **Mouse** | RGB der Maus · **Akkustand** (mit Lade-Anzeige) |
+| **Keyboard** | RGB der Tastatur |
+| **Fans** | RGB von Lüftern, Lüfter-Controllern und ARGB-Anschlüssen · Drehzahlen |
+| **Water Pump** | RGB der AIO-Pumpe · **Flüssigkeitstemperatur** und Pumpen-Drehzahl |
 
-## Wie das technisch funktioniert
+In jeder Kategorie gibt es eigene Effekte (Statisch, Atmen, Regenbogen, Regenbogen-Welle,
+Farbwechsel, Farbverlauf, Welle, Komet, Blinken, Aus), Farbrad, Helligkeit und Tempo.
+Einzelne Zonen lassen sich abschalten. Die eingebauten Hardware-Modi eines Geräts kannst
+du auch im Gerät speichern.
 
-Jeder Hersteller spricht seine Hardware anders an (SMBus für RAM/Mainboard,
-I²C für Grafikkarten, USB-HID für Lüfter-Controller und Peripherie). Diese
-Treiber für **hunderte Geräte** gibt es schon im Open-Source-Projekt **OpenRGB**.
-RGB Control startet OpenRGB **unsichtbar im Hintergrund** als Dienst und
-bringt die eigene Oberfläche, synchrone Effekte, Profile, Hardware-Scan und
-das Aufräumen anderer Apps mit. Du siehst OpenRGB selbst nie.
+Werkzeuge: **Andere Apps** findet iCUE, Armoury Crate, Mystic Light & Co. und beendet bzw.
+deinstalliert sie · **Hardware-Scan** · **Profile** · **Einstellungen** (Autostart, Tray …).
 
-## Einrichten und .exe bauen (Windows)
+Ohne Hardware ausprobieren: Einstellungen → **Demo-Modus**, oder `python main.py --demo`.
 
-1. **Python installieren** (3.10 oder neuer) von python.org – beim Setup den Haken
-   **„Add python.exe to PATH“** setzen.
-2. **OpenRGB besorgen:** auf https://openrgb.org/releases.html die Windows-Version (64-Bit)
-   herunterladen, entpacken und den Ordner so umbenennen, dass hier liegt:
-   `RGB-Control\OpenRGB\OpenRGB.exe`
-   (Alternativ OpenRGB normal installieren – dann wird es unter „Programme“ automatisch gefunden.)
-3. Doppelklick auf **`build_exe.bat`**. Nach ein paar Minuten liegt die fertige App in
-   `dist\RGBControl\RGBControl.exe` (der OpenRGB-Ordner wird automatisch mitkopiert).
-   Immer den **ganzen Ordner** `dist\RGBControl` verschieben, nicht nur die .exe.
+## Woher die Daten kommen
 
-Ohne .exe testen: Doppelklick auf `start_ohne_exe.bat`.
+- **Beleuchtung:** OpenRGB, unsichtbar im Hintergrund. Es enthält die Treiber für hunderte Geräte.
+- **Temperaturen und Drehzahlen:** LibreHardwareMonitor. Wird beim Bauen automatisch eingebunden.
+  - CPU: braucht zusätzlich den kostenlosen Treiber **PawnIO** (https://pawnio.eu). Ohne ihn bleibt die CPU-Anzeige leer oder ungenau.
+  - GPU: NVIDIA, AMD und Intel.
+  - Wasserpumpe: AIOs mit eigenem Controller, z. B. Corsair (iCUE Link, Commander, Hydro), NZXT Kraken, Lian Li, Aqua Computer, oder ein Pumpen-Sensor am Mainboard.
+- **Maus-Akku:**
+  - Bluetooth-Mäuse über Windows.
+  - Logitech über HID++ (Lightspeed, Unifying, Bolt, Kabel).
+  - Razer über HyperSpeed, Dock oder Kabel.
+  - Mäuse, deren Akku nur über die Hersteller-App lesbar ist (z. B. Corsair Slipstream, SteelSeries), werden nicht angezeigt.
+- **RAM-Auslastung:** direkt von Windows.
 
-Ausprobieren ganz ohne RGB-Hardware: in den Einstellungen **Demo-Modus** einschalten
-(oder `python main.py --demo`).
+## .exe bauen
 
-## Wichtig für beste Erkennung
+**Am einfachsten über GitHub:** Der Workflow `.github/workflows/…build.yml` baut die .exe auf
+einem Windows-Rechner von GitHub. Er bindet LibreHardwareMonitor ein, führt alle Tests aus und
+**startet die fertige .exe zur Probe**. Unter *Actions* → letzter Lauf → *Artifacts* →
+`RGBControl-Windows` herunterladen.
 
-- Die App fragt beim Start nach **Administratorrechten** – die sind nötig, damit
-  RAM und Mainboard (SMBus) gefunden werden. Die .exe fordert sie automatisch an.
-- **Andere RGB-Programme beenden/deinstallieren** (Seite „Andere RGB-Apps“), sonst
-  blockieren sie die Hardware oder überschreiben die Farben. Danach am besten einmal neu starten.
-- Für RAM-/Mainboard-Zugriff installiert OpenRGB beim ersten Start ggf. seinen
-  SMBus-Treiber (aktuelle Versionen nutzen „PawnIO“) – die Abfrage bestätigen.
-- In manchen BIOS-Versionen muss die RGB-Steuerung durch Software erlaubt sein.
-- Ein Gerät fehlt? Hardware-Scan → zeigt „nicht erkannt“. Dann prüfen, ob es in der
-  Liste unterstützter Geräte auf openrgb.org steht. Komplett ohne Hersteller-Protokoll
-  (z. B. einfache 3-Pin-ARGB-Lüfter ohne Controller) geht es nur über den ARGB-Anschluss
-  des Mainboards – den steuert die App dann mit (Zone „ARGB Header“).
+**Lokal:** Python 3.10+ und das .NET SDK 8 installieren, dann `build_exe.bat` doppelklicken.
 
-## Dateien
+**OpenRGB dazulegen:** Die Windows-Version von https://openrgb.org/releases.html entpacken, sodass
+`OpenRGB\OpenRGB.exe` neben `RGBControl.exe` liegt. Alternativ OpenRGB installieren oder im
+Workflow die Variable `OPENRGB_ZIP_URL` setzen.
 
-```
-main.py                  Startpunkt
-rgbcontrol/effects.py    Effekte
-rgbcontrol/engine.py     Effekt-Engine (30 FPS, synchron über alle Geräte)
-rgbcontrol/backend.py    Anbindung an den OpenRGB-Dienst + Demo-Geräte
-rgbcontrol/openrgb_service.py  OpenRGB finden/unsichtbar starten, Adminrechte
-rgbcontrol/hwscan.py     Hardware-Scan
-rgbcontrol/conflicts.py  Andere RGB-Apps erkennen/beenden/deinstallieren
-rgbcontrol/config.py     Einstellungen, Profile, Autostart
-rgbcontrol/ui/           Oberfläche (Qt / PySide6)
-tests/                   Tests (python -m pytest tests)
-```
+## Wichtig für beste Ergebnisse
+
+- **Als Administrator starten.** Die .exe fragt automatisch danach. Ohne Adminrechte fehlen RAM, Mainboard und Temperaturen.
+- **Andere RGB-Programme beenden oder deinstallieren** (Seite „Andere Apps“), sonst flackert es.
+- Einige AIOs werden gleichzeitig von OpenRGB (RGB) und LibreHardwareMonitor (Sensoren) angesprochen. Bei Problemen: Einstellungen → „Wasserkühlung direkt auslesen“ ausschalten.
 
 Einstellungen und Profile liegen in `%APPDATA%\RGBControl`.
 
 ## Lizenzen
 
-RGB Control nutzt PySide6 (LGPL), openrgb-python (GPL-3.0) und psutil (BSD).
-OpenRGB steht unter GPL-2.0. Für den privaten Gebrauch ist das kein Problem. Wenn du
-die App weitergibst, musst du die Lizenzen beilegen (und den Quellcode anbieten).
+PySide6 (LGPL) · openrgb-python (GPL-3.0) · psutil (BSD) · hidapi (BSD/GPL) · pythonnet (MIT) ·
+nvidia-ml-py (BSD) · LibreHardwareMonitorLib (MPL-2.0) · OpenRGB (GPL-2.0).

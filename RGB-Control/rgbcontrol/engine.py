@@ -1,5 +1,5 @@
-"""Effekt-Engine: berechnet in einem Hintergrund-Thread die Farben und
-schickt sie an die ausgewählten Geräte/Zonen."""
+"""Effekt-Engine: berechnet in einem Hintergrund-Thread die Farben für
+mehrere Gruppen (eine pro Kategorie) und schickt sie an die Geräte."""
 from __future__ import annotations
 
 import copy
@@ -19,7 +19,15 @@ class Target:
     led_count: int
 
 
-def build_targets(devices: list[LightDevice], selected: set[tuple[int, int]]) -> list[Target]:
+@dataclass
+class Group:
+    targets: list[Target]
+    effect: str
+    params: EffectParams
+
+
+def build_targets(devices: list[LightDevice], selected) -> list[Target]:
+    selected = set(selected)
     out = []
     for d in devices:
         for z in d.zones:
@@ -35,9 +43,7 @@ class EffectEngine:
         self.backend = backend
         self.on_error = on_error
         self._lock = threading.Lock()
-        self._targets: list[Target] = []
-        self._effect = "static"
-        self._params = EffectParams()
+        self._groups: dict[str, Group] = {}
         self._dirty = False
         self._prepared: set[int] = set()
         self._stop = threading.Event()
@@ -65,15 +71,27 @@ class EffectEngine:
             self._prepared.clear()
             self._dirty = True
 
-    def apply(self, targets: list[Target], effect: str, params: EffectParams) -> None:
+    def set_group(self, key: str, targets: list[Target], effect: str, params: EffectParams) -> None:
         with self._lock:
-            self._targets = list(targets)
-            self._effect = effect
-            self._params = copy.deepcopy(params)
+            # Eine Zone darf nur von einer Gruppe gesteuert werden
+            taken = {(t.device, t.zone) for t in targets}
+            for k, g in self._groups.items():
+                if k != key:
+                    g.targets = [t for t in g.targets if (t.device, t.zone) not in taken]
+            self._groups[key] = Group(list(targets), effect, copy.deepcopy(params))
+            self._dirty = True
+
+    def remove_group(self, key: str) -> None:
+        with self._lock:
+            self._groups.pop(key, None)
+            self._dirty = True
+
+    def clear(self) -> None:
+        with self._lock:
+            self._groups.clear()
             self._dirty = True
 
     def release(self, devices: set[int] | None = None) -> None:
-        """Vergisst Geräte, damit sie erneut in den Direkt-Modus gesetzt werden."""
         with self._lock:
             if devices is None:
                 self._prepared.clear()
@@ -81,55 +99,60 @@ class EffectEngine:
                 self._prepared -= devices
 
     def remove_devices(self, devices: set[int]) -> None:
-        """Entfernt Geräte aus der Software-Steuerung (z.B. für Hardware-Modus)."""
         with self._lock:
-            self._targets = [t for t in self._targets if t.device not in devices]
+            for g in self._groups.values():
+                g.targets = [t for t in g.targets if t.device not in devices]
             self._prepared -= devices
             self._dirty = True
 
-    @property
-    def state(self) -> tuple[list[Target], str, EffectParams]:
+    def groups(self) -> dict[str, Group]:
         with self._lock:
-            return list(self._targets), self._effect, copy.deepcopy(self._params)
+            return copy.deepcopy(self._groups)
 
-    # -- Thread ----------------------------------------------------------
-    def frame(self, t: float, targets: list[Target], effect: str, params: EffectParams):
-        total = sum(tg.led_count for tg in targets)
-        colors = render(effect, t, total, params)
-        out, pos = {}, 0
-        for tg in targets:
-            out[(tg.device, tg.zone)] = colors[pos:pos + tg.led_count]
-            pos += tg.led_count
+    # -- Berechnung ------------------------------------------------------
+    @staticmethod
+    def frame(t: float, groups: dict[str, Group]) -> dict[tuple[int, int], list[RGB]]:
+        out = {}
+        for g in groups.values():
+            total = sum(tg.led_count for tg in g.targets)
+            if not total:
+                continue
+            colors = render(g.effect, t, total, g.params)
+            pos = 0
+            for tg in g.targets:
+                out[(tg.device, tg.zone)] = colors[pos:pos + tg.led_count]
+                pos += tg.led_count
         return out
 
     def _run(self) -> None:
-        last_static_push = 0.0
+        last_push = 0.0
         while not self._stop.is_set():
             start = time.monotonic()
             with self._lock:
-                targets, effect, params = self._targets, self._effect, self._params
+                groups = copy.deepcopy(self._groups)
                 dirty, self._dirty = self._dirty, False
                 backend = self.backend
-            animated = EFFECTS_BY_KEY.get(effect, EFFECTS_BY_KEY["static"]).animated
-            # statische Effekte nur bei Aenderung (und alle 10 s zur Sicherheit) senden
-            push = animated or dirty or (targets and start - last_static_push > 10)
-            if targets and push:
-                frame = self.frame(start - self._t0, targets, effect, params)
+            animated = any(EFFECTS_BY_KEY.get(g.effect, EFFECTS_BY_KEY["static"]).animated
+                           for g in groups.values() if g.targets)
+            has_targets = any(g.targets for g in groups.values())
+            push = animated or dirty or (has_targets and start - last_push > 10)
+            if has_targets and push:
+                frame = self.frame(start - self._t0, groups)
                 self.preview = frame
                 try:
-                    for dev in {t.device for t in targets} - self._prepared:
+                    for dev in {d for d, _ in frame} - self._prepared:
                         backend.prepare_direct(dev)
                         self._prepared.add(dev)
                     for (dev, zone), cols in frame.items():
                         backend.set_zone_colors(dev, zone, cols)
-                    last_static_push = start
+                    last_push = start
                 except BackendError as e:
                     with self._lock:
-                        self._targets = []
                         self._prepared.clear()
                     if self.on_error:
                         self.on_error(str(e))
-            elif not targets:
+                    self._stop.wait(2)
+            elif not has_targets:
                 self.preview = {}
             delay = (1 / self.FPS) if animated else 0.1
             self._stop.wait(max(0.0, delay - (time.monotonic() - start)))

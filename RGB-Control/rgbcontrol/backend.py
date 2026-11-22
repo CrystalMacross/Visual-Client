@@ -240,6 +240,12 @@ class DemoBackend(Backend):
                         modes=["Direct", "Static", "Rainbow", "Breathing"]),
             LightDevice(5, "Corsair K70 RGB (Demo)", "KEYBOARD", "Corsair", location="HID",
                         zones=[LightZone(0, "Tastatur", 104)], modes=["Direct", "Static", "Wave"]),
+            LightDevice(6, "Logitech G502 X Plus (Demo)", "MOUSE", "Logitech", location="HID",
+                        zones=[LightZone(0, "Logo", 1), LightZone(1, "Lichtleiste", 8)],
+                        modes=["Direct", "Static", "Cycle", "Breathing"]),
+            LightDevice(7, "Lian Li Galahad II Trinity (Demo)", "COOLER", "Lian Li", location="HID",
+                        zones=[LightZone(0, "Pump Ring", 24), LightZone(1, "Fan 1", 16), LightZone(2, "Fan 2", 16)],
+                        modes=["Direct", "Static", "Rainbow", "Breathing"]),
         ]
 
     @property

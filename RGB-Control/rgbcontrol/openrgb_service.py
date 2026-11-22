@@ -17,12 +17,21 @@ def app_dir() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def resource_dirs() -> list[Path]:
+    """Ordner, in denen mitgelieferte Dateien liegen können (App-Ordner, PyInstaller-Ordner)."""
+    dirs = [app_dir()]
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass and Path(meipass) not in dirs:
+        dirs.append(Path(meipass))
+    return dirs
+
+
 def candidate_paths(custom: str = "") -> list[Path]:
     paths: list[Path] = []
     if custom:
         paths.append(Path(custom))
-    base = app_dir()
-    paths += [base / "OpenRGB" / "OpenRGB.exe", base / "OpenRGB.exe"]
+    for d in resource_dirs():
+        paths += [d / "OpenRGB" / "OpenRGB.exe", d / "OpenRGB.exe"]
     for env in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432"):
         if os.environ.get(env):
             paths.append(Path(os.environ[env]) / "OpenRGB" / "OpenRGB.exe")

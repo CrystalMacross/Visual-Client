@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - "RGB-Control/**"
-      - ".github/workflows/rgbcontrol-build.yml"
+      - "RGB-Control.zip"
+      - ".github/workflows/**"
   workflow_dispatch:
 
 defaults:
@@ -14,20 +15,42 @@ defaults:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Unzip RGB-Control.zip (falls nur die ZIP im Repo liegt)
+        shell: pwsh
+        working-directory: ${{ github.workspace }}
+        run: |
+          if (-not (Test-Path RGB-Control/main.py)) {
+            if (-not (Test-Path RGB-Control.zip)) { throw "Weder Ordner RGB-Control noch RGB-Control.zip gefunden" }
+            Expand-Archive -Path RGB-Control.zip -DestinationPath . -Force
+          }
+          if (-not (Test-Path RGB-Control/requirements.txt)) { throw "RGB-Control/requirements.txt fehlt" }
+
       - name: Setup Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
-          cache-dependency-path: RGB-Control/requirements.txt
+          architecture: x64
 
-      - name: Install dependencies
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build LibreHardwareMonitor (Temperatursensoren)
+        shell: pwsh
+        run: |
+          dotnet build tools/lhm/LhmDeps.csproj -c Release -o lhm --nologo
+          Remove-Item lhm/LhmDeps.* -Force
+          Get-ChildItem lhm | Format-Table Name, Length
+          if (-not (Test-Path lhm/LibreHardwareMonitorLib.dll)) { throw "LibreHardwareMonitorLib.dll fehlt" }
+
+      - name: Install Python packages
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller pytest
@@ -37,14 +60,29 @@ jobs:
 
       - name: Build EXE with PyInstaller
         shell: cmd
+        run: >
+          pyinstaller --noconfirm --clean --windowed --uac-admin --name RGBControl
+          --icon assets\icon.ico --add-data "assets;assets" --add-data "lhm;lhm"
+          --collect-all pythonnet --collect-all clr_loader --hidden-import clr
+          main.py
+
+      - name: Self-test of the built EXE (Sensoren, Akku, Oberflaeche)
+        shell: pwsh
         run: |
-          pyinstaller --noconfirm --clean --windowed --uac-admin --name RGBControl --icon assets\icon.ico --add-data "assets;assets" main.py
+          $out = Join-Path $PWD "selftest.json"
+          $p = Start-Process -FilePath "dist\RGBControl\RGBControl.exe" -ArgumentList "--selftest", "`"$out`"" -Wait -PassThru
+          if (-not (Test-Path $out)) { throw "Selbsttest hat kein Ergebnis geschrieben (Exit-Code $($p.ExitCode))" }
+          Get-Content $out
+          $r = Get-Content $out -Raw | ConvertFrom-Json
+          if (-not $r.ok) { throw "Selbsttest fehlgeschlagen - siehe 'errors' oben" }
+          if ($r.sensors.source -ne "LibreHardwareMonitor") { throw "LibreHardwareMonitor wurde in der EXE nicht geladen" }
+          if ($r.ui.devices -lt 1) { throw "Oberflaeche hat im Demo-Modus keine Geraete geladen" }
+          Write-Host "Selbsttest OK: $($r.sensors.readings) Sensorwerte, UI mit $($r.ui.pages) Seiten"
 
       - name: Add OpenRGB (optional)
         shell: pwsh
-        # Optional: Wenn in den Repo-Variablen (Settings > Secrets and variables > Actions > Variables)
-        # OPENRGB_ZIP_URL gesetzt ist, wird OpenRGB (portable ZIP von openrgb.org) in die App kopiert.
-        # Ohne Variable wird dieser Schritt nur uebersprungen.
+        # Optional: Repo-Variable OPENRGB_ZIP_URL (Settings > Secrets and variables > Actions > Variables)
+        # auf die Windows-ZIP von openrgb.org setzen, dann wird OpenRGB mitgeliefert.
         env:
           OPENRGB_ZIP_URL: ${{ vars.OPENRGB_ZIP_URL }}
         run: |
@@ -58,7 +96,6 @@ jobs:
           if (-not $exe) { throw "OpenRGB.exe nicht im ZIP gefunden" }
           New-Item -ItemType Directory -Force -Path dist\RGBControl\OpenRGB | Out-Null
           Copy-Item -Path "$($exe.DirectoryName)\*" -Destination dist\RGBControl\OpenRGB -Recurse -Force
-          Write-Host "OpenRGB wurde in die App kopiert."
 
       - name: Package ZIP
         shell: pwsh
@@ -69,7 +106,7 @@ jobs:
         with:
           name: RGBControl-Windows
           path: |
-            RGB-Control/dist/RGBControl/
             RGB-Control/RGBControl-Windows.zip
+            RGB-Control/selftest.json
           if-no-files-found: error
           retention-days: 30

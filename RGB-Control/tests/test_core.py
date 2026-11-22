@@ -31,7 +31,7 @@ def test_engine_with_demo_backend():
     devs = b.list_devices()
     targets = build_targets(devs, {(d.index, z.index) for d in devs for z in d.zones})
     eng = EffectEngine(b)
-    eng.apply(targets, "static", EffectParams(color=(10, 20, 30)))
+    eng.set_group("all", targets, "static", EffectParams(color=(10, 20, 30)))
     eng.start()
     import time
     time.sleep(0.4)
