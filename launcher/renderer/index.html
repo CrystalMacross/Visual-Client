@@ -7,7 +7,7 @@
   <title>Visual Launcher</title>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body data-ui="old">
   <div id="bg" class="bg"></div>
   <div id="bg-dim" class="bg-dim"></div>
 
@@ -131,6 +131,14 @@
       <section class="page" data-page="settings">
         <div class="page-head"><div><h1>Einstellungen</h1><p class="muted">Alles wird nur lokal auf diesem Gerät gespeichert.</p></div></div>
         <div class="settings-grid">
+          <div class="glass card-pad span2">
+            <h3>Launcher-Design</h3>
+            <div class="segmented" id="ui-mode">
+              <button data-ui="new">Neu</button>
+              <button data-ui="old">Klassisch</button>
+            </div>
+            <p class="muted small" style="margin:0">„Neu“ ist das überarbeitete Design mit Effekten, „Klassisch“ dieses Design. Der Launcher lädt sich zum Wechseln kurz neu, alle Einstellungen bleiben erhalten.</p>
+          </div>
           <div class="glass card-pad">
             <h3>Konten</h3>
             <div id="accounts"></div>

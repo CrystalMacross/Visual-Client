@@ -396,7 +396,39 @@ function renderSettings() {
   $('#discord-id').value = s.discord.clientId || '';
   updateDiscordState();
   $('#about').textContent = `Visual Launcher ${state.info.version} · Visual Client ${state.info.visualClient || '–'} eingebaut`;
+  const current = document.body.dataset.ui || 'old';
+  $$('#ui-mode button').forEach((b) => b.classList.toggle('active', b.dataset.ui === current));
+  const fx = $('#fx-toggle');
+  if (fx) fx.checked = !s.ui || s.ui.effects !== false;
 }
+
+// ------------------------------------------------------------------ launcher UI (new / classic) + effects
+
+function applyUiPrefs() {
+  const ui = state.settings.ui || {};
+  const on = ui.effects !== false;
+  document.body.classList.toggle('no-fx', !on);
+  window.dispatchEvent(new CustomEvent('vl-fx', { detail: on }));
+}
+
+$$('#ui-mode button').forEach((b) => b.addEventListener('click', async () => {
+  if (b.dataset.ui === (document.body.dataset.ui || 'old')) return;
+  if (state.launching) { toast('Bitte warte, bis Minecraft gestartet ist.', 'error'); return; }
+  document.body.classList.add('ui-switching');
+  try {
+    await api(window.vl.ui.set(b.dataset.ui));
+  } catch (e) {
+    document.body.classList.remove('ui-switching');
+    toast(e.message, 'error');
+  }
+}));
+
+const fxToggle = $('#fx-toggle');
+if (fxToggle) fxToggle.addEventListener('change', (e) => {
+  state.settings.ui = { ...(state.settings.ui || {}), effects: e.target.checked };
+  applyUiPrefs();
+  saveSetting({ ui: state.settings.ui });
+});
 
 function saveSetting(patch) {
   return api(window.vl.settings.save(patch)).catch((e) => toast(e.message, 'error'));
@@ -474,8 +506,9 @@ function renderHome() {
   if (!state.instances.length) sel.append(h('<option value="">Keine Instanz</option>'));
   sel.value = state.selectedInstance || '';
   $('#home-title').textContent = inst ? inst.name : 'Visual Launcher';
-  $('#home-sub').textContent = inst ? `Fabric ${inst.loaderVersion || '(neueste)'} · ${Object.keys(inst.installed || {}).length} Inhalte aus der Bibliothek` : 'Lege eine Instanz an, um loszulegen.';
+  $('#home-sub').textContent = inst ? `Fabric ${inst.loaderVersion || '(neueste)'} · ${Object.keys(inst.installed || {}).length} Inhalte` : 'Lege eine Instanz an, um loszulegen.';
   $('#home-version').textContent = inst ? 'Minecraft ' + inst.mcVersion : '–';
+  renderHomeExtras(inst);
   const vcOn = inst && inst.visualClient && supportsVc(inst.mcVersion);
   $('#home-vc').textContent = vcOn ? `Visual Client ${state.info.visualClient}` : 'Ohne Visual Client';
   $('#home-vc').className = 'pill ' + (vcOn ? 'accent' : '');
@@ -485,6 +518,24 @@ function renderHome() {
   recent.replaceChildren(...(items.length ? items.map(instanceCard) : [h('<div class="empty glass">Noch keine Instanzen. Erstelle eine unter „Instanzen“ oder installiere ein Modpack.</div>')]));
 }
 $('#home-instance').addEventListener('change', (e) => e.target.value && selectInstance(e.target.value));
+
+/** New UI only: greeting, big instance picture and stat tiles. */
+function renderHomeExtras(inst) {
+  const greet = $('#greeting');
+  if (greet) {
+    const hr = new Date().getHours();
+    const word = hr < 5 ? 'Gute Nacht' : hr < 11 ? 'Guten Morgen' : hr < 18 ? 'Guten Tag' : 'Guten Abend';
+    const acc = currentAccount();
+    greet.textContent = acc ? `${word}, ${acc.name}` : word;
+  }
+  const pic = $('#home-pic');
+  if (pic) pic.innerHTML = inst ? thumb(inst.iconUrl || inst.icon, inst.name, 'hero-thumb') : '<div class="hero-thumb">?</div>';
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  set('#stat-playtime', inst ? fmtPlaytime(inst.playTime) : '–');
+  set('#stat-content', inst ? String(Object.keys(inst.installed || {}).length) : '–');
+  set('#stat-total', fmtPlaytime(state.instances.reduce((a, i) => a + (i.playTime || 0), 0)));
+  set('#stat-instances', String(state.instances.length));
+}
 
 async function refreshInstanceViews() {
   await loadInstances();
@@ -538,6 +589,7 @@ async function renderInstanceDetail() {
   box.innerHTML = `<div class="detail-head"><button class="profile-pic" data-act="icon" title="Profilbild ändern (klicken oder Bild hierher ziehen)">${thumb(inst.iconUrl || inst.icon, inst.name)}<span class="profile-edit"><svg viewBox="0 0 24 24"><path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></button>
     <div><h2>${esc(inst.name)}${playtimeBadge(inst)}</h2><div class="muted">Minecraft ${esc(inst.mcVersion)} · Fabric ${esc(inst.loaderVersion || 'neueste')}</div></div>
     <div class="detail-actions">
+      <button class="btn primary upload-btn" data-act="upload" title="Eigene .jar-Mods oder .zip-Ressourcen-/Shaderpakete hinzufügen (auch Dateien, die es nicht auf Modrinth gibt)"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>Upload Files</button>
       <button class="btn" data-act="folder">Ordner öffnen</button>
       <button class="btn" data-act="rename">Umbenennen</button>
       <button class="btn" data-act="pick-icon">Profilbild ändern</button>
@@ -545,8 +597,23 @@ async function renderInstanceDetail() {
       <button class="btn danger" data-act="delete">Löschen</button>
     </div></div>
     ${supportsVc(inst.mcVersion) ? `<label class="toggle"><input type="checkbox" id="inst-vc" ${inst.visualClient ? 'checked' : ''}><span></span>Visual Client ${esc(state.info.visualClient || '')} verwenden (inkl. Fabric API)</label>` : '<p class="muted small">Visual Client unterstützt diese Minecraft-Version nicht (1.21.4 – 26.3).</p>'}
-    <h3 style="margin-top:18px">Inhalte</h3><div class="content-list"><div class="spinner"></div></div>`;
+    <div class="content-head"><h3>Inhalte</h3><span class="muted small">Tipp: .jar-Mods und .zip-Pakete einfach hierher ziehen</span></div>
+    <div class="content-list"><div class="spinner"></div></div>
+    <div class="drop-overlay"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg><b>Loslassen zum Hinzufügen</b><span>.jar = Mod · .zip = Ressourcen- oder Shaderpaket</span></div>`;
   $('[data-act=folder]', box).onclick = () => api(window.vl.instances.open(inst.id));
+  $('[data-act=upload]', box).onclick = () => uploadFiles(inst);
+  // drag & drop files onto the instance
+  const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  box.ondragover = (e) => { if (!hasFiles(e)) return; e.preventDefault(); box.classList.add('drag-over'); };
+  box.ondragleave = (e) => { if (!box.contains(e.relatedTarget)) box.classList.remove('drag-over'); };
+  box.ondrop = (e) => {
+    box.classList.remove('drag-over');
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    const files = [...e.dataTransfer.files].map((f) => window.vl.pathForFile(f)).filter((f) => /\.(jar|zip)$/i.test(f));
+    if (!files.length) { toast('Nur .jar-Mods und .zip-Pakete können hinzugefügt werden.', 'error'); return; }
+    uploadFiles(inst, files);
+  };
   const setIcon = async (filePath) => {
     try {
       const res = await api(window.vl.instances.chooseIcon(inst.id, filePath));
@@ -588,7 +655,7 @@ async function renderInstanceDetail() {
   const items = await api(window.vl.instances.content(inst.id));
   const list = $('.content-list', box);
   const labels = { mod: 'Mod', resourcepack: 'Ressourcenpaket', shader: 'Shader', datapack: 'Datenpaket' };
-  if (!items.length) { list.innerHTML = '<div class="muted small">Noch leer. Füge Inhalte über Modrinth hinzu.</div>'; return; }
+  if (!items.length) { list.innerHTML = '<div class="muted small">Noch leer. Füge Inhalte über Modrinth oder „Upload Files“ hinzu.</div>'; return; }
   list.replaceChildren(...items.map((it) => {
     const row = h(`<div class="content-row ${it.enabled ? '' : 'disabled'}">
       ${thumb(it.icon, it.name)}
@@ -605,6 +672,31 @@ async function renderInstanceDetail() {
     if (del) del.onclick = async () => { await api(window.vl.instances.removeContent(inst.id, it.type, it.file)); renderInstanceDetail(); };
     return row;
   }));
+}
+
+/** "Upload Files": own .jar mods / .zip packs (also ones that are not on Modrinth). */
+async function uploadFiles(inst, paths) {
+  const btn = $('#instance-detail [data-act=upload]');
+  if (btn) btn.disabled = true;
+  try {
+    const res = await api(window.vl.instances.addFiles(inst.id, paths || []));
+    if (!res) return; // dialog cancelled
+    for (const a of res.added) if (a.warning) toast(`${a.file}: ${a.warning}`, 'error');
+    for (const e of res.errors) toast(`${e.file}: ${e.message}`, 'error');
+    if (res.added.length) {
+      const labels = { mod: 'Mod', resourcepack: 'Ressourcenpaket', shader: 'Shaderpaket' };
+      toast(res.added.length === 1
+        ? `${labels[res.added[0].type] || 'Datei'} „${res.added[0].title}“ hinzugefügt.`
+        : `${res.added.length} Dateien zu „${inst.name}“ hinzugefügt.`, 'ok');
+    }
+    await loadInstances();
+    renderInstanceDetail();
+  } catch (e) {
+    toast(e.message, 'error');
+  } finally {
+    const b = $('#instance-detail [data-act=upload]');
+    if (b) b.disabled = false;
+  }
 }
 
 $('#new-instance').addEventListener('click', async () => {
@@ -676,6 +768,8 @@ function updatePlayButton() {
   const btn = $('#play');
   const label = $('span', btn);
   btn.classList.toggle('running', state.running);
+  document.body.classList.toggle('game-running', state.running);
+  document.body.classList.toggle('launching', state.launching);
   btn.disabled = state.launching || (!state.running && !currentInstance());
   label.textContent = state.running ? 'BEENDEN' : state.launching ? 'STARTET…' : 'SPIELEN';
 }
@@ -912,6 +1006,7 @@ window.vl.events.installProgress((p) => {
     $('#app-version').textContent = 'v' + state.info.version;
     state.settings = await api(window.vl.settings.get());
     applyDesign(state.settings.design, state.settings.backgroundImage);
+    applyUiPrefs();
     await loadAccounts();
     await loadInstances();
     state.running = await api(window.vl.game.running());

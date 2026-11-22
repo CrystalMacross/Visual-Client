@@ -42,7 +42,7 @@ function createWindow() {
     }
   });
   win.removeMenu();
-  win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+  win.loadFile(uiFile());
   win.once('ready-to-show', () => win.show());
 
   // never navigate away from the app; open allowed links in the system browser
@@ -51,6 +51,32 @@ function createWindow() {
     return { action: 'deny' };
   });
   win.webContents.on('will-navigate', (e) => e.preventDefault());
+}
+
+/** The new UI (new.html) or the classic one (index.html), chosen in the launcher settings. */
+function uiFile() {
+  const ui = store.getSettings().ui || {};
+  return path.join(__dirname, 'renderer', ui.mode === 'old' ? 'index.html' : 'new.html');
+}
+
+/** "Upload Files": copies picked (or dropped) .jar/.zip files into an instance. */
+async function addFilesToInstance(id, filePaths) {
+  let files = Array.isArray(filePaths) ? filePaths.filter((f) => typeof f === 'string' && f) : [];
+  if (!files.length) {
+    const res = await dialog.showOpenDialog(win, {
+      title: 'Dateien zur Instanz hinzufügen',
+      buttonLabel: 'Hinzufügen',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: 'Mods und Pakete (.jar, .zip)', extensions: ['jar', 'zip'] },
+        { name: 'Mods (.jar)', extensions: ['jar'] },
+        { name: 'Ressourcen- und Shaderpakete (.zip)', extensions: ['zip'] }
+      ]
+    });
+    if (res.canceled || !res.filePaths.length) return null;
+    files = res.filePaths;
+  }
+  return instances.addFiles(id, files);
 }
 
 function openExternal(url) {
@@ -198,6 +224,14 @@ function registerIpc() {
   handle('instances:open', (id, sub) => instances.openFolder(id, sub));
   handle('instances:content', (id) => instances.content(id));
   handle('instances:toggle', (id, type, file) => instances.toggleContent(id, type, file));
+  handle('instances:addFiles', (id, files) => addFilesToInstance(id, files));
+  handle('ui:set', (mode) => {
+    const next = mode === 'old' ? 'old' : 'new';
+    store.saveSettings({ ui: { mode: next } });
+    // reload in the chosen UI (programmatic loads are not blocked by will-navigate)
+    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile()); }, 60);
+    return next;
+  });
   handle('instances:removeContent', (id, type, file) => instances.removeContent(id, type, file));
   handle('instances:select', (id) => store.saveSettings({ selectedInstance: id }));
   handle('instances:chooseIcon', (id, filePath) => chooseProfilePicture(id, filePath));

@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('vl', {
   app: { info: call('app:info') },
   legal: { get: call('legal:get'), accept: call('legal:accept') },
   settings: { get: call('settings:get'), save: call('settings:save') },
+  ui: { set: call('ui:set') },
   background: { choose: call('background:choose'), set: call('background:set') },
   pickImage: call('dialog:pickImage'),
   auth: { list: call('auth:list'), login: call('auth:login'), logout: call('auth:logout'), select: call('auth:select') },
@@ -27,7 +28,8 @@ contextBridge.exposeInMainWorld('vl', {
     list: call('instances:list'), create: call('instances:create'), update: call('instances:update'),
     remove: call('instances:remove'), open: call('instances:open'), content: call('instances:content'),
     toggle: call('instances:toggle'), removeContent: call('instances:removeContent'), select: call('instances:select'),
-    chooseIcon: call('instances:chooseIcon'), clearIcon: call('instances:clearIcon')
+    chooseIcon: call('instances:chooseIcon'), clearIcon: call('instances:clearIcon'),
+    addFiles: call('instances:addFiles')
   },
   modrinth: { search: call('modrinth:search'), install: call('modrinth:install'), modpack: call('modrinth:modpack') },
   discord: { status: call('discord:status') },

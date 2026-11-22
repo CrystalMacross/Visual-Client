@@ -8,6 +8,9 @@ Moderner Minecraft-Launcher mit eingebautem **Visual Client**.
 - **Design**: Hintergrund als Verlauf / Farbe per Hex-Code oder eigener Screenshot, Akzentfarbe, Abdunkeln, Unschärfe
 - **Discord Rich Presence** (abschaltbar): „Playing: <Server-IP>“ / Einzelspieler, erkannt aus dem Spielprotokoll – ohne Mod
 - **Spiel läuft unabhängig**: Minecraft bleibt offen, auch wenn der Launcher geschlossen wird (Spielzeit wird beim nächsten Öffnen weitergezählt)
+- **Zwei Designs**: „Neu“ (Glas-Optik, Aurora-Licht, Partikel, leuchtende Ränder, 3D-Karten – abschaltbar, pausiert beim Spielen)
+  oder „Klassisch“; umschaltbar unter Einstellungen → Launcher-Design
+- **Upload Files**: eigene `.jar`-Mods und `.zip`-Ressourcen-/Shaderpakete (auch ohne Modrinth) per Knopf oder Drag & Drop in eine Instanz
 - **Java automatisch**: lädt die offizielle Mojang-Java-Laufzeit passend zur Version
 - **Schnellstart**: Anmeldung wird bis kurz vor Ablauf wiederverwendet (und im Hintergrund erneuert), Fabric-/Versionsdaten
   und die Java-Prüfung werden zwischengespeichert, Assets werden über Größe statt per Prüfsumme geprüft, Java-Klassen-Cache

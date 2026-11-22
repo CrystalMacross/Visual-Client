@@ -179,6 +179,133 @@ function removeContent(id, type, file) {
   write(meta);
 }
 
+// ---------------------------------------------------------------- uploaded files ("Upload Files")
+
+const MAX_UPLOAD = 512 * 1024 * 1024;
+
+/** Reads a zip/jar's entries (AdmZip is only loaded when files are uploaded). */
+function openArchive(file) {
+  const AdmZip = require('adm-zip');
+  try {
+    return new AdmZip(file);
+  } catch {
+    throw new Error('Die Datei ist kein gültiges Archiv (beschädigt oder keine .jar/.zip).');
+  }
+}
+
+function entryText(zip, name) {
+  const e = zip.getEntry(name);
+  return e ? zip.readAsText(e) : null;
+}
+
+/** fabric.mod.json "icon" is a path or a { size: path } map; returns a small PNG as data URL. */
+function modIcon(zip, icon) {
+  let p = icon;
+  if (p && typeof p === 'object') {
+    const sizes = Object.keys(p).map(Number).filter((n) => n > 0).sort((a, b) => a - b);
+    const best = sizes.find((n) => n >= 64) || sizes[sizes.length - 1];
+    p = best !== undefined ? p[String(best)] : null;
+  }
+  if (typeof p !== 'string' || !/\.png$/i.test(p)) return null;
+  const e = zip.getEntry(p.replace(/^\//, ''));
+  if (!e || e.header.size > 256 * 1024) return null;
+  return 'data:image/png;base64,' + e.getData().toString('base64');
+}
+
+/**
+ * Works out what an uploaded file is:
+ *   .jar  -> mod (Fabric: name/version/icon from fabric.mod.json; Quilt/Forge: added with a warning)
+ *   .zip  -> resource pack (pack.mcmeta) or shader pack (shaders/ folder)
+ */
+function inspectUpload(file) {
+  const ext = path.extname(file).toLowerCase();
+  const base = path.basename(file);
+  const zip = openArchive(file);
+  const names = zip.getEntries().map((e) => e.entryName);
+  if (ext === '.jar') {
+    const info = { type: 'mod', title: base.replace(/\.jar$/i, ''), version: null, icon: null, warning: null };
+    const fabric = entryText(zip, 'fabric.mod.json');
+    if (fabric) {
+      try {
+        const json = JSON.parse(fabric);
+        if (json.name) info.title = String(json.name).slice(0, 80);
+        if (json.version) info.version = String(json.version).slice(0, 40);
+        info.icon = modIcon(zip, json.icon);
+      } catch { /* keep the file name */ }
+    } else if (names.includes('quilt.mod.json')) {
+      info.warning = 'Quilt-Mod – läuft nur, wenn sie auch Fabric unterstützt.';
+    } else if (names.includes('META-INF/mods.toml') || names.includes('META-INF/neoforge.mods.toml')) {
+      info.warning = 'Forge/NeoForge-Mod – Fabric lädt sie nicht.';
+    } else {
+      info.warning = 'Keine Fabric-Mod erkannt (fabric.mod.json fehlt).';
+    }
+    return info;
+  }
+  if (ext === '.zip') {
+    if (names.includes('pack.mcmeta')) {
+      return { type: 'resourcepack', title: base.replace(/\.zip$/i, ''), version: null, icon: packIcon(zip), warning: null };
+    }
+    if (names.some((n) => n.startsWith('shaders/'))) {
+      return { type: 'shader', title: base.replace(/\.zip$/i, ''), version: null, icon: null, warning: null };
+    }
+    if (names.some((n) => /^[^/]+\/pack\.mcmeta$/.test(n))) {
+      throw new Error('Das Ressourcenpaket ist in einem Unterordner verpackt – pack.mcmeta muss direkt im Zip liegen.');
+    }
+    throw new Error('Unbekanntes Zip: weder Ressourcenpaket (pack.mcmeta) noch Shaderpaket (shaders/).');
+  }
+  throw new Error('Nur .jar (Mods) und .zip (Ressourcen- und Shaderpakete) werden unterstützt.');
+}
+
+function packIcon(zip) {
+  const e = zip.getEntry('pack.png');
+  if (!e || e.header.size > 256 * 1024) return null;
+  return 'data:image/png;base64,' + e.getData().toString('base64');
+}
+
+/**
+ * Copies files the user picked (mods not on Modrinth, own resource/shader packs) into the
+ * instance and records them so the content list shows name, version and icon.
+ * @returns {{ added: object[], errors: object[] }}
+ */
+function addFiles(id, files) {
+  const meta = read(id);
+  const added = [];
+  const errors = [];
+  for (const raw of files) {
+    const file = String(raw);
+    const base = path.basename(file);
+    try {
+      const stat = fs.statSync(file);
+      if (!stat.isFile()) throw new Error('Keine Datei.');
+      if (stat.size > MAX_UPLOAD) throw new Error('Größer als 512 MB.');
+      if (/^visual-client-/i.test(base)) throw new Error('Visual Client wird vom Launcher selbst verwaltet.');
+      const info = inspectUpload(file);
+      const dir = CONTENT_DIRS[info.type];
+      const name = base.replace(/[^\w.+\- ()[\]]/g, '_');
+      const target = path.join(instanceDir(id), dir, name);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.rmSync(target + '.disabled', { force: true });
+      fs.copyFileSync(file, target);
+      for (const [key, rec] of Object.entries(meta.installed)) {
+        if (rec.file === `${dir}/${name}`) delete meta.installed[key];
+      }
+      meta.installed[`upload:${dir}/${name}`] = {
+        title: info.version ? `${info.title} ${info.version}` : info.title,
+        file: `${dir}/${name}`,
+        icon: info.icon,
+        source: 'Upload',
+        type: info.type,
+        uploaded: Date.now()
+      };
+      added.push({ file: name, type: info.type, title: info.title, warning: info.warning });
+    } catch (e) {
+      errors.push({ file: base, message: e.message });
+    }
+  }
+  write(meta);
+  return { added, errors };
+}
+
 /** Records a library install so it can be shown with title/icon and isn't installed twice. */
 function recordInstall(id, key, info) {
   const meta = read(id);
@@ -189,5 +316,5 @@ function recordInstall(id, key, info) {
 module.exports = {
   CONTENT_DIRS, sharedRoot, instancesRoot, instanceDir, list, read, create, update, addPlayTime, remove,
   setProfilePicture, clearProfilePicture, openFolder,
-  content, toggleContent, removeContent, recordInstall
+  content, toggleContent, removeContent, recordInstall, addFiles
 };
