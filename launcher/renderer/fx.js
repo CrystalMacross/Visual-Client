@@ -1,5 +1,5 @@
 /* Visual Launcher - effects for the new UI (particles, cursor light, glow borders, tilt,
- * ripples, magnetic play button, sliding dock indicator). Purely visual: everything here can be
+ * ripples, magnetic play button, sliding navigation indicator). Purely visual: everything here can be
  * switched off in the settings ("Effekte") and pauses while Minecraft runs or the window is hidden. */
 'use strict';
 
@@ -97,8 +97,8 @@
     if (aurora) aurora.style.translate = `${(mx / W - 0.5) * -26}px ${(my / H - 0.5) * -18}px`;
   }
 
-  const GLOW = '.fx-card, .card, .result, .stat';
-  const TILT = '.fx-tilt, .cards .card, .stat';
+  const GLOW = '.fx-card, .card, .result';
+  const TILT = '.fx-tilt, .posters .card, .cards .card';
 
   document.addEventListener('pointermove', (e) => {
     mx = e.clientX;
@@ -117,7 +117,7 @@
       const r = t.getBoundingClientRect();
       const px = (e.clientX - r.left) / r.width - 0.5;
       const py = (e.clientY - r.top) / r.height - 0.5;
-      const max = t.classList.contains('hero') ? 2.2 : 5;
+      const max = t.classList.contains('stage') ? 1.6 : 6;
       t.style.transform = `perspective(1000px) rotateX(${(-py * max).toFixed(2)}deg) rotateY(${(px * max).toFixed(2)}deg) translateY(-3px)`;
     }
     if (play && !play.disabled) {
@@ -139,8 +139,10 @@
   // ---------------------------------------------------------------- ripples
   document.addEventListener('pointerdown', (e) => {
     if (!enabled || e.button !== 0) return;
-    const el = e.target.closest && e.target.closest('.btn, .play, .segmented button');
+    let el = e.target.closest && e.target.closest('.btn, .play, .segmented button');
     if (!el || el.disabled) return;
+    // the play button is a chamfered shape: the ripple goes into its (clipped) fill
+    if (el.classList.contains('play') && el.querySelector('.play-fill')) el = el.querySelector('.play-fill');
     const r = el.getBoundingClientRect();
     const size = Math.max(r.width, r.height) * 2.2;
     const dot = document.createElement('span');
@@ -152,19 +154,18 @@
     setTimeout(() => dot.remove(), 700);
   });
 
-  // ---------------------------------------------------------------- dock indicator
+  // ---------------------------------------------------------------- navigation indicator
   const dock = document.getElementById('dock');
   const indicator = document.getElementById('dock-indicator');
   function placeIndicator() {
     const act = dock.querySelector('.nav.active');
     // only touch attributes that really change: the observer below would otherwise fire forever
     if (!act) { if (dock.classList.contains('has-indicator')) dock.classList.remove('has-indicator'); return; }
-    const top = act.offsetTop + 'px', height = act.offsetHeight + 'px';
-    if (indicator.style.top !== top) indicator.style.top = top;
-    if (indicator.style.height !== height) indicator.style.height = height;
+    const vars = { '--ix': act.offsetLeft + 'px', '--iw': act.offsetWidth + 'px', '--iy': act.offsetTop + 'px', '--ih': act.offsetHeight + 'px' };
+    for (const [k, v] of Object.entries(vars)) if (indicator.style.getPropertyValue(k) !== v) indicator.style.setProperty(k, v);
     if (!dock.classList.contains('has-indicator')) dock.classList.add('has-indicator');
   }
-  // watch only the nav buttons (not the dock itself, whose class placeIndicator sets)
+  // watch only the nav buttons (not the bar itself, whose class placeIndicator sets)
   const navObserver = new MutationObserver(placeIndicator);
   dock.querySelectorAll('.nav').forEach((n) => navObserver.observe(n, { attributes: true, attributeFilter: ['class'] }));
 
@@ -179,6 +180,8 @@
     run();
   });
   window.addEventListener('resize', () => { resize(); placeIndicator(); });
+  // labels can hide/show with the window width and fonts load late: keep the indicator in place
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(placeIndicator);
 
   resize();
   readAccent();

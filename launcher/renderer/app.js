@@ -167,6 +167,13 @@ function applyDesign(d, imageUrl) {
   bg.style.backgroundPosition = 'center';
   bg.style.filter = d.blur ? `blur(${d.blur}px)` : '';
   $('#bg-dim').style.opacity = String(d.dim / 100);
+  // the new UI shows the background again inside its home "stage"
+  $$('[data-bg-mirror]').forEach((m) => {
+    m.style.background = css;
+    m.style.backgroundSize = 'cover';
+    m.style.backgroundPosition = 'center';
+    m.style.filter = (d.blur ? `blur(${d.blur}px) ` : '') + `brightness(${(1 - d.dim / 200).toFixed(2)})`;
+  });
   const prev = $('#preview-bg');
   if (prev) {
     prev.style.background = css;
