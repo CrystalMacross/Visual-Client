@@ -636,3 +636,23 @@ body.no-fx *, body.no-fx *::before, body.no-fx *::after { animation-duration: 0s
   .gate.split { grid-template-columns: 1fr; }
   .gate-art { display: none; }
 }
+
+/* design picker thumbnails: Glass, Neon, Nova (renderer/skin-*.css) */
+.ui-thumb.glass { border-radius: 14px; background: radial-gradient(80% 90% at 20% 10%, rgba(155, 140, 255, .65), transparent 60%), radial-gradient(70% 80% at 90% 30%, rgba(110, 231, 249, .45), transparent 60%), #141526; }
+.ui-thumb.glass i { background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .3); border-radius: 999px; }
+.ui-thumb.glass i:nth-child(1) { left: 20px; right: 20px; top: 6px; height: 12px; }
+.ui-thumb.glass i:nth-child(2) { left: 10px; right: 10px; top: 24px; height: 40px; border-radius: 10px; }
+.ui-thumb.glass i:nth-child(3) { left: 46px; right: 46px; bottom: 8px; height: 12px; background: linear-gradient(110deg, #a99bff, #6ee7f9); border: 0; }
+.ui-thumb.neon { background: #04020a; border-color: #ff2bd6; box-shadow: 0 0 12px rgba(255, 43, 214, .6); }
+.ui-thumb.neon i { border: 1px solid #00f0ff; box-shadow: 0 0 8px rgba(0, 240, 255, .7); }
+.ui-thumb.neon i:nth-child(1) { left: 0; right: 0; top: 0; height: 12px; border-width: 0 0 2px; border-color: #ff2bd6; }
+.ui-thumb.neon i:nth-child(2) { left: 10px; right: 10px; top: 20px; height: 38px; }
+.ui-thumb.neon i:nth-child(3) { left: 40px; right: 40px; bottom: 8px; height: 12px; background: linear-gradient(110deg, #ff2bd6, #00f0ff); border: 0; }
+.ui-thumb.neon i:nth-child(4) { left: 0; right: 0; top: 0; bottom: 0; border: 0; box-shadow: none; background: repeating-linear-gradient(180deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px 3px); }
+.ui-thumb.nova { border-radius: 12px; background: radial-gradient(80% 80% at 90% 0%, rgba(255, 122, 89, .6), transparent 60%), radial-gradient(70% 70% at 10% 100%, rgba(139, 92, 246, .55), transparent 60%), #1a0c16; }
+.ui-thumb.nova i { border-radius: 6px; background: rgba(255, 255, 255, .14); }
+.ui-thumb.nova i:nth-child(1) { left: 0; top: 0; bottom: 0; width: 22px; border-radius: 0; background: rgba(0, 0, 0, .35); }
+.ui-thumb.nova i:nth-child(2) { left: 5px; top: 10px; width: 12px; height: 12px; background: linear-gradient(150deg, #ff7a59, #ff4f9a); }
+.ui-thumb.nova i:nth-child(3) { left: 30px; right: 8px; top: 8px; height: 46px; border-radius: 8px; }
+.ui-thumb.nova i:nth-child(4) { left: 30px; bottom: 8px; width: 60px; height: 14px; border-radius: 6px; background: linear-gradient(110deg, #ff7a59, #ff4f9a, #8b5cf6); }
+.ui-choices { flex-wrap: wrap; }

@@ -6,6 +6,7 @@
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: https://cdn.modrinth.com https://textures.minecraft.net; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <title>Visual Launcher</title>
   <link rel="stylesheet" href="new.css">
+  <script src="skin.js"></script>
 </head>
 <body data-ui="new">
   <!-- background: user background (faint), dark shade, aurora, HUD grid, particles, grain, cursor light -->
@@ -179,11 +180,14 @@
         </div>
         <div class="rows">
           <section class="row fx-card">
-            <div class="row-label"><span class="idx">01</span><h3>Launcher-Design</h3><p class="muted small">„Neu“ ist dieses Design mit Effekten, „Klassisch“ das bisherige. Der Launcher lädt sich zum Wechseln kurz neu, alle Einstellungen bleiben erhalten.</p></div>
+            <div class="row-label"><span class="idx">01</span><h3>Launcher-Design</h3><p class="muted small">„Neu“ mit Effekten, „Klassisch“ das bisherige, dazu Glass (Milchglas), Neon (Cyberpunk) und Nova (Seitenleiste). Der Launcher lädt sich zum Wechseln kurz neu, alle Einstellungen bleiben erhalten.</p></div>
             <div class="row-body">
               <div class="ui-choices segmented" id="ui-mode">
                 <button data-ui="new"><span class="ui-thumb new"><i></i><i></i><i></i><i></i></span>Neu</button>
                 <button data-ui="old"><span class="ui-thumb old"><i></i><i></i><i></i></span>Klassisch</button>
+          <button data-ui="glass"><span class="ui-thumb glass"><i></i><i></i><i></i></span>Glass</button>
+          <button data-ui="neon"><span class="ui-thumb neon"><i></i><i></i><i></i><i></i></span>Neon</button>
+          <button data-ui="nova"><span class="ui-thumb nova"><i></i><i></i><i></i><i></i></span>Nova</button>
               </div>
               <label class="toggle"><input type="checkbox" id="fx-toggle"><span></span>Effekte (Partikel, Lichter, Animationen) – beim Spielen automatisch pausiert</label>
             </div>

@@ -42,7 +42,7 @@ function createWindow() {
     }
   });
   win.removeMenu();
-  win.loadFile(uiFile(), { query: { lang: uiLang() } });
+  win.loadFile(uiFile(), { query: { lang: uiLang(), skin: uiSkin() } });
   win.once('ready-to-show', () => win.show());
 
   // never navigate away from the app; open allowed links in the system browser
@@ -57,6 +57,13 @@ function createWindow() {
 function uiFile() {
   const ui = store.getSettings().ui || {};
   return path.join(__dirname, 'renderer', ui.mode === 'old' ? 'index.html' : 'new.html');
+}
+
+/** Glass, Neon and Nova are designs on top of the new UI (renderer/skin-*.css). */
+const SKINS = ['glass', 'neon', 'nova'];
+function uiSkin() {
+  const ui = store.getSettings().ui || {};
+  return SKINS.includes(ui.mode) ? ui.mode : '';
 }
 
 /** Launcher language from the settings: "en" (default) or "de". */
@@ -239,16 +246,16 @@ function registerIpc() {
   handle('instances:toggle', (id, type, file) => instances.toggleContent(id, type, file));
   handle('instances:addFiles', (id, files) => addFilesToInstance(id, files));
   handle('ui:set', (mode) => {
-    const next = mode === 'old' ? 'old' : 'new';
+    const next = ['old', 'new', ...SKINS].includes(mode) ? mode : 'new';
     store.saveSettings({ ui: { mode: next } });
     // reload in the chosen UI (programmatic loads are not blocked by will-navigate)
-    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile(), { query: { lang: uiLang() } }); }, 60);
+    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile(), { query: { lang: uiLang(), skin: uiSkin() } }); }, 60);
     return next;
   });
   handle('lang:set', (lang) => {
     const next = lang === 'de' ? 'de' : 'en';
     store.saveSettings({ language: next });
-    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile(), { query: { lang: uiLang() } }); }, 60);
+    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile(), { query: { lang: uiLang(), skin: uiSkin() } }); }, 60);
     return next;
   });
   handle('instances:removeContent', (id, type, file) => instances.removeContent(id, type, file));

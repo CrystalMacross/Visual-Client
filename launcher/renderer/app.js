@@ -403,7 +403,7 @@ function renderSettings() {
   $('#discord-id').value = s.discord.clientId || '';
   updateDiscordState();
   $('#about').textContent = `Visual Launcher ${state.info.version} · Visual Client ${state.info.visualClient || '–'} eingebaut`;
-  const current = document.body.dataset.ui || 'old';
+  const current = document.documentElement.dataset.skin || document.body.dataset.ui || 'old';
   $$('#ui-mode button').forEach((b) => b.classList.toggle('active', b.dataset.ui === current));
   const fx = $('#fx-toggle');
   if (fx) fx.checked = !s.ui || s.ui.effects !== false;
@@ -419,7 +419,7 @@ function applyUiPrefs() {
 }
 
 $$('#ui-mode button').forEach((b) => b.addEventListener('click', async () => {
-  if (b.dataset.ui === (document.body.dataset.ui || 'old')) return;
+  if (b.dataset.ui === (document.documentElement.dataset.skin || document.body.dataset.ui || 'old')) return;
   if (state.launching) { toast('Bitte warte, bis Minecraft gestartet ist.', 'error'); return; }
   document.body.classList.add('ui-switching');
   try {
