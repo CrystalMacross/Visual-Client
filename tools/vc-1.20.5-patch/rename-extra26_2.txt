@@ -1,0 +1,3 @@
+# 26.2+: GameRenderer.getMainCamera() -> mainCamera(), F1 state moved from Options.hideGui to Gui.hud.isHidden()
+\.getMainCamera\(\) => .mainCamera()
+\bmc\.options\.hideGui\b => mc.gui.hud.isHidden()
