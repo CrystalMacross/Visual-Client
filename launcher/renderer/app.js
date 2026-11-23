@@ -430,6 +430,20 @@ $$('#ui-mode button').forEach((b) => b.addEventListener('click', async () => {
   }
 }));
 
+// launcher language (renderer/i18n.js translates the window; switching reloads it)
+$$('#lang-mode button').forEach((b) => {
+  b.classList.toggle('active', b.dataset.lang === (window.VL_LANG || 'de'));
+  b.addEventListener('click', async () => {
+    if (b.dataset.lang === (window.VL_LANG || 'de')) return;
+    if (state.launching) { toast('Bitte warte, bis Minecraft gestartet ist.', 'error'); return; }
+    try {
+      await api(window.vl.lang.set(b.dataset.lang));
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  });
+});
+
 const fxToggle = $('#fx-toggle');
 if (fxToggle) fxToggle.addEventListener('change', (e) => {
   state.settings.ui = { ...(state.settings.ui || {}), effects: e.target.checked };

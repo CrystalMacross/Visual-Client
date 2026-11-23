@@ -42,7 +42,7 @@ function createWindow() {
     }
   });
   win.removeMenu();
-  win.loadFile(uiFile());
+  win.loadFile(uiFile(), { query: { lang: uiLang() } });
   win.once('ready-to-show', () => win.show());
 
   // never navigate away from the app; open allowed links in the system browser
@@ -59,18 +59,28 @@ function uiFile() {
   return path.join(__dirname, 'renderer', ui.mode === 'old' ? 'index.html' : 'new.html');
 }
 
+/** Launcher language from the settings: "en" (default) or "de". */
+function uiLang() {
+  return store.getSettings().language === 'de' ? 'de' : 'en';
+}
+
+/** Text for native dialogs (the window itself is translated by renderer/i18n.js). */
+function tr(de, en) {
+  return uiLang() === 'en' ? en : de;
+}
+
 /** "Upload Files": copies picked (or dropped) .jar/.zip files into an instance. */
 async function addFilesToInstance(id, filePaths) {
   let files = Array.isArray(filePaths) ? filePaths.filter((f) => typeof f === 'string' && f) : [];
   if (!files.length) {
     const res = await dialog.showOpenDialog(win, {
-      title: 'Dateien zur Instanz hinzufügen',
-      buttonLabel: 'Hinzufügen',
+      title: tr('Dateien zur Instanz hinzufügen', 'Add files to the instance'),
+      buttonLabel: tr('Hinzufügen', 'Add'),
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: 'Mods und Pakete (.jar, .zip)', extensions: ['jar', 'zip'] },
+        { name: tr('Mods und Pakete (.jar, .zip)', 'Mods and packs (.jar, .zip)'), extensions: ['jar', 'zip'] },
         { name: 'Mods (.jar)', extensions: ['jar'] },
-        { name: 'Ressourcen- und Shaderpakete (.zip)', extensions: ['zip'] }
+        { name: tr('Ressourcen- und Shaderpakete (.zip)', 'Resource and shader packs (.zip)'), extensions: ['zip'] }
       ]
     });
     if (res.canceled || !res.filePaths.length) return null;
@@ -148,7 +158,7 @@ async function chooseProfilePicture(id, filePath) {
   let file = filePath;
   if (!file) {
     const res = await dialog.showOpenDialog(win, {
-      title: 'Profilbild für die Instanz wählen',
+      title: tr('Profilbild für die Instanz wählen', 'Choose a profile picture for the instance'),
       properties: ['openFile'],
       filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }]
     });
@@ -175,7 +185,8 @@ function registerIpc() {
     visualStyles: versions.bundledVisualStyles() ? versions.bundledVisualStyles().version : null
   }));
   handle('legal:get', () => {
-    const read = (f) => fs.readFileSync(path.join(__dirname, 'legal', f), 'utf8');
+    const dir = uiLang() === 'en' ? path.join(__dirname, 'legal', 'en') : path.join(__dirname, 'legal');
+    const read = (f) => fs.readFileSync(path.join(dir, f), 'utf8');
     return { tos: read('TERMS_OF_SERVICE.md'), tou: read('TERMS_OF_USE.md'), privacy: read('PRIVACY.md') };
   });
   handle('legal:accept', () => store.saveSettings({ legalAccepted: LEGAL_VERSION }));
@@ -194,7 +205,7 @@ function registerIpc() {
   handle('discord:status', () => presence.status());
   handle('background:choose', async () => {
     const res = await dialog.showOpenDialog(win, {
-      title: 'Hintergrundbild wählen',
+      title: tr('Hintergrundbild wählen', 'Choose a background image'),
       properties: ['openFile'],
       filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }]
     });
@@ -231,7 +242,13 @@ function registerIpc() {
     const next = mode === 'old' ? 'old' : 'new';
     store.saveSettings({ ui: { mode: next } });
     // reload in the chosen UI (programmatic loads are not blocked by will-navigate)
-    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile()); }, 60);
+    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile(), { query: { lang: uiLang() } }); }, 60);
+    return next;
+  });
+  handle('lang:set', (lang) => {
+    const next = lang === 'de' ? 'de' : 'en';
+    store.saveSettings({ language: next });
+    setTimeout(() => { if (win && !win.isDestroyed()) win.loadFile(uiFile(), { query: { lang: uiLang() } }); }, 60);
     return next;
   });
   handle('instances:removeContent', (id, type, file) => instances.removeContent(id, type, file));
@@ -239,7 +256,7 @@ function registerIpc() {
   handle('instances:chooseIcon', (id, filePath) => chooseProfilePicture(id, filePath));
   handle('dialog:pickImage', async () => {
     const res = await dialog.showOpenDialog(win, {
-      title: 'Profilbild wählen',
+      title: tr('Profilbild wählen', 'Choose a profile picture'),
       properties: ['openFile'],
       filters: [{ name: 'Bilder', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }]
     });

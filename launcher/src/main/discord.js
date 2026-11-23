@@ -158,13 +158,17 @@ const game = new GameState();
 let session = null; // { instance, mcVersion, start }
 let getSettings = () => ({ enabled: false });
 
+function mainMenuText() {
+  try { return require('./store').getSettings().language === 'de' ? 'Im Hauptmenü' : 'In the main menu'; } catch { return 'In the main menu'; }
+}
+
 function activity() {
   if (!session) return null;
   const s = getSettings();
   let details;
   if (game.mode === 'multiplayer') details = s.showServer && game.server ? `Playing: ${game.server}` : 'Playing: Multiplayer';
   else if (game.mode === 'singleplayer') details = 'Playing: Singleplayer';
-  else details = 'Im Hauptmenü';
+  else details = mainMenuText();
   return {
     details: details.slice(0, 128),
     state: `Minecraft ${session.mcVersion} · ${session.instance}`.slice(0, 128),

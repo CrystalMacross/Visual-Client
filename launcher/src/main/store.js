@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS = {
   game: { width: 1280, height: 720, fullscreen: false, closeLauncher: false },
   discord: { enabled: true, showServer: true, clientId: '' },
   ui: { mode: 'new', effects: true }, // launcher UI: new (with effects) or old (classic)
+  language: 'en', // launcher language: en | de (English for new installs)
   selectedInstance: null,
   selectedAccount: null
 };

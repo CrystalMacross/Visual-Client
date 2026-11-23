@@ -189,6 +189,15 @@
             </div>
           </section>
           <section class="row fx-card">
+            <div class="row-label"><span class="idx">Aa</span><h3>Sprache</h3><p class="muted small">Die Sprache des Launchers. Er lädt sich zum Wechseln kurz neu.</p></div>
+            <div class="row-body">
+              <div class="segmented" id="lang-mode">
+                <button data-lang="en">English</button>
+                <button data-lang="de">Deutsch</button>
+              </div>
+            </div>
+          </section>
+          <section class="row fx-card">
             <div class="row-label"><span class="idx">02</span><h3>Konten</h3><p class="muted small">Microsoft-Konten mit Minecraft: Java Edition. Klicke ein Konto an, um es zu verwenden.</p></div>
             <div class="row-body">
               <div id="accounts"></div>
@@ -286,7 +295,8 @@
   <div id="modal" class="gate" hidden><div class="gate-card modal-card" id="modal-card"></div></div>
 
   <div id="toasts" class="toasts"></div>
-  <script src="app.js"></script>
+  <script src="i18n.js"></script>
+<script src="app.js"></script>
   <script src="fx.js"></script>
 </body>
 </html>

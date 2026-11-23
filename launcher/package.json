@@ -1,7 +1,7 @@
 {
   "name": "visual-launcher",
   "productName": "Visual Launcher",
-  "version": "1.10.4",
+  "version": "1.10.5",
   "description": "Modern Minecraft launcher with Microsoft login, Modrinth library and Visual Client built in.",
   "main": "main.js",
   "license": "MIT",
@@ -43,7 +43,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "license": "legal/LICENSE_AGREEMENT.txt",
+      "license": "legal/LICENSE_AGREEMENT_EN.txt",
       "shortcutName": "Visual Launcher"
     },
     "portable": { "artifactName": "Visual-Launcher-${version}-portable.exe" },
