@@ -1,7 +1,7 @@
 {
   "name": "visual-launcher",
   "productName": "Visual Launcher",
-  "version": "1.10.6",
+  "version": "1.10.7",
   "description": "Modern Minecraft launcher with Microsoft login, Modrinth library and Visual Client built in.",
   "main": "main.js",
   "license": "MIT",
