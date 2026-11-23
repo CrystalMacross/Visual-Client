@@ -1,7 +1,7 @@
 {
   "name": "visual-launcher",
   "productName": "Visual Launcher",
-  "version": "1.10.3",
+  "version": "1.10.4",
   "description": "Modern Minecraft launcher with Microsoft login, Modrinth library and Visual Client built in.",
   "main": "main.js",
   "license": "MIT",
@@ -37,7 +37,7 @@
       "package.json"
     ],
     "extraResources": [
-      { "from": "resources/mods", "to": "mods", "filter": ["visual-client-*.jar"] }
+      { "from": "resources/mods", "to": "mods", "filter": ["visual-client-*.jar", "visual-styles-*.jar"] }
     ],
     "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
     "nsis": {

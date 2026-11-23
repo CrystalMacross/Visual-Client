@@ -138,6 +138,56 @@ function installVisualClient(instanceDir) {
   return vc.version;
 }
 
+// ---------------------------------------------------------------- Visual Styles
+
+/** Minecraft versions the bundled Visual Styles jar supports (fabric.mod.json: ~1.21.11). */
+const VISUAL_STYLES_VERSIONS = ['1.21.11'];
+
+function visualStylesSupports(mcVersion) {
+  return VISUAL_STYLES_VERSIONS.includes(mcVersion);
+}
+
+function bundledVisualStyles() {
+  let best = null;
+  for (const dir of bundledModDirs()) {
+    let names = [];
+    try { names = fs.readdirSync(dir); } catch { continue; }
+    for (const name of names) {
+      const m = /^visual-styles-(\d+)\.(\d+)\.(\d+)(?:\+[\w.]+)?\.jar$/i.exec(name);
+      if (!m) continue;
+      const v = [Number(m[1]), Number(m[2]), Number(m[3])];
+      const cmp = best ? (v[0] - best.v[0] || v[1] - best.v[1] || v[2] - best.v[2]) : 1;
+      if (cmp > 0) best = { v, file: path.join(dir, name) };
+    }
+  }
+  return best ? { version: best.v.join('.'), file: best.file } : null;
+}
+
+/**
+ * Puts the bundled Visual Styles into a 1.21.11 instance (replacing older copies, keeping it
+ * off if the player disabled it) and removes it from instances of other versions, where Fabric
+ * would refuse to start.
+ */
+function installVisualStyles(instanceDir, mcVersion) {
+  const vs = bundledVisualStyles();
+  const mods = path.join(instanceDir, 'mods');
+  fs.mkdirSync(mods, { recursive: true });
+  const supported = vs && visualStylesSupports(mcVersion);
+  const targetName = vs ? `visual-styles-${vs.version}.jar` : null;
+  for (const f of fs.readdirSync(mods)) {
+    if (!/^visual-styles-.*\.jar(\.disabled)?$/i.test(f)) continue;
+    if (supported && (f === targetName || f === targetName + '.disabled')) continue;
+    fs.rmSync(path.join(mods, f));
+  }
+  if (!supported) return null;
+  const target = path.join(mods, targetName);
+  if (fs.existsSync(target + '.disabled')) return vs.version;
+  if (!fs.existsSync(target) || fs.statSync(target).size !== fs.statSync(vs.file).size) {
+    fs.copyFileSync(vs.file, target);
+  }
+  return vs.version;
+}
+
 /** Fabric API is required by Visual Client; fetch the newest build for the version from Modrinth. */
 async function ensureFabricApi(instanceDir, mcVersion) {
   const mods = path.join(instanceDir, 'mods');
@@ -152,5 +202,5 @@ async function ensureFabricApi(instanceDir, mcVersion) {
 
 module.exports = {
   listVersions, versionJson, javaComponent, installFabric, visualClientSupports,
-  bundledVisualClient, installVisualClient, ensureFabricApi, request
+  bundledVisualClient, installVisualClient, bundledVisualStyles, installVisualStyles, visualStylesSupports, ensureFabricApi, request
 };

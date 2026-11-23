@@ -115,6 +115,7 @@ async function start(instanceId, send) {
       versions.installVisualClient(gameDir);
       await versions.ensureFabricApi(gameDir, inst.mcVersion);
     }
+    if (inst.visualClient) versions.installVisualStyles(gameDir, inst.mcVersion);
     let javaPath = settings.java.customPath && fs.existsSync(settings.java.customPath) ? settings.java.customPath : null;
     let component = null;
     if (!javaPath) {

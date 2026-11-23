@@ -28,3 +28,17 @@ const newest = jars[0];
 const out = `visual-client-${newest.v.join('.')}.jar`;
 fs.copyFileSync(path.join(repoRoot, newest.f), path.join(target, out));
 console.log('Bundled Visual Client ' + newest.v.join('.') + ' -> resources/mods/' + out);
+
+// Visual Styles: the newest visual-styles-<version>[+<mc>].jar from the repository root, if any.
+const styles = fs.readdirSync(repoRoot)
+  .map((f) => ({ f, m: /^visual-styles-(\d+)\.(\d+)\.(\d+)(?:\+[\w.]+)?\.jar$/i.exec(f) }))
+  .filter((x) => x.m)
+  .map((x) => ({ f: x.f, v: [Number(x.m[1]), Number(x.m[2]), Number(x.m[3])] }))
+  .sort((a, b) => b.v[0] - a.v[0] || b.v[1] - a.v[1] || b.v[2] - a.v[2]);
+for (const old of fs.readdirSync(target)) {
+  if (/^visual-styles-.*\.jar$/i.test(old)) fs.rmSync(path.join(target, old));
+}
+if (styles.length) {
+  fs.copyFileSync(path.join(repoRoot, styles[0].f), path.join(target, styles[0].f));
+  console.log('Bundled Visual Styles ' + styles[0].v.join('.') + ' -> resources/mods/' + styles[0].f);
+}

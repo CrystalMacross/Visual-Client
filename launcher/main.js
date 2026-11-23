@@ -171,7 +171,8 @@ function registerIpc() {
     version: app.getVersion(),
     platform: process.platform,
     legalVersion: LEGAL_VERSION,
-    visualClient: versions.bundledVisualClient() ? versions.bundledVisualClient().version : null
+    visualClient: versions.bundledVisualClient() ? versions.bundledVisualClient().version : null,
+    visualStyles: versions.bundledVisualStyles() ? versions.bundledVisualStyles().version : null
   }));
   handle('legal:get', () => {
     const read = (f) => fs.readFileSync(path.join(__dirname, 'legal', f), 'utf8');
@@ -217,6 +218,7 @@ function registerIpc() {
   handle('instances:create', (opts) => {
     const inst = instances.create(opts);
     if (inst.visualClient && versions.visualClientSupports(inst.mcVersion)) versions.installVisualClient(instances.instanceDir(inst.id));
+    if (inst.visualClient) versions.installVisualStyles(instances.instanceDir(inst.id), inst.mcVersion);
     return inst;
   });
   handle('instances:update', (id, patch) => instances.update(id, patch));

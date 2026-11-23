@@ -145,12 +145,12 @@ function content(id) {
       out.push({
         type,
         file: name,
-        name: info ? info.title : /^visual-client-/i.test(base) ? 'Visual Client ' + base.replace(/^visual-client-|\.jar$/gi, '') : base,
+        name: info ? info.title : /^visual-client-/i.test(base) ? 'Visual Client ' + base.replace(/^visual-client-|\.jar$/gi, '') : /^visual-styles-/i.test(base) ? 'Visual Styles ' + base.replace(/^visual-styles-|\.jar$/gi, '') : base,
         icon: info ? info.icon : null,
         source: info ? info.source : null,
         enabled,
         size: stat.isFile() ? stat.size : 0,
-        builtIn: /^visual-client-/i.test(base)
+        builtIn: /^visual-(client|styles)-/i.test(base)
       });
     }
   }
@@ -279,6 +279,7 @@ function addFiles(id, files) {
       if (!stat.isFile()) throw new Error('Keine Datei.');
       if (stat.size > MAX_UPLOAD) throw new Error('Größer als 512 MB.');
       if (/^visual-client-/i.test(base)) throw new Error('Visual Client wird vom Launcher selbst verwaltet.');
+      if (/^visual-styles-/i.test(base)) throw new Error('Visual Styles wird vom Launcher selbst verwaltet.');
       const info = inspectUpload(file);
       const dir = CONTENT_DIRS[info.type];
       const name = base.replace(/[^\w.+\- ()[\]]/g, '_');
