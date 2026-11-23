@@ -637,22 +637,23 @@ body.no-fx *, body.no-fx *::before, body.no-fx *::after { animation-duration: 0s
   .gate-art { display: none; }
 }
 
-/* design picker thumbnails: Glass, Neon, Nova (renderer/skin-*.css) */
-.ui-thumb.glass { border-radius: 14px; background: radial-gradient(80% 90% at 20% 10%, rgba(155, 140, 255, .65), transparent 60%), radial-gradient(70% 80% at 90% 30%, rgba(110, 231, 249, .45), transparent 60%), #141526; }
-.ui-thumb.glass i { background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .3); border-radius: 999px; }
-.ui-thumb.glass i:nth-child(1) { left: 20px; right: 20px; top: 6px; height: 12px; }
-.ui-thumb.glass i:nth-child(2) { left: 10px; right: 10px; top: 24px; height: 40px; border-radius: 10px; }
-.ui-thumb.glass i:nth-child(3) { left: 46px; right: 46px; bottom: 8px; height: 12px; background: linear-gradient(110deg, #a99bff, #6ee7f9); border: 0; }
-.ui-thumb.neon { background: #04020a; border-color: #ff2bd6; box-shadow: 0 0 12px rgba(255, 43, 214, .6); }
-.ui-thumb.neon i { border: 1px solid #00f0ff; box-shadow: 0 0 8px rgba(0, 240, 255, .7); }
-.ui-thumb.neon i:nth-child(1) { left: 0; right: 0; top: 0; height: 12px; border-width: 0 0 2px; border-color: #ff2bd6; }
-.ui-thumb.neon i:nth-child(2) { left: 10px; right: 10px; top: 20px; height: 38px; }
-.ui-thumb.neon i:nth-child(3) { left: 40px; right: 40px; bottom: 8px; height: 12px; background: linear-gradient(110deg, #ff2bd6, #00f0ff); border: 0; }
-.ui-thumb.neon i:nth-child(4) { left: 0; right: 0; top: 0; bottom: 0; border: 0; box-shadow: none; background: repeating-linear-gradient(180deg, rgba(255, 255, 255, .06) 0 1px, transparent 1px 3px); }
-.ui-thumb.nova { border-radius: 12px; background: radial-gradient(80% 80% at 90% 0%, rgba(255, 122, 89, .6), transparent 60%), radial-gradient(70% 70% at 10% 100%, rgba(139, 92, 246, .55), transparent 60%), #1a0c16; }
-.ui-thumb.nova i { border-radius: 6px; background: rgba(255, 255, 255, .14); }
-.ui-thumb.nova i:nth-child(1) { left: 0; top: 0; bottom: 0; width: 22px; border-radius: 0; background: rgba(0, 0, 0, .35); }
-.ui-thumb.nova i:nth-child(2) { left: 5px; top: 10px; width: 12px; height: 12px; background: linear-gradient(150deg, #ff7a59, #ff4f9a); }
-.ui-thumb.nova i:nth-child(3) { left: 30px; right: 8px; top: 8px; height: 46px; border-radius: 8px; }
-.ui-thumb.nova i:nth-child(4) { left: 30px; bottom: 8px; width: 60px; height: 14px; border-radius: 6px; background: linear-gradient(110deg, #ff7a59, #ff4f9a, #8b5cf6); }
+/* design picker thumbnails: Glass (light bento + dock), Neon (synthwave sun + bottom bar), Nova (sidebar + cover) */
+.ui-thumb.glass { border-radius: 14px; background: radial-gradient(70% 80% at 10% 0%, #d8ccff, transparent 60%), radial-gradient(70% 80% at 100% 20%, #c9ecff, transparent 60%), #f4f2fb; border-color: rgba(255, 255, 255, .9); }
+.ui-thumb.glass i { background: #fff; border-radius: 6px; box-shadow: 0 3px 8px rgba(80, 60, 160, .18); }
+.ui-thumb.glass i:nth-child(1) { left: 5px; top: 6px; bottom: 6px; width: 14px; border-radius: 7px; }
+.ui-thumb.glass i:nth-child(2) { left: 26px; top: 8px; width: 78px; height: 44px; }
+.ui-thumb.glass i:nth-child(3) { right: 8px; top: 8px; width: 30px; height: 44px; background: radial-gradient(circle at 50% 50%, #8b6cff 0 8px, #fff 9px); }
+.ui-thumb.glass i:nth-child(4) { left: 26px; right: 8px; bottom: 8px; height: 18px; background: repeating-linear-gradient(90deg, #fff 0 24px, transparent 24px 28px); box-shadow: none; }
+.ui-thumb.neon { background: linear-gradient(180deg, #12002b, #3d0b5c 52%, #08000f 53%); border-color: #ff2bd6; box-shadow: 0 0 12px rgba(255, 43, 214, .6); }
+.ui-thumb.neon i { display: block; }
+.ui-thumb.neon i:nth-child(1) { left: 50%; top: 10px; width: 40px; height: 40px; margin-left: -20px; border-radius: 50%; background: linear-gradient(180deg, #ffe14d, #ff2bd6 70%, #8c1eff); -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 55% 62%, #000 62% 72%, transparent 72% 80%, #000 80%); }
+.ui-thumb.neon i:nth-child(2) { left: 0; right: 0; bottom: 14px; height: 24px; background-image: linear-gradient(rgba(255, 43, 214, .8) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 240, 255, .7) 1px, transparent 1px); background-size: 12px 8px; }
+.ui-thumb.neon i:nth-child(3) { left: 40px; right: 40px; top: 46px; height: 8px; background: linear-gradient(90deg, #ff2bd6, #00f0ff); }
+.ui-thumb.neon i:nth-child(4) { left: 0; right: 0; bottom: 0; height: 12px; background: #07000f; border-top: 2px solid #ff2bd6; }
+.ui-thumb.nova { border-radius: 10px; background: #1c1017; }
+.ui-thumb.nova i { display: block; }
+.ui-thumb.nova i:nth-child(1) { left: 0; top: 0; bottom: 0; width: 34px; background: #120a0f; border-right: 1px solid rgba(247, 239, 230, .15); }
+.ui-thumb.nova i:nth-child(2) { left: 6px; top: 14px; width: 22px; height: 6px; border-radius: 3px; background: #f7efe6; }
+.ui-thumb.nova i:nth-child(3) { left: 42px; top: 22px; width: 44px; height: 10px; border-radius: 2px; background: linear-gradient(90deg, #f7efe6, rgba(247, 239, 230, .4)); box-shadow: 0 16px 0 -2px rgba(247, 239, 230, .25), 0 30px 0 -1px #f7efe6; }
+.ui-thumb.nova i:nth-child(4) { right: 8px; top: 10px; width: 46px; height: 66px; border-radius: 6px; background: linear-gradient(160deg, #3a1f52, #6b2b4a); box-shadow: inset 0 0 0 6px rgba(0, 0, 0, 0), 0 0 0 0 transparent; }
 .ui-choices { flex-wrap: wrap; }
