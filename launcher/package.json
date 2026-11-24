@@ -1,7 +1,7 @@
 {
   "name": "visual-launcher",
   "productName": "Visual Launcher",
-  "version": "1.10.14",
+  "version": "1.10.15",
   "description": "Modern Minecraft launcher with Microsoft login, Modrinth library and Visual Client built in.",
   "main": "main.js",
   "license": "MIT",
@@ -47,7 +47,16 @@
       "shortcutName": "Visual Launcher"
     },
     "portable": { "artifactName": "Visual-Launcher-${version}-portable.exe" },
-    "mac": { "target": ["dmg"], "category": "public.app-category.games", "icon": "build/icon.png" },
+    "afterPack": "scripts/adhoc-sign.js",
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "category": "public.app-category.games",
+      "icon": "build/icon.png",
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": { "artifactName": "Visual-Launcher-${version}-${arch}.${ext}" },
     "linux": { "target": ["AppImage"], "category": "Game", "icon": "build/icon.png" }
   }
 }
