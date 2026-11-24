@@ -56,6 +56,8 @@
     // settings
     'Alles wird nur lokal auf diesem Gerät gespeichert.': 'Everything is stored only on this device.',
     'Launcher-Design': 'Launcher design', 'Neu': 'New', 'Klassisch': 'Classic',
+    'Biom und Dimension anzeigen (braucht Visual Client)': 'Show biome and dimension (needs Visual Client)',
+    'Weltnamen im Einzelspieler anzeigen': 'Show the world name in singleplayer',
     '„Neu“ mit Effekten, „Klassisch“ das bisherige, dazu Glass (Milchglas), Neon (Cyberpunk) und Nova (Seitenleiste). Der Launcher lädt sich zum Wechseln kurz neu, alle Einstellungen bleiben erhalten.': '“New” with effects, “Classic” the previous one, plus Glass (frosted glass), Neon (cyberpunk) and Nova (sidebar). The launcher reloads briefly to switch; all settings are kept.',
     '„Neu“ mit Effekten, „Klassisch“ dieses Design, dazu Glass, Neon und Nova. Der Launcher lädt sich zum Wechseln kurz neu, alle Einstellungen bleiben erhalten.': '“New” with effects, “Classic” this design, plus Glass, Neon and Nova. The launcher reloads briefly to switch; all settings are kept.',
     '„Neu“ ist dieses Design mit Effekten, „Klassisch“ das bisherige. Der Launcher lädt sich zum Wechseln kurz neu, alle Einstellungen bleiben erhalten.': '“New” is this design with effects, “Classic” the previous one. The launcher reloads briefly to switch; all settings are kept.',

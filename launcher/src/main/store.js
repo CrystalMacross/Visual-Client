@@ -19,7 +19,7 @@ const DEFAULT_SETTINGS = {
   },
   java: { minMemory: 1024, maxMemory: 4096, customPath: '', jvmArgs: '', fastStart: true },
   game: { width: 1280, height: 720, fullscreen: false, closeLauncher: false },
-  discord: { enabled: true, showServer: true, clientId: '' },
+  discord: { enabled: true, showServer: true, showBiome: true, showWorld: true, clientId: '' },
   ui: { mode: 'new', effects: true }, // launcher UI: new (with effects) or old (classic)
   language: 'en', // launcher language: en | de (English for new installs)
   selectedInstance: null,

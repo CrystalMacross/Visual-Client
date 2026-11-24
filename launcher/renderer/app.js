@@ -400,6 +400,9 @@ function renderSettings() {
   $('#discord-on').checked = s.discord.enabled;
   $('#discord-server').checked = s.discord.showServer;
   $('#discord-server').disabled = !s.discord.enabled;
+  $('#discord-biome').checked = s.discord.showBiome !== false;
+  $('#discord-world').checked = s.discord.showWorld !== false;
+  $('#discord-biome').disabled = $('#discord-world').disabled = !s.discord.enabled;
   $('#discord-id').value = s.discord.clientId || '';
   updateDiscordState();
   $('#about').textContent = `Visual Launcher ${state.info.version} · Visual Client ${state.info.visualClient || '–'} eingebaut`;
@@ -472,11 +475,13 @@ async function updateDiscordState() {
   const pill = $('#discord-state');
   if (!pill) return;
   let text = 'aus', cls = '';
-  if (s.enabled && !/^\d{15,25}$/.test(s.clientId || '')) { text = 'ID fehlt'; cls = ''; }
-  else if (s.enabled) {
+  if (s.enabled) {
     const st = await api(window.vl.discord.status()).catch(() => null);
-    text = st && st.connected ? 'verbunden' : st && st.playing ? 'Discord nicht gefunden' : 'bereit';
-    cls = st && st.connected ? 'ok' : 'accent';
+    if (st && st.hasId === false) { text = 'ID fehlt'; cls = ''; }
+    else {
+      text = st && st.connected ? 'verbunden' : st && st.playing ? 'Discord nicht gefunden' : 'bereit';
+      cls = st && st.connected ? 'ok' : 'accent';
+    }
   }
   pill.textContent = text;
   pill.className = 'pill ' + cls;
@@ -484,7 +489,9 @@ async function updateDiscordState() {
 function saveDiscord() {
   saveSetting({ discord: state.settings.discord }).then(() => setTimeout(updateDiscordState, 800));
 }
-$('#discord-on').addEventListener('change', (e) => { state.settings.discord.enabled = e.target.checked; $('#discord-server').disabled = !e.target.checked; saveDiscord(); });
+$('#discord-on').addEventListener('change', (e) => { state.settings.discord.enabled = e.target.checked; $('#discord-server').disabled = $('#discord-biome').disabled = $('#discord-world').disabled = !e.target.checked; saveDiscord(); });
+$('#discord-biome').addEventListener('change', (e) => { state.settings.discord.showBiome = e.target.checked; saveDiscord(); });
+$('#discord-world').addEventListener('change', (e) => { state.settings.discord.showWorld = e.target.checked; saveDiscord(); });
 $('#discord-server').addEventListener('change', (e) => { state.settings.discord.showServer = e.target.checked; saveDiscord(); });
 $('#discord-id').addEventListener('change', (e) => {
   const id = e.target.value.trim();

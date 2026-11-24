@@ -177,7 +177,7 @@ async function start(instanceId, send) {
   running = child;
   instances.update(inst.id, { lastPlayed: Date.now() });
   send('launch:started', { instanceId: inst.id });
-  presence.gameStarted(inst);
+  presence.gameStarted(inst, gameDir);
 
   const play = trackPlayTime(inst.id, child.pid, logFile, Date.now(), send);
   const timer = setInterval(() => { play.flush(); send('instances:changed', { instanceId: inst.id }); }, 60000);
