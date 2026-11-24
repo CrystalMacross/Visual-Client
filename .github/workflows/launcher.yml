@@ -24,7 +24,7 @@ jobs:
         include:
           - os: windows-latest
             target: --win
-          - os: macos-latest
+          - os: macos-14
             target: --mac
           - os: ubuntu-latest
             target: --linux
@@ -113,3 +113,4 @@ jobs:
             Windows warnt beim ersten Start, weil die Datei nicht signiert ist: „Weitere Informationen“ → „Trotzdem ausführen“.
 
             Automatisch gebaut aus Commit ${{ github.event.pull_request.head.sha || github.sha }}.
+
