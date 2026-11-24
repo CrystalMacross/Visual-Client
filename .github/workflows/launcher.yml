@@ -24,7 +24,7 @@ jobs:
         include:
           - os: windows-latest
             target: --win
-          - os: macos-14
+          - os: macos-15-intel
             target: --mac
           - os: ubuntu-latest
             target: --linux
