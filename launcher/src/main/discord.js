@@ -222,7 +222,7 @@ function biomeIcon(biome, dim) {
 
 // Application ID of the "Visual Launcher" Discord app (Discord shows its name as "Playing ...").
 // A personal ID from the launcher settings wins over this one.
-const DEFAULT_CLIENT_ID = '';
+const DEFAULT_CLIENT_ID = '1573720997075488929';
 
 const rpc = new DiscordRpc();
 const game = new GameState();
