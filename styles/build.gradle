@@ -1,0 +1,42 @@
+plugins {
+	// 1.21.11 is still obfuscated -> the "remap" flavour of Loom.
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+version = "${project.mod_version}+${project.minecraft_version}"
+group = 'net.visualstyles'
+
+base {
+	archivesName = 'visual-styles'
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	// Visual Styles is written against the intermediary names (class_310, method_1507, ...).
+	mappings "net.fabricmc:intermediary:${project.minecraft_version}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+	inputs.property "version", project.mod_version
+	filesMatching("fabric.mod.json") {
+		expand "version": inputs.properties.version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 21
+	it.options.encoding = 'UTF-8'
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_21
+	targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+	from("LICENSE") {
+		rename { "LICENSE_visual-styles" }
+	}
+}

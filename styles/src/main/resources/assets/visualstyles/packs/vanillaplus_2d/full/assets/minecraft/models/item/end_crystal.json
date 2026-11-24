@@ -1,0 +1,6 @@
+{
+    "parent": "item/crystal_util",
+    "textures": {
+        "layer0": "item/end_crystal"
+    }
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "visualstyles",
+  "version": "${version}",
+  "name": "Visual Styles",
+  "description": "Pick looks for end crystals, respawn anchors, armor, swords, pickaxes, axes, totems, mace, wind charges, pearls, fire, stone, deepslate, snow, your inventory, enchant glint and the crosshair from one menu (key K). Import your own texture packs as .zip. No resource pack screen, purely visual and client-side.",
+  "authors": [
+    "Visual Client"
+  ],
+  "license": "MIT",
+  "icon": "assets/visualstyles/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "net.visualstyles.VisualStyles"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "visualstyles.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

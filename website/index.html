@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VisualMod.com · Visual Client &amp; Visual Launcher</title>
+<meta name="description" content="Visual Client is a client-side Fabric mod with 45 modules for PvP, visuals, HUD and quality of life. Visual Launcher signs you in with Microsoft, sets up Fabric, installs the mod and starts the game.">
+<meta name="theme-color" content="#040814">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VisualMod.com">
+<meta property="og:title" content="Visual Client &amp; Visual Launcher">
+<meta property="og:description" content="Visual Client is a client-side Fabric mod with 45 modules for PvP, visuals, HUD and quality of life. Visual Launcher signs you in with Microsoft, sets up Fabric, installs the mod and starts the game.">
+<meta property="og:url" content="https://visualmod.vercel.app/">
+<meta property="og:image" content="https://visualmod.vercel.app/assets/launcher-home.webp">
+<meta property="og:image:width" content="1240">
+<meta property="og:image:height" content="780">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+/* Fonts are served from this site itself: no requests to Google or other font services. */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/inter-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/inter-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/space-grotesk-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 400 700; font-display: swap; src: url(fonts/space-grotesk-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+/* Phones with a notch: the page draws under the safe areas (viewport-fit=cover). */
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+</style>
+<link rel="stylesheet" href="site.css?v=1">
+<script src="sky.js?v=1" defer></script>
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#home" aria-label="VisualMod.com home"><span class="mark">V</span><span class="name">VISUALMOD</span><span class="tld">.COM</span></a>
+    <nav class="tabs" aria-label="Pages">
+      <a class="tab" href="#home">Home</a>
+      <a class="tab cat" href="#mod">Mod</a>
+      <a class="tab cat" href="#launcher">Launcher</a>
+      <a class="tab cat" href="#styles">Styles</a>
+      <a class="tab" href="#info">Info</a>
+      <span class="sep" aria-hidden="true"></span>
+      <a class="tab" href="#terms-of-service">Terms of Service</a>
+      <a class="tab" href="#terms-of-use">Terms of Use</a>
+      <a class="tab" href="#privacy">Privacy</a>
+    </nav>
+    <button type="button" class="btn primary top-dl" data-download="">Download</button>
+  </div>
+</header>
+
+<main>
+<!-- ================================================================ HOME -->
+<section class="view" id="view-home" data-view="home">
+  <div class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="label">Minecraft: Java Edition · Fabric</div>
+          <h1>Play Minecraft <span class="grad-text">your way</span></h1>
+          <p class="lead">Visual Client is a client-side Fabric mod with 45 modules for PvP, visuals, HUD and quality of life. Visual Launcher signs you in with Microsoft, sets up Fabric and installs the mod for you, starts the game and shows your server and biome on Discord.</p>
+          <div class="hero-actions">
+            <button type="button" class="btn primary" data-download="">Download</button>
+            <a class="btn" href="#mod">Explore the Mod</a>
+            <a class="btn" href="#launcher">Explore the Launcher</a>
+          </div>
+          <dl class="hero-stats">
+            <div><dt>Modules</dt><dd>45</dd></div>
+            <div><dt>Styles</dt><dd>350</dd></div>
+            <div><dt>Designs</dt><dd>15</dd></div>
+            <div><dt>Telemetry</dt><dd>0</dd></div>
+          </dl>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <img class="hv hv1" src="assets/launcher-nova.jpg?v=2" width="800" height="475" alt="">
+          <img class="hv hv2" src="assets/launcher-glass.jpg?v=2" width="800" height="475" alt="">
+          <img class="hv hv3" src="assets/mod-menu.webp" width="1240" height="698" alt="">
+        </div>
+      </div>
+
+      <div class="cats">
+        <a class="card cat-card" href="#mod">
+          <div class="cat-top"><span class="label">Visual Client</span><span class="chip hot">v1.20.7</span></div>
+          <h2>Mod</h2>
+          <p class="muted">Discord status with your server and biome, Pins, five menu designs, Item Size, Texture Painter, shareable configs, PvP tools, HUD elements and a sakura night title screen.</p>
+          <div class="facts"><div><b>45</b><span>Modules</span></div><div><b>8</b><span>MC builds</span></div><div><b>1</b><span>File</span></div></div>
+          <span class="go">Open Mod <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <a class="card cat-card" href="#launcher">
+          <div class="cat-top"><span class="label">Visual Launcher</span><span class="chip hot">v1.10.16</span></div>
+          <h2>Launcher</h2>
+          <p class="muted">Microsoft sign-in, instances, the Modrinth library, Upload Files for your own mods, five designs and a Discord status that shows your server and biome.</p>
+          <div class="facts"><div><b>3</b><span>Systems</span></div><div><b>5</b><span>Designs</span></div><div><b>0</b><span>Telemetry</span></div></div>
+          <span class="go">Open Launcher <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <a class="card cat-card" href="#styles">
+          <div class="cat-top"><span class="label">Visual Styles</span><span class="chip hot">v1.7.0</span></div>
+          <h2>Styles</h2>
+          <p class="muted">New looks for crystals, anchors, armor, swords, axes, mace, pearls, fire, blocks and more from one menu, with 25 texture packs, your own ZIP packs and five menu designs. Pick as many looks as you like and press Apply.</p>
+          <div class="facts"><div><b>17</b><span>Collections</span></div><div><b>350</b><span>Styles</span></div><div><b>1</b><span>Click</span></div></div>
+          <span class="go">Open Styles <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </div>
+
+      <div class="section">
+        <div class="split">
+          <div>
+            <div class="label">New in Launcher 1.10.16</div>
+            <h2 style="margin-top:10px">Your server and biome on Discord</h2>
+            <p class="muted" style="margin-top:12px">Visual Launcher shows your game in your Discord status: the server you play on and, with Visual Client 1.20.7, the biome and dimension you are in, each with its own picture. In singleplayer it can show your world name.</p>
+            <ul>
+              <li>Updates every few seconds while you play</li>
+              <li>20 biome pictures, from the cherry grove to the deep dark, the Nether and the End</li>
+              <li>Works right away, no setup; choose what is shown under Settings → Discord</li>
+            </ul>
+            <div class="hero-actions" style="margin-top:22px"><button type="button" class="btn primary" data-download="launcher">Get Launcher 1.10.16</button></div>
+          </div>
+          <div class="rpc-demo">
+            <div class="rpc-card" aria-label="Example of the Discord status" role="group">
+              <div class="rpc-head">Playing a game</div>
+              <div class="rpc-body">
+                <div class="rpc-art"><img src="rpc/logo.png" width="92" height="92" alt="Visual Launcher logo" loading="lazy"><img class="rpc-small" id="rpc-small" src="rpc/biomes/cherry.png" width="36" height="36" alt="Biome: Cherry Grove" loading="lazy"></div>
+                <div class="rpc-text">
+                  <b>Visual Launcher</b>
+                  <span>Playing on mc.hypixel.net</span>
+                  <span id="rpc-state">Cherry Grove · Overworld</span>
+                  <span class="rpc-time" id="rpc-time">00:42 elapsed</span>
+                </div>
+              </div>
+              <span class="rpc-btn">Visual Launcher</span>
+            </div>
+            <div class="biomes" id="biomes" role="group" aria-label="Try a biome"></div>
+          </div>
+        </div>
+      </div>
+      <p class="disclaimer">Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ MOD -->
+<section class="view" id="view-mod" data-view="mod">
+  <div class="page-hero">
+    <div class="wrap">
+      <div>
+        <div class="label">Category · Mod</div>
+        <h1 style="margin-top:14px">Visual Client</h1>
+        <p class="lead">A client-side Fabric mod. Everything it changes happens on your screen: menus, HUD, colors, sounds and effects. One jar runs on every supported Minecraft version.</p>
+        <div class="chips" style="margin-top:20px"><span class="chip hot">45 modules</span><span class="chip">Client-side only</span><span class="chip">Fabric</span><span class="chip">Free</span></div>
+      </div>
+      <dl class="spec">
+        <div><span class="k">Version</span><span class="v">1.20.7</span></div>
+        <div><span class="k">Minecraft</span><span class="v">1.21.4 – 1.21.11 · 26.1 – 26.3</span></div>
+        <div><span class="k">Loader</span><span class="v">Fabric Loader + Fabric API</span></div>
+        <div><span class="k">Menu key</span><span class="v"><kbd>Right Shift</kbd></span></div>
+        <div><span class="k">License</span><span class="v">MIT · open source</span></div>
+        <div class="actions">
+          <button type="button" class="btn primary" data-download="mod">Download the Mod</button>
+          <button type="button" class="btn" data-download="launcher">Get it with the Launcher</button>
+          <button type="button" class="btn" data-download="source">Source code</button>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <figure class="pano"><img src="assets/title-screen.webp" width="1600" height="400" alt="The Visual Client title screen: a cherry blossom garden at night with lanterns, a pond and a starry sky" loading="lazy"></figure>
+
+  <div class="wrap">
+    <div class="section">
+      <div class="section-head"><div><div class="label">Highlights</div><h2 style="margin-top:10px">What the mod adds</h2></div></div>
+      <div class="split">
+        <div>
+          <h3>A menu built for speed</h3>
+          <p class="muted" style="margin-top:10px">The reworked menu shows every module as a card with a switch. Search across all categories as soon as you start typing, open a module's settings with a right click or the gear, and change sliders, colors and modes on one page.</p>
+          <ul>
+            <li>Sidebar with categories and module counts</li>
+            <li>Global search: <kbd>Ctrl</kbd> + <kbd>F</kbd> or just type</li>
+            <li>Prefer the classic menu? Switch under GUI Style → UI: Old / New</li>
+          </ul>
+        </div>
+        <figure class="shot" data-zoom><img src="assets/mod-menu.webp" width="1240" height="698" alt="The Visual Client menu with module cards in the PvP category" loading="lazy"><figcaption>Menu preview</figcaption></figure>
+      </div>
+
+      <div class="grid g3" style="margin-top:28px">
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></div><h3>Texture Painter</h3><p>Paint any item's or block's texture pixel by pixel with pencil, fill and undo, and pick colors by HEX code. Your edits stay on after a restart; export them as a ready-to-use resource pack ZIP, including the texture of placed End Crystals.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 2l7 10-7 10-7-10z"/><path d="M12 8.5l2.5 3.5-2.5 3.5-2.5-3.5z"/></svg></div><h3>Pins</h3><p>Ping a spot like in Fortnite: press J and a flat 2D marker appears where you look, with the distance. Double tap for a red danger pin; off-screen pins wait at the screen edge.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><path d="M8.5 15.5a5 5 0 0 1 0-7M15.5 8.5a5 5 0 0 1 0 7M5.6 18.4a9 9 0 0 1 0-12.8M18.4 5.6a9 9 0 0 1 0 12.8"/></svg></div><h3>Discord status</h3><p>The Discord Status module tells Visual Launcher which server you play on and which biome and dimension you are in, so your Discord status shows them with a picture for each biome. It only writes a small file on your PC.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 9v11"/></svg></div><h3>Five menu designs</h3><p>Pick the menu under GUI Style → UI: Old, New and three modern designs. Glass is a light frosted panel with module cards, Neon a dark neon list whose settings open in place, Spotlight a search-first command palette you can drive with the arrow keys.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 3c-2 3-2 6 0 9 2-3 2-6 0-9z"/><path d="M12 12c-3-1.5-6-1-8 1 3 1.5 6 1 8-1zM12 12c3-1.5 6-1 8 1-3 1.5-6 1-8-1z"/><path d="M12 12v9"/></svg></div><h3>Sakura night</h3><p>The title screen panorama got a new night sky: a milky way full of stars, a glowing moon, warm lanterns, richer cherry blossoms, falling petals and fireflies. Seamless all the way around.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><path d="M14 6h7M17.5 2.5v7M3 17.5h7"/></svg></div><h3>Item Size</h3><p>Make dropped items bigger or smaller on the ground. Set one size for everything, or open the item editor and give single items their own size.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/><path d="M17 15l2 2 3-4"/></svg></div><h3>Shareable configs</h3><p>Save your settings as named configs and load them again later. Copy a config code to share your whole setup, HUD layout included, with friends.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div><h3>PvP tools</h3><p>Shield Status colors shields by whether they can block, Shield Fixes shows the real blocking state, Hit Indicator tells you when a target is in reach, and Totem Tweaks can remove the pop animation.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14"/><path d="M7 8h4M7 12h7M15 8h2"/></svg></div><h3>HUD you can place</h3><p>Armor, potions, totems, FPS, coordinates, ping, keystrokes and CPS. Arrange it all in the HUD editor.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><h3>More FPS, less noise</h3><p>FPS Boost hides far-away entities and reduces particles. Mute explosions and totem pops, or replace hit and pop sounds with your own choice.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></div><h3>Your sky, your weather</h3><p>Sky Color paints the sky in any HEX colour, Weather Changer sets the weather on your screen only, Fullbright lights up every cave and Zoom brings far things close on <kbd>C</kbd>.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18"/></svg></div><h3>Quality of life</h3><p>Shulker Tooltips show what is inside a box, Smooth Swap lets items glide between slots, Saturation Overlay shows your hidden hunger and Chat Heads put faces next to messages.</p></div>
+      </div>
+
+      <div class="split rev" style="margin-top:48px">
+        <div>
+          <h3>Tune every module</h3>
+          <p class="muted" style="margin-top:10px">Each module has its own settings page. GUI Style alone lets you choose the UI, square or rounded corners, transparency, font size, accent effects, outlines and glow.</p>
+          <ul>
+            <li>Switches, sliders and mode pickers</li>
+            <li>Color picker with HEX input</li>
+            <li>Item editor for per-item sizes</li>
+          </ul>
+        </div>
+        <div class="grid" style="gap:12px">
+          <figure class="shot" data-zoom><img src="assets/mod-gui-style.webp" width="1240" height="698" alt="Settings page of the GUI Style module with the UI switch set to New" loading="lazy"><figcaption>GUI Style settings</figcaption></figure>
+          <figure class="shot" data-zoom><img src="assets/mod-item-size.webp" width="1240" height="698" alt="Settings page of the Item Size module" loading="lazy"><figcaption>Item Size</figcaption></figure>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="modules">
+      <div class="section-head"><div><div class="label">All modules</div><h2 style="margin-top:10px">Every module in the menu</h2></div><p class="muted">Filter by the menu's categories or search by name. Modules marked HUD also appear in the HUD tab of the menu.</p></div>
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="filters" id="filters" role="group" aria-label="Filter modules by category"></div>
+          <label class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input id="mod-search" type="search" placeholder="Search modules" aria-label="Search modules"></label>
+        </div>
+        <div class="mods" id="mods"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Install</div><h2 style="margin-top:10px">Install the mod by hand</h2></div><p class="muted">With Visual Launcher none of this is needed: it installs Fabric, Fabric API and the mod for you.</p></div>
+      <ol class="steps">
+        <li><h3>Install Fabric</h3><p class="muted" style="margin-top:8px">Install Fabric Loader for your Minecraft version (1.21.4 – 1.21.11 or 26.1 – 26.3).</p></li>
+        <li><h3>Add the files</h3><p class="muted" style="margin-top:8px">Put Fabric API and the Visual Client jar into the <code>mods</code> folder of your game directory.</p></li>
+        <li><h3>Start the game</h3><p class="muted" style="margin-top:8px">Launch Minecraft with the Fabric profile. The title screen shows the sakura garden.</p></li>
+        <li><h3>Open the menu</h3><p class="muted" style="margin-top:8px">Press <kbd>Right Shift</kbd>. You can change the key under Options → Controls.</p></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ LAUNCHER -->
+<section class="view" id="view-launcher" data-view="launcher">
+  <div class="page-hero">
+    <div class="wrap">
+      <div>
+        <div class="label">Category · Launcher</div>
+        <h1 style="margin-top:14px">Visual Launcher</h1>
+        <p class="lead">A desktop launcher for Minecraft: Java Edition. Sign in with Microsoft, create instances with Fabric, add mods from Modrinth or your own files, and press Play. Visual Client comes built in.</p>
+        <div class="chips" style="margin-top:20px"><span class="chip hot">Visual Client built in</span><span class="chip">Modrinth library</span><span class="chip">Discord status</span><span class="chip">No telemetry</span><span class="chip">Free</span></div>
+      </div>
+      <dl class="spec">
+        <div><span class="k">Version</span><span class="v">1.10.16</span></div>
+        <div><span class="k">Systems</span><span class="v">Windows · macOS · Linux</span></div>
+        <div><span class="k">Account</span><span class="v">Microsoft with Minecraft: Java Edition</span></div>
+        <div><span class="k">Languages</span><span class="v">English · Deutsch</span></div>
+        <div><span class="k">Includes</span><span class="v">Visual Client 1.20.7 · Visual Styles 1.6.3</span></div>
+        <div><span class="k">License</span><span class="v">MIT · open source</span></div>
+        <div class="actions">
+          <button type="button" class="btn primary" data-download="launcher">Download the Launcher</button>
+          <a class="btn" href="#info">How it works</a>
+          <button type="button" class="btn" data-download="source">Source code</button>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="section">
+      <div class="section-head"><div><div class="label">Five designs</div><h2 style="margin-top:10px">Pick the look you like</h2></div><p class="muted">New is the dark HUD with effects and Classic the original look. Since 1.10.10 there are three designs with their own layout: Glass is a light bento dashboard with a floating dock and a round play button, Neon a synthwave arcade with a retro sun, a scoreboard and the navigation at the bottom, Nova an editorial layout with a wide sidebar, serif headlines and a framed cover. Every design has the same functions; switch any time under Settings → Launcher design.</p></div>
+      <div class="toggle-shots" role="group" aria-label="Choose a screenshot">
+        <button type="button" data-shot="home" aria-pressed="true">Home</button>
+        <button type="button" data-shot="instance" aria-pressed="false">Instance</button>
+        <button type="button" data-shot="settings" aria-pressed="false">Settings</button>
+        <button type="button" data-shot="classic" aria-pressed="false">Classic</button>
+        <button type="button" data-shot="glass" aria-pressed="false">Glass</button>
+        <button type="button" data-shot="neon" aria-pressed="false">Neon</button>
+        <button type="button" data-shot="nova" aria-pressed="false">Nova</button>
+        <button type="button" data-shot="designs" aria-pressed="false">All designs</button>
+      </div>
+      <figure class="shot" data-zoom id="launcher-shot"><img id="launcher-shot-img" src="assets/launcher-home.webp" width="1240" height="780" alt="Visual Launcher home screen in the new design" loading="lazy"><figcaption id="launcher-shot-cap">New design · Home</figcaption></figure>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Features</div><h2 style="margin-top:10px">What the launcher does</h2></div></div>
+      <div class="grid g3">
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="8"/><rect x="3" y="13" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/></svg></div><h3>Microsoft sign-in</h3><p>Sign in through Microsoft's own window. The launcher never sees your password, supports several accounts and reuses a valid session, so Play starts right away.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/></svg></div><h3>Instances</h3><p>Every instance has its own mods, resource packs and worlds. Fabric, Fabric API and Visual Client are installed automatically. Give each one a profile picture and see its play time.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h3>Modrinth library</h3><p>Search mods, resource packs, shaders and modpacks, filtered to your instance's version, and install them with one click, dependencies included.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v4h16v-4"/></svg></div><h3>Upload Files</h3><p>Use mods that are not on Modrinth: add your own .jar mods and .zip resource or shader packs with a button or by drag and drop. The type is detected for you.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><h3>Fast start</h3><p>Sessions, versions and the Java check are cached, game files are checked by size instead of hashing thousands of files, and Java 21+ gets a class cache.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M8 3v4M16 3v4M4 9h16v12H4z"/></svg></div><h3>Java handled</h3><p>The launcher downloads the official Java runtime for each Minecraft version. You can still set your own Java path, memory and JVM arguments.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z"/></svg></div><h3>Your look</h3><p>Pick a gradient or a solid color by HEX code, or use your own screenshot as the background. Set the accent color, dimming and blur.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M7 4h10l2 6-2 10H7L5 10z"/><circle cx="9.5" cy="13" r="1"/><circle cx="14.5" cy="13" r="1"/></svg></div><h3>Discord status</h3><p>Shows the server you play on and, with Visual Client, the biome and dimension you are in, with a picture for each biome. Server, biome and world name only if you allow it. It only talks to the Discord app on your PC.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Visual Styles built in</h3><p>Every Minecraft 1.21.11 instance gets Visual Styles too: press <kbd>K</kbd> in game and pick looks for crystals, armor, tools and more. <a href="#styles">See Styles</a></p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3>Private by design</h3><p>No telemetry, no analytics and no server of ours. Sign-in tokens stay encrypted on your device and are hidden from the launch log.</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Downloads</div><h2 style="margin-top:10px">Pick your system</h2></div><p class="muted">Launcher 1.10.16 for Windows, macOS and Linux, with Visual Client 1.20.7 and Visual Styles 1.6.3. Visual Styles 1.7.0 is available as its own download.</p></div>
+      <div class="platforms">
+        <div class="card platform"><h3><svg class="i" viewBox="0 0 24 24"><path d="M3 5l8-1v8H3zM13 3.8L21 3v9h-8zM3 13h8v7l-8-1zM13 13h8v8l-8-1z"/></svg>Windows</h3><ul><li><span>Installer</span><span>143 MB</span></li><li><span>Portable, no install</span><span>124 MB</span></li></ul></div>
+        <div class="card platform"><h3><svg class="i" viewBox="0 0 24 24"><path d="M16 3c0 2-1.5 3.5-3.3 3.5C12.5 4.6 14.2 3 16 3z"/><path d="M19 16.5c-.8 1.9-2 4.5-3.6 4.5-1.3 0-1.7-.8-3.2-.8s-2 .8-3.2.8C7.300 21 4 16.700 4 12.600 4 9.700 5.900 8 7.800 8c1.400 0 2.300.9 3.500.9 1.100 0 1.800-.9 3.600-.9 1.300 0 2.700.7 3.600 2-3.100 1.700-2.600 6 .5 6.500z"/></svg>macOS</h3><ul><li><span>Apple Silicon (.dmg)</span><span>143 MB</span></li><li><span>Intel (.dmg)</span><span>149 MB</span></li></ul></div>
+        <div class="card platform"><h3><svg class="i" viewBox="0 0 24 24"><path d="M12 3c-2 0-3 2-3 4.500 0 2-1.500 3-2.500 5S5 16 6 17.500 9 19 9 21h6c0-2 2-2 3-3.500s.5-3-.5-5-2.500-3-2.500-5C15 5 14 3 12 3z"/></svg>Linux</h3><ul><li><span>AppImage</span><span>148 MB</span></li></ul></div>
+      </div>
+      <p class="note">The files are not code-signed. Windows SmartScreen asks once: choose “More info” → “Run anyway”. On macOS, right-click the app and choose “Open”, or allow it under System Settings → Privacy &amp; Security → “Open Anyway”.</p>
+      <div class="hero-actions" style="margin-top:18px"><button type="button" class="btn primary" data-download="launcher">Download the Launcher</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ STYLES -->
+<section class="view" id="view-styles" data-view="styles">
+  <div class="page-hero">
+    <div class="wrap">
+      <div>
+        <div class="label">Category · Styles</div>
+        <h1 style="margin-top:14px">Visual Styles</h1>
+        <p class="lead">A client-side Fabric mod that changes how the things you look at in a fight appear: end crystals, respawn anchors, armor, swords, pickaxes, axes, totems, mace, wind charges and pearls, fire, blocks, your inventory, the enchant glint and the crosshair. Pick a style in one menu and it is on, or import your own texture packs as ZIP.</p>
+        <div class="chips" style="margin-top:20px"><span class="chip hot">350 styles</span><span class="chip">25 texture packs</span><span class="chip">ZIP import</span><span class="chip">5 menu designs</span><span class="chip">17 collections</span><span class="chip">Whole packs</span><span class="chip">Purely visual</span><span class="chip">Free</span></div>
+      </div>
+      <dl class="spec">
+        <div><span class="k">Version</span><span class="v">1.7.0</span></div>
+        <div><span class="k">Minecraft</span><span class="v">1.21.11</span></div>
+        <div><span class="k">Loader</span><span class="v">Fabric Loader + Fabric API</span></div>
+        <div><span class="k">Menu key</span><span class="v"><kbd>K</kbd></span></div>
+        <div><span class="k">In the launcher</span><span class="v">Built into launcher 1.10.16</span></div>
+        <div><span class="k">License</span><span class="v">MIT · open source</span></div>
+        <div class="actions">
+          <button type="button" class="btn primary" data-download="styles">Download Styles</button>
+          <button type="button" class="btn" data-download="launcher">Get it with the Launcher</button>
+          <button type="button" class="btn" data-download="source">Source code</button>
+        </div>
+      </dl>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="section">
+      <div class="section-head"><div><div class="label">How it works</div><h2 style="margin-top:10px">One menu, one Apply</h2></div></div>
+      <div class="grid g3">
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M3 10h6"/></svg></div><h3>Five menu designs</h3><p>Studio, Glass (light frosted glass with category pills), Neon (dark glow), Showcase (big preview and a list of looks) and Dock (a drawer at the screen edge, so the game stays visible). Same functions everywhere; switch with the ◐ button or under Extras.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><h3>Pick, then Apply</h3><p>Press <kbd>K</kbd> and click styles in as many collections as you like. Press Apply and the game reloads its textures once: everything is on. No resource pack screen, no restart.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div><h3>Find it fast</h3><p>Search with <kbd>/</kbd>, mark favorites with <kbd>F</kbd>, right-click a style for a bigger preview and see the current pick in the preview on the right.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/><path d="M17 15l2 2 3-4"/></svg></div><h3>Presets</h3><p>Three preset slots for your whole look: click a slot to load it, Shift + click to save. Reset puts everything back to vanilla.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M4 16v4h16v-4"/></svg></div><h3>Your own styles</h3><p>The Folder button opens <code>config/visualstyles/custom</code>. A PNG there becomes a style, a folder with Minecraft file names becomes a style with several textures. New files show up in the menu within seconds.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg></div><h3>Import your own packs</h3><p>New in 1.7.0: press Import ZIP, drag .zip packs onto the menu or put them into <code>config/visualstyles/zips</code>. Every pack lands in each category it has textures for, with its own preview picture, and under Whole packs. Older packs (1.12 to 1.21) are converted to the new texture paths.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18z"/></svg></div><h3>Extras</h3><p>Spin speed and core colour of end crystals (HEX), the glow colour of respawn anchor charges, lower fire on your screen and bright titles in dark inventories.</p></div>
+        <div class="card feature"><div class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg></div><h3>Visual only</h3><p>Built-in styles are made from the game's own textures, plus looks from 25 texture packs. All of it on your screen only. No advantage over other players: player outlines that would show players through walls are left out on purpose.</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Collections</div><h2 style="margin-top:10px">What you can restyle</h2></div><p class="muted">17 collections with 193 built-in styles and 157 looks (455 textures) from 25 texture packs: vrzc mashup, l3po Private, VE x Clean Cyan, VE x Dagga, ayvexs pack, Vanilla Pink, Evantii x Dagga, ItzRealMe Private, Olivershh, Greg Christmas, kesu Private, SKTred, Gallery Walk Remake, GregoryBlueory II, marlow vs do re mi, Purple Vanilla+, Ruin Overlay V1, Vanilla Vision, Cowarted Default Mashup, Xmas Remake by Swetsy, Gray Faith x Swetsy, Green Faith, Ledgemain Cheats, Marlow Edited and VanillaPlus V2 2D Crystal. New: the collection Whole packs applies a pack completely, every texture, model and sound of it (VanillaPlus V2 2D Crystal so far). Every texture was checked pixel by pixel, so no look is in the menu twice. Plus everything you add yourself, as PNG files or as whole ZIP packs.</p></div>
+      <div class="browser">
+        <div class="mods">
+          <div class="mod"><div class="mod-top"><b>End Crystal</b><span class="tag hud">Extras</span></div><p>Colours, see-through, core only, invisible. Spin speed and core colour.</p></div>
+          <div class="mod"><div class="mod-top"><b>Respawn Anchor</b><span class="tag hud">Extras</span></div><p>New looks including Glowstone, plus your own glow colour for the charges.</p></div>
+          <div class="mod"><div class="mod-top"><b>Obsidian</b><span class="tag">Blocks</span></div><p>Obsidian in new colours, smoother or darker, or from 17 texture packs.</p></div>
+          <div class="mod"><div class="mod-top"><b>Glowstone</b><span class="tag">Blocks</span></div><p>The glowstone block in other colours, smoother or dimmer, or from ayvexs pack.</p></div>
+          <div class="mod"><div class="mod-top"><b>Armor</b><span class="tag">Gear</span></div><p>Armor in new colours, worn and in your inventory.</p></div>
+          <div class="mod"><div class="mod-top"><b>Sword</b><span class="tag">Gear</span></div><p>Picked on its own, independent of the pickaxe and axe.</p></div>
+          <div class="mod"><div class="mod-top"><b>Pickaxe</b><span class="tag">Gear</span></div><p>Picked on its own, independent of the sword and axe.</p></div>
+          <div class="mod"><div class="mod-top"><b>Axe</b><span class="tag hud">New</span></div><p>Netherite and diamond axe in new colours, picked on their own.</p></div>
+          <div class="mod"><div class="mod-top"><b>Totem</b><span class="tag">Gear</span></div><p>The Totem of Undying in other colours.</p></div>
+          <div class="mod"><div class="mod-top"><b>Mace + Wind + Pearl</b><span class="tag hud">New</span></div><p>Mace, wind charge (item and flying charge) and ender pearl in one category: one pick restyles all three, or take a look from 15 texture packs.</p></div>
+          <div class="mod"><div class="mod-top"><b>Fire</b><span class="tag hud">Extras</span></div><p>Fire colours, plus lower fire on your screen.</p></div>
+          <div class="mod"><div class="mod-top"><b>Stone</b><span class="tag">Blocks</span></div><p>Calmer or tinted stone.</p></div>
+          <div class="mod"><div class="mod-top"><b>Deepslate</b><span class="tag">Blocks</span></div><p>Calmer or tinted deepslate.</p></div>
+          <div class="mod"><div class="mod-top"><b>Snow</b><span class="tag">Blocks</span></div><p>Other snow looks.</p></div>
+          <div class="mod"><div class="mod-top"><b>Inventory</b><span class="tag">Screen</span></div><p>Dark inventory variants with bright titles.</p></div>
+          <div class="mod"><div class="mod-top"><b>Enchant Glint</b><span class="tag">Screen</span></div><p>The enchantment glint in other colours.</p></div>
+          <div class="mod"><div class="mod-top"><b>Whole packs</b><span class="tag hud">New</span></div><p>A whole texture pack at once: every texture, model and sound of it, including the ZIP packs you import.</p></div>
+          <div class="mod"><div class="mod-top"><b>Crosshair</b><span class="tag">Screen</span></div><p>Other crosshair shapes.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Install</div><h2 style="margin-top:10px">Install Visual Styles</h2></div><p class="muted">With Visual Launcher 1.10.10 or newer it is already in every Minecraft 1.21.11 instance.</p></div>
+      <ol class="steps">
+        <li><h3>Fabric 1.21.11</h3><p class="muted" style="margin-top:8px">Install Fabric Loader and Fabric API for Minecraft 1.21.11.</p></li>
+        <li><h3>Add the jar</h3><p class="muted" style="margin-top:8px">Put the Visual Styles jar into the <code>mods</code> folder. It works alone or next to Visual Client.</p></li>
+        <li><h3>Open the menu</h3><p class="muted" style="margin-top:8px">Press <kbd>K</kbd> in game. You can change the key under Options → Controls.</p></li>
+        <li><h3>Turning it off</h3><p class="muted" style="margin-top:8px">The styles live in the resource pack "Visual Styles". If you remove the mod, switch that pack off under Resource Packs.</p></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ INFO -->
+<section class="view" id="view-info" data-view="info">
+  <div class="page-hero">
+    <div class="wrap" style="grid-template-columns:minmax(0,1fr)">
+      <div>
+        <div class="label">Info</div>
+        <h1 style="margin-top:14px">What you get</h1>
+        <p class="lead">Two products from one project. The mod changes how Minecraft looks and feels while you play. The launcher gets you into the game with the mod, the right Java and your content already set up.</p>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="section">
+      <div class="grid g2">
+        <div class="card">
+          <div class="label">Mod</div>
+          <h2 style="margin:10px 0 14px">Visual Client</h2>
+          <p class="muted">A Fabric mod that runs only on your side. Servers see a normal client.</p>
+          <ul class="muted" style="padding-left:18px;margin:14px 0 0">
+            <li>A searchable menu with 45 modules in PvP, Visuals, HUD, Player, Misc, Extra and Configs</li>
+            <li>HUD elements you place yourself: armor, potions, totems, FPS, coordinates, ping, keystrokes, CPS</li>
+            <li>Visual changes: sky color, weather, fullbright, block overlay, motion blur, zoom, armor glint, hide armor</li>
+            <li>PvP helpers: shield status and fixes, hit indicator, damage tint, totem counter and totem tweaks</li>
+            <li>Texture Painter with ZIP export, per-item sizes for dropped items, shareable config codes</li>
+            <li>Sounds and effects: mute explosions or totem pops, custom hit and pop sounds, kill effects</li>
+            <li>Discord Status: your server, biome and dimension in your Discord status, together with Visual Launcher</li>
+            <li>A sakura garden at night as the title screen</li>
+          </ul>
+          <a class="btn" style="margin-top:20px" href="#mod">See all modules</a>
+        </div>
+        <div class="card">
+          <div class="label">Launcher</div>
+          <h2 style="margin:10px 0 14px">Visual Launcher</h2>
+          <p class="muted">A desktop app that installs and starts Minecraft with Fabric and Visual Client.</p>
+          <ul class="muted" style="padding-left:18px;margin:14px 0 0">
+            <li>Microsoft sign-in with several accounts</li>
+            <li>Instances with their own mods, packs and worlds, play time and profile pictures</li>
+            <li>The Modrinth library for mods, resource packs, shaders and modpacks</li>
+            <li>Upload Files for mods and packs that are not on Modrinth</li>
+            <li>Automatic Java, fast start, and the game keeps running when you close the launcher</li>
+            <li>Five designs, custom backgrounds and colors</li>
+            <li>Discord status with your server, biome and dimension</li>
+            <li>No telemetry and no server of ours</li>
+          </ul>
+          <a class="btn" style="margin-top:20px" href="#launcher">See the launcher</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Together</div><h2 style="margin-top:10px">Mod alone or with the launcher</h2></div><p class="muted">The mod works in any Fabric setup. The launcher does the setup for you.</p></div>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead><tr><th scope="col">Task</th><th scope="col">Mod alone</th><th scope="col">With Visual Launcher</th></tr></thead>
+          <tbody>
+            <tr><td>Install Fabric Loader</td><td>By hand, per Minecraft version</td><td class="yes">Automatic</td></tr>
+            <tr><td>Fabric API</td><td>Download it yourself</td><td class="yes">Installed for you</td></tr>
+            <tr><td>Visual Client updates</td><td>Replace the jar yourself</td><td class="yes">Bundled with each launcher version</td></tr>
+            <tr><td>Java</td><td>Your own installation</td><td class="yes">Official runtime per version</td></tr>
+            <tr><td>Other mods and packs</td><td>Copy files into folders</td><td class="yes">Modrinth library or Upload Files</td></tr>
+            <tr><td>Several setups side by side</td><td>Separate game folders by hand</td><td class="yes">Instances</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Requirements</div><h2 style="margin-top:10px">What you need</h2></div></div>
+      <div class="grid g3">
+        <div class="card"><h3>Minecraft</h3><p class="muted" style="margin-top:8px">A Microsoft account that owns Minecraft: Java Edition.</p></div>
+        <div class="card"><h3>Versions</h3><p class="muted" style="margin-top:8px">Visual Client supports 1.21.4 – 1.21.11 and 26.1 – 26.3. The launcher also starts other Fabric versions, without the mod.</p></div>
+        <div class="card"><h3>System</h3><p class="muted" style="margin-top:8px">Windows, macOS (Intel or Apple Silicon) or Linux. Java is downloaded by the launcher.</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><div><div class="label">Questions</div><h2 style="margin-top:10px">Frequently asked</h2></div></div>
+      <div class="faq">
+        <details><summary>Can I use Visual Client on servers?</summary><p>Visual Client is client-side and changes only what you see and hear. Each server decides which mods it allows, so check the server's rules before you join.</p></details>
+        <details><summary>Does it cost anything?</summary><p>No. The mod and the launcher are free.</p></details>
+        <details><summary>Is the source code available?</summary><p>Yes. Visual Client and Visual Launcher are open source under the MIT License. Download the source of both as ZIP files in the download window under “Source code”, or browse it on GitHub.</p></details>
+        <details><summary>Do you collect my data?</summary><p>No. There is no telemetry, no analytics and no server of ours. The launcher talks directly to Microsoft, Mojang, Fabric and Modrinth. Details are in the Privacy policy.</p></details>
+        <details><summary>Which key opens the menu?</summary><p>Right Shift. Zoom is on C, pins are on J. All of them can be changed under Options → Controls.</p></details>
+        <details><summary>Can I use mods that are not on Modrinth?</summary><p>Yes. Open an instance in the launcher and use Upload Files, or drag the .jar onto the instance. Resource and shader packs as .zip work the same way.</p></details>
+        <details><summary>How do I switch the launcher design?</summary><p>Open Settings → Launcher design and choose New, Classic, Glass, Neon or Nova. The launcher reloads in the chosen design and keeps all your settings.</p></details>
+        <details><summary>How does the Discord status work?</summary><p>It is on by default and needs no setup: while the Discord app runs on your PC, Discord shows “Visual Launcher” with your instance and the server you are on, and with Visual Client also the biome and dimension you are in, each with its own picture. The launcher only talks to the Discord app on your PC. Under Settings → Discord you can turn it off or hide the server address, biome or world name.</p></details>
+        <details><summary>Does Minecraft close when I close the launcher?</summary><p>No. The game keeps running, and the launcher counts the play time when you open it again.</p></details>
+        <details><summary>Is this an official Minecraft product?</summary><p>No. Visual Client and Visual Launcher are not approved by or associated with Mojang or Microsoft.</p></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ TERMS OF SERVICE -->
+<section class="view" id="view-terms-of-service" data-view="terms-of-service">
+  <div class="wrap doc">
+    <nav class="toc" aria-label="Contents">
+      <div class="label" style="margin-bottom:10px">Contents</div>
+      <a href="#terms-of-service" data-jump="tos-1">1. What we provide</a>
+      <a href="#terms-of-service" data-jump="tos-2">2. Requirements</a>
+      <a href="#terms-of-service" data-jump="tos-3">3. Sign-in</a>
+      <a href="#terms-of-service" data-jump="tos-4">4. No data collection</a>
+      <a href="#terms-of-service" data-jump="tos-5">5. Third-party content</a>
+      <a href="#terms-of-service" data-jump="tos-6">6. Availability and changes</a>
+      <a href="#terms-of-service" data-jump="tos-7">7. Warranty and liability</a>
+      <a href="#terms-of-service" data-jump="tos-8">8. License</a>
+      <a href="#terms-of-service" data-jump="tos-9">9. Final provisions</a>
+    </nav>
+    <article>
+      <div class="label">Legal</div>
+      <h1 style="margin-top:12px">Terms of Service</h1>
+      <p class="stamp">Last updated: 22 November 2026</p>
+      <p class="summary">These Terms of Service (“Terms”) govern the software <strong>Visual Launcher</strong> (“Launcher”), the mods <strong>Visual Client</strong> and <strong>Visual Styles</strong> (each a “Mod”) and the website <strong>VisualMod.com</strong> (“Website”), provided by the Visual Client project (“we”). By installing or using the Launcher or the Mod you agree to these Terms. If you do not agree, do not use them.</p>
+
+      <h2 id="tos-1">1. What we provide</h2>
+      <ul>
+        <li>Visual Launcher is a free, unofficial launcher for <strong>Minecraft: Java Edition</strong>. It downloads the game, the Fabric mod loader, Java runtimes and content from <strong>Modrinth</strong>, and starts the game.</li>
+        <li>Visual Client is a free, client-side mod for Fabric that changes visuals, sounds, menus and HUD elements.</li>
+        <li>Neither is an official Minecraft product. They are not approved by or associated with Mojang Studios or Microsoft, and they are not connected to Modrinth or the Fabric project.</li>
+        <li>“Minecraft” is a trademark of Mojang Synergies AB. All other trademarks belong to their owners.</li>
+      </ul>
+
+      <h2 id="tos-2">2. Requirements</h2>
+      <ul>
+        <li>You need your own, lawfully obtained <strong>Microsoft account with Minecraft: Java Edition</strong>. The Launcher and the Mod do not allow, and must not be used for, playing without a valid license.</li>
+        <li>You must be old enough to use a Microsoft account in your country, or have the consent of a parent or guardian.</li>
+        <li>Minecraft is also subject to the <strong>Minecraft End User License Agreement (EULA)</strong> and the <strong>Microsoft Services Agreement</strong>. When you start the game you accept them towards Mojang and Microsoft.</li>
+      </ul>
+
+      <h2 id="tos-3">3. Sign-in</h2>
+      <ul>
+        <li>You sign in only through Microsoft's official sign-in window. The Launcher never sees or stores your password.</li>
+        <li>The session tokens issued by Microsoft are stored only on your device, encrypted where your operating system offers a key store. Signing out deletes them.</li>
+      </ul>
+
+      <h2 id="tos-4">4. No data collection</h2>
+      <p>We run <strong>no servers</strong> for the Launcher or the Mod and receive <strong>no data</strong> from you: no telemetry, no analytics, no crash reports, no account or usage data. See the <a href="#privacy">Privacy policy</a> for details.</p>
+
+      <h2 id="tos-5">5. Third-party content</h2>
+      <ul>
+        <li>Mods, resource packs, shaders and modpacks from Modrinth, and files you add with Upload Files, come from <strong>third parties</strong>. We do not review, host or take responsibility for them. Their authors' licenses and Modrinth's terms apply.</li>
+        <li>Only install content you trust. Mods are executable code and can affect your system.</li>
+      </ul>
+
+      <h2 id="tos-6">6. Availability and changes</h2>
+      <ul>
+        <li>The Launcher works only while the services of Microsoft, Mojang, Fabric and Modrinth are reachable and keep their interfaces. We have no influence on that.</li>
+        <li>We may change the Launcher, the Mod, this website and these Terms at any time, or stop development. When the Terms change, the Launcher asks for your consent again at the next start.</li>
+      </ul>
+
+      <h2 id="tos-7">7. Warranty and liability</h2>
+      <ul>
+        <li>The Launcher and the Mod are provided <strong>“as is”</strong> and <strong>free of charge</strong>, without any express or implied warranty, in particular as to freedom from errors, constant availability or fitness for a particular purpose.</li>
+        <li>We are not liable for damage arising from the use of the Launcher, the Mod, the game or third-party content, such as lost worlds, data loss or banned accounts. This does not apply in cases of intent or gross negligence, injury to life, body or health, or where liability is mandatory by law (for example under product liability law).</li>
+        <li>Back up your worlds regularly.</li>
+      </ul>
+
+      <h2 id="tos-8">8. License</h2>
+      <p>Visual Launcher and Visual Client are released under the <strong>MIT License</strong>. Included libraries are subject to their own open-source licenses.</p>
+
+      <h2 id="tos-9">9. Final provisions</h2>
+      <ul>
+        <li>The law of the Federal Republic of Germany applies, excluding the UN Convention on Contracts for the International Sale of Goods. Mandatory consumer protection rules of your country of residence remain unaffected.</li>
+        <li>If any provision is invalid, the remaining provisions stay in effect.</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<!-- ================================================================ TERMS OF USE -->
+<section class="view" id="view-terms-of-use" data-view="terms-of-use">
+  <div class="wrap doc">
+    <nav class="toc" aria-label="Contents">
+      <div class="label" style="margin-bottom:10px">Contents</div>
+      <a href="#terms-of-use" data-jump="tou-1">1. Permitted use</a>
+      <a href="#terms-of-use" data-jump="tou-2">2. Not permitted</a>
+      <a href="#terms-of-use" data-jump="tou-3">3. Your own content</a>
+      <a href="#terms-of-use" data-jump="tou-4">4. Visual Client on servers</a>
+      <a href="#terms-of-use" data-jump="tou-5">5. Breaches</a>
+      <a href="#terms-of-use" data-jump="tou-6">6. Contact and reports</a>
+    </nav>
+    <article>
+      <div class="label">Legal</div>
+      <h1 style="margin-top:12px">Terms of Use</h1>
+      <p class="stamp">Last updated: 22 November 2026</p>
+      <p class="summary">These Terms of Use set out how you may use Visual Launcher and Visual Client. They add to the <a href="#terms-of-service">Terms of Service</a>.</p>
+
+      <h2 id="tou-1">1. Permitted use</h2>
+      <p>You may use the Launcher and the Mod privately and free of charge to:</p>
+      <ul>
+        <li>sign in with your own Microsoft account and play Minecraft: Java Edition,</li>
+        <li>create instances with Fabric and Visual Client,</li>
+        <li>install mods, resource packs, shaders and modpacks from Modrinth, and add your own files with Upload Files,</li>
+        <li>customize the Launcher, for example with your own HEX colors or your own screenshots as the background,</li>
+        <li>share Visual Client config codes with other players.</li>
+      </ul>
+
+      <h2 id="tou-2">2. Not permitted</h2>
+      <p>You must not use the Launcher or the Mod to:</p>
+      <ul>
+        <li>play Minecraft <strong>without a valid license</strong> or bypass license and account checks,</li>
+        <li>sign in with <strong>other people's accounts</strong>, or use or pass on other people's credentials or session tokens,</li>
+        <li>break the <strong>Minecraft EULA</strong>, the <strong>Microsoft Services Agreement</strong>, the <strong>Minecraft Usage Guidelines</strong> or the rules of servers you play on, for example with unauthorized cheats,</li>
+        <li>redistribute third-party content against its license or bypass authors' download restrictions,</li>
+        <li>overload the servers of Microsoft, Mojang, Modrinth or Fabric with automated mass requests,</li>
+        <li>pass off modified versions of the Launcher or the Mod as official versions, or distribute them with malware.</li>
+      </ul>
+
+      <h2 id="tou-3">3. Your own content</h2>
+      <ul>
+        <li>Images you set as the Launcher background and files you add with Upload Files stay <strong>on your device</strong> and are not sent anywhere.</li>
+        <li>Only use images and files you have the rights to, and make sure they are appropriate for you.</li>
+      </ul>
+
+      <h2 id="tou-4">4. Visual Client on servers</h2>
+      <ul>
+        <li>Visual Client is a purely client-side mod for visual changes, sounds and HUD elements.</li>
+        <li>Each server decides whether mods are allowed. Check its rules before you join.</li>
+      </ul>
+
+      <h2 id="tou-5">5. Breaches</h2>
+      <p>If you break these Terms of Use, your right to use the Launcher and the Mod ends. Bans by Microsoft, Mojang, servers or platforms are outside our control.</p>
+
+      <h2 id="tou-6">6. Contact and reports</h2>
+      <p>Report bugs and security issues to the Visual Client project. Never share tokens or passwords with anyone, including us.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ================================================================ PRIVACY -->
+<section class="view" id="view-privacy" data-view="privacy">
+  <div class="wrap doc">
+    <nav class="toc" aria-label="Contents">
+      <div class="label" style="margin-bottom:10px">Contents</div>
+      <a href="#privacy" data-jump="pr-1">1. Stored on your device</a>
+      <a href="#privacy" data-jump="pr-2">2. Services the Launcher contacts</a>
+      <a href="#privacy" data-jump="pr-3">3. The Mod</a>
+      <a href="#privacy" data-jump="pr-4">4. Minecraft itself</a>
+      <a href="#privacy" data-jump="pr-5">5. This website</a>
+      <a href="#privacy" data-jump="pr-6">6. Your rights</a>
+    </nav>
+    <article>
+      <div class="label">Legal</div>
+      <h1 style="margin-top:12px">Privacy</h1>
+      <p class="stamp">Last updated: 24 November 2026</p>
+      <p class="summary"><strong>In short: the Launcher and the Mod do not send any data to us.</strong> The Visual Client project runs no server, no telemetry, no analytics, no advertising and no automatic crash reports.</p>
+
+      <h2 id="pr-1">1. What is stored on your device</h2>
+      <p>The Launcher keeps the following in its user data folder:</p>
+      <ul>
+        <li><strong>Account data:</strong> Minecraft name, UUID, skin address, the Microsoft refresh token and the current Minecraft session. The tokens are encrypted with your operating system's key store (Windows DPAPI, macOS Keychain, Linux Secret Service). If your system offers no key store, they are stored there without encryption.</li>
+        <li><strong>Settings:</strong> design, colors, background image, memory, window size, Discord settings.</li>
+        <li><strong>Game data:</strong> Minecraft, Fabric, Java, instances, mods and worlds.</li>
+      </ul>
+      <p>Tokens are removed from the launch log before it is shown. Signing out, or deleting the user data folder, removes this data completely. The Mod stores its settings and configs in the game's <code>config</code> folder.</p>
+
+      <h2 id="pr-2">2. Services the Launcher contacts</h2>
+      <p>The Launcher connects only to these services, and only when you use the matching feature:</p>
+      <ul>
+        <li><strong>Microsoft / Xbox Live</strong> (login.live.com, user.auth.xboxlive.com, xsts.auth.xboxlive.com) for sign-in</li>
+        <li><strong>Mojang / Minecraft services</strong> (api.minecraftservices.com, piston-meta.mojang.com, launchermeta.mojang.com, libraries.minecraft.net, resources.download.minecraft.net, textures.minecraft.net) for account checks, game files, Java and skins</li>
+        <li><strong>Fabric</strong> (meta.fabricmc.net, maven.fabricmc.net) for the mod loader</li>
+        <li><strong>Modrinth</strong> (api.modrinth.com, cdn.modrinth.com) for search and downloads</li>
+        <li><strong>The Discord app on your PC</strong> (local, only when Discord status is on): the Launcher passes on what you play (instance, Minecraft version and, if enabled, the server address, the biome and dimension, and the world name in singleplayer). Discord shows this to your friends and loads the pictures for the status from this website; Discord's privacy policy applies.</li>
+      </ul>
+      <p>These providers receive technically necessary data such as your IP address, and at sign-in your account data. Their privacy policies apply, for example Microsoft's. We have no access to this data.</p>
+
+      <h2 id="pr-3">3. The Mod</h2>
+      <ul>
+        <li>Visual Client has no telemetry and sends nothing to us.</li>
+        <li>The Mod does not connect to any online service of its own. Skins, servers and other online features are handled by Minecraft itself.</li>
+        <li>The Discord Status module writes your current server, world name, dimension and biome into a small file in the game folder (<code>visualclient/presence.json</code>) so the Launcher can show them. Nothing is sent anywhere by the Mod; turning the module off deletes the file.</li>
+        <li>Config codes are created on your device. They contain your module settings and HUD layout and go only where you paste them.</li>
+      </ul>
+
+      <h2 id="pr-4">4. Minecraft itself</h2>
+      <p>When you start the game, Minecraft processes data under Mojang's and Microsoft's rules, for example for multiplayer, chat reports and the game's own telemetry. This is not part of the Launcher or the Mod.</p>
+
+      <h2 id="pr-5">5. This website (VisualMod.com)</h2>
+      <ul>
+        <li>This website sets no cookies and uses no analytics, tracking or advertising.</li>
+        <li>This website is hosted by Vercel Inc. (USA). To deliver the page, Vercel processes technically necessary data such as your IP address; <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">Vercel's privacy policy</a> applies.</li>
+        <li>Fonts and images are served from this website itself. The page loads nothing from Google or other third-party services.</li>
+        <li>The launcher and mod files are served by GitHub from the release page of the Visual Client project. GitHub receives technically necessary data such as your IP address, and <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub's privacy statement</a> applies to those downloads. Visual Styles and the source code ZIPs are served by this website.</li>
+      </ul>
+
+      <h2 id="pr-6">6. Your rights</h2>
+      <p>Because we do not receive or store personal data from you, there is nothing we could give you access to or delete. You manage your local data yourself. For data held by Microsoft, Mojang, Modrinth, Discord or the download host, contact the respective provider. Under the GDPR you may also lodge a complaint with a data protection supervisory authority.</p>
+      <p>Questions about privacy can be sent to the Visual Client project. Never share tokens or passwords with anyone.</p>
+    </article>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <div class="brand" style="margin-bottom:10px"><span class="mark">V</span><span class="name">VISUALMOD</span><span class="tld">.COM</span></div>
+      <p style="max-width:52ch">Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft. Minecraft is a trademark of Mojang Synergies AB.</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="#mod">Mod</a><a href="#launcher">Launcher</a><a href="#info">Info</a>
+      <a href="#terms-of-service">Terms of Service</a><a href="#terms-of-use">Terms of Use</a><a href="#privacy">Privacy</a>
+      <a href="#launcher" data-download="">Download</a>
+    </nav>
+  </div>
+</footer>
+
+<div class="dl" id="dl" hidden role="dialog" aria-modal="true" aria-labelledby="dl-title">
+  <div class="dl-panel">
+    <div class="dl-head"><h2 id="dl-title">Download</h2><button type="button" class="dl-x" id="dl-close">Close</button></div>
+    <div class="dl-body">
+      <div data-step="pick">
+        <p class="dl-intro">What do you want to download?</p>
+        <div class="dl-choices">
+          <button type="button" class="dl-choice" data-go="launcher">
+            <span class="chip hot" style="align-self:flex-start">Recommended</span>
+            <h3>Launcher</h3>
+            <p>Visual Launcher with Visual Client built in. Installs Fabric, Fabric API and Java for you.</p>
+            <span class="meta">v1.10.16 · Windows · macOS · Linux</span>
+          </button>
+          <button type="button" class="dl-choice" data-go="mod">
+            <span class="chip" style="align-self:flex-start">For your own setup</span>
+            <h3>Mod</h3>
+            <p>Only the Visual Client jar, for an existing Fabric installation.</p>
+            <span class="meta">v1.20.7 · Minecraft 1.21.4 – 1.21.11 · 26.1 – 26.3</span>
+          </button>
+          <button type="button" class="dl-choice" data-go="styles">
+            <span class="chip" style="align-self:flex-start">New</span>
+            <h3>Styles</h3>
+            <p>Visual Styles: new looks for crystals, armor, tools, fire and more from one menu.</p>
+            <span class="meta">v1.7.0 · Minecraft 1.21.11</span>
+          </button>
+          <button type="button" class="dl-choice" data-go="source">
+            <span class="chip" style="align-self:flex-start">Open source · MIT</span>
+            <h3>Source code</h3>
+            <p>The source of the mods and the launcher as ZIP files, from the same build as these downloads.</p>
+            <span class="meta">Mod 1.20.7 · Launcher 1.10.16 · Styles 1.7.0</span>
+          </button>
+        </div>
+      </div>
+      <div data-step="launcher" hidden>
+        <button type="button" class="dl-back" data-go="pick">← Back</button>
+        <p class="dl-intro">Visual Launcher 1.10.16 · includes Visual Client 1.20.7 and Visual Styles 1.6.3</p>
+        <div class="dl-list" id="dl-launcher"></div>
+        <p class="dl-note">The files are not code-signed. Windows SmartScreen asks once: choose “More info” → “Run anyway”. On macOS, right-click the app and choose “Open”, or allow it under System Settings → Privacy &amp; Security → “Open Anyway”.</p>
+        <p class="dl-note">All files are also on the <a href="https://github.com/CrystalMacross/Visual-Client/releases/tag/launcher" target="_blank" rel="noopener">GitHub release page</a>. Looking for the code? <button type="button" class="dl-link" data-go="source">Source code</button></p>
+      </div>
+      <div data-step="mod" hidden>
+        <button type="button" class="dl-back" data-go="pick">← Back</button>
+        <p class="dl-intro">Visual Client 1.20.7 · one jar for every supported Minecraft version</p>
+        <div class="dl-list" id="dl-mod"></div>
+        <div class="dl-req">Needs <strong>Fabric Loader</strong> and <strong>Fabric API</strong> for Minecraft 1.21.4 – 1.21.11 or 26.1 – 26.3. Put the jar into your <code>mods</code> folder and open the menu with <kbd>Right Shift</kbd>.</div>
+        <p class="dl-note">Also on the <a href="https://github.com/CrystalMacross/Visual-Client/releases/tag/launcher" target="_blank" rel="noopener">GitHub release page</a>. Looking for the code? <button type="button" class="dl-link" data-go="source">Source code</button></p>
+      </div>
+      <div data-step="styles" hidden>
+        <button type="button" class="dl-back" data-go="pick">← Back</button>
+        <p class="dl-intro">Visual Styles 1.7.0 · for Minecraft 1.21.11 · with 25 texture packs and ZIP import</p>
+        <div class="dl-list" id="dl-styles"></div>
+        <div class="dl-req">Needs <strong>Fabric Loader</strong> and <strong>Fabric API</strong> for Minecraft 1.21.11. Put the jar into your <code>mods</code> folder and open the menu with <kbd>K</kbd>. Already built into Visual Launcher 1.10.10 and newer.</div>
+        <p class="dl-note">Looking for the code? <button type="button" class="dl-link" data-go="source">Source code</button></p>
+      </div>
+      <div data-step="source" hidden>
+        <button type="button" class="dl-back" data-go="pick">← Back</button>
+        <p class="dl-intro">Source code of Visual Client 1.20.7, Visual Launcher 1.10.16 and Visual Styles 1.7.0 · MIT License</p>
+        <div class="dl-list" id="dl-src"></div>
+        <p class="dl-note">The Styles ZIP is the Gradle project of Visual Styles 1.7.0. The mod and launcher ZIPs come from commit <code>eae9879</code>, the same build as the downloads on this page. Old build files from the repository are left out. Browse this version on <a href="https://github.com/CrystalMacross/Visual-Client/tree/eae9879b79ed6448fc997213899dbf59c0b0a6e6" target="_blank" rel="noopener">GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><img id="lightbox-img" alt=""><button type="button" id="lightbox-close">Close</button></div>
+
+<script>
+(() => {
+  'use strict';
+  const MODULES = [{"name": "Armor HUD", "cat": "PvP", "desc": "Your armor in hotbar slots, each piece with its durability bar.", "hud": true}, {"name": "Damage Tint", "cat": "PvP", "desc": "Changes the color of the flash when a player or mob is hurt.", "hud": false}, {"name": "Hit Indicator", "cat": "PvP", "desc": "Your crosshair turns into a sword as soon as a player is in reach and can be hit.", "hud": false}, {"name": "Potion HUD", "cat": "PvP", "desc": "Shows how long your potion effects last, right under the effect boxes.", "hud": true}, {"name": "Shield Fixes", "cat": "PvP", "desc": "Shields only look raised while they really block (fixes the shield display bug).", "hud": false}, {"name": "Shield Status", "cat": "PvP", "desc": "Colors shields green when they can block and red when they were axed - yours and other players'.", "hud": false}, {"name": "Totem Counter", "cat": "PvP", "desc": "Counts the Totems of Undying in your inventory and off hand.", "hud": true}, {"name": "Totem Tweaks", "cat": "PvP", "desc": "Tweaks the totem: equip animation, pop animation size and totem size in hand.", "hud": false}, {"name": "Armor Glint", "cat": "Visuals", "desc": "Changes the color of the enchantment glint on armor and items.", "hud": false}, {"name": "Block Overlay", "cat": "Visuals", "desc": "Changes the outline of the block you look at and can fill it with a color.", "hud": false}, {"name": "FPS Boost", "cat": "Visuals", "desc": "More FPS: hides far-away entities and reduces particles (totem pops, explosions).", "hud": false}, {"name": "Fullbright", "cat": "Visuals", "desc": "Everything is fully lit, even deep in caves.", "hud": false}, {"name": "Hide Armor", "cat": "Visuals", "desc": "Hides armor pieces so you can see the skin underneath.", "hud": false}, {"name": "Motion Blur", "cat": "Visuals", "desc": "Blends previous frames into the current one for a motion blur effect.", "hud": false}, {"name": "Nametags", "cat": "Visuals", "desc": "Shows your own nametag above your head in third person.", "hud": false}, {"name": "Sky Color", "cat": "Visuals", "desc": "Paints the sky in any color. Type a HEX code or use the picker.", "hud": false}, {"name": "Texture Painter", "cat": "Visuals", "desc": "Paint any item's texture pixel by pixel. Pick colors by HEX code.", "hud": false}, {"name": "Weather Changer", "cat": "Visuals", "desc": "Changes the weather you see. Only on your screen, the server is not affected.", "hud": false}, {"name": "XP Clumps", "cat": "Visuals", "desc": "Clumps experience orbs that are close together into one bigger orb.", "hud": false}, {"name": "Zoom", "cat": "Visuals", "desc": "Hold the zoom key (default C, change it in Controls) to zoom in.", "hud": false}, {"name": "Auto Sprint", "cat": "Player", "desc": "Sprints automatically while you move forward.", "hud": false}, {"name": "Highlighter", "cat": "Player", "desc": "Sets the background color of items/slots in your inventory with HEX codes.", "hud": false}, {"name": "Saturation Overlay", "cat": "Player", "desc": "Shows how much saturation you have on top of the hunger bar.", "hud": false}, {"name": "Shulker Tooltips", "cat": "Player", "desc": "Shows every item inside a shulker box and how many there are, right in the tooltip.", "hud": false}, {"name": "Smooth Swap", "cat": "Player", "desc": "Items fly smoothly between slots when you move them in your inventory.", "hud": false}, {"name": "CPS Counter", "cat": "Misc", "desc": "Counts your mouse clicks per second.", "hud": true}, {"name": "Chat Heads", "cat": "Misc", "desc": "Shows the player's head next to their chat messages.", "hud": false}, {"name": "Coordinates", "cat": "Misc", "desc": "Shows your exact block position: X, Y and Z.", "hud": true}, {"name": "Custom Fonts", "cat": "Misc", "desc": "Changes the font of the client menu and HUD text.", "hud": false}, {"name": "Discord Status", "cat": "Misc", "desc": "Tells Visual Launcher your server, biome and dimension for your Discord status.", "hud": false}, {"name": "FPS Counter", "cat": "Misc", "desc": "Shows how many frames per second the game draws.", "hud": true}, {"name": "Fake FPS", "cat": "Misc", "desc": "Displays a configurable random FPS value in the FPS HUD.", "hud": false}, {"name": "GUI Style", "cat": "Misc", "desc": "Look of the click GUI: Square or Rounded, plus effects like glow, rainbow, particles and animations.", "hud": false}, {"name": "Keystrokes", "cat": "Misc", "desc": "Shows your configured movement, jump, attack and use bindings.", "hud": true}, {"name": "Ping Display", "cat": "Misc", "desc": "Shows your latency to the server in milliseconds.", "hud": true}, {"name": "Pins", "cat": "Misc", "desc": "Fortnite-style 2D markers: press J to pin the spot you look at, double tap for a danger pin.", "hud": false}, {"name": "Theme", "cat": "Misc", "desc": "Colours and shape of the menu and the HUD.", "hud": false}, {"name": "Custom Hit Sounds", "cat": "Extra", "desc": "Plays a custom sound when you hit something.", "hud": false}, {"name": "Custom Pop Sounds", "cat": "Extra", "desc": "Plays a different sound when a totem pops.", "hud": false}, {"name": "Item Size", "cat": "Extra", "desc": "Changes how big dropped items look on the ground - for all items or per item.", "hud": false}, {"name": "Kill Effects", "cat": "Extra", "desc": "Shows an effect (lightning, flames, blood...) when someone you hit dies.", "hud": false}, {"name": "No Explosion Particles", "cat": "Extra", "desc": "Hides explosion particles from TNT, creepers, end crystals, beds and respawn anchors.", "hud": false}, {"name": "No Explosion Sounds", "cat": "Extra", "desc": "Mutes explosions (crystals, anchors, TNT, creepers...).", "hud": false}, {"name": "No Totem Pop Sounds", "cat": "Extra", "desc": "Mutes the sound when a totem of undying pops.", "hud": false}, {"name": "Configs", "cat": "Configs", "desc": "Save and load your settings as named configs, or share them with a config code.", "hud": false}];
+  const SHOTS = {
+    home: ['assets/launcher-home.webp', 'New design · Home', 'Visual Launcher home screen in the new design'],
+    instance: ['assets/launcher-instance.webp', 'New design · Instance with Upload Files', 'An instance in the new design with Upload Files and its content list'],
+    settings: ['assets/launcher-settings.webp', 'New design · Settings', 'Launcher settings with the design switch'],
+    classic: ['assets/launcher-classic.webp', 'Classic design · Instances', 'The classic launcher design'],
+    glass: ['assets/launcher-glass.jpg?v=2', 'Glass design · light bento dashboard with a floating dock', 'Visual Launcher in the Glass design: light bento tiles, a floating dock and a round play button'],
+    neon: ['assets/launcher-neon.jpg?v=2', 'Neon design · synthwave arcade with the navigation at the bottom', 'Visual Launcher in the Neon design: retro sun, scoreboard and PRESS START'],
+    nova: ['assets/launcher-nova.jpg?v=2', 'Nova design · editorial layout with a wide sidebar', 'Visual Launcher in the Nova design: serif headline, facts and a framed cover'],
+    designs: ['assets/launcher-designs.jpg?v=2', 'Settings · Launcher design (here in Nova)', 'The design picker with New, Classic, Glass, Neon and Nova']
+  };
+
+  // ---------------------------------------------------------------- routing
+  const VIEWS = ['home', 'mod', 'launcher', 'styles', 'info', 'terms-of-service', 'terms-of-use', 'privacy'];
+  function show() {
+    const name = (location.hash || '').slice(1);
+    const view = VIEWS.includes(name) ? name : 'home';
+    document.querySelectorAll('.view').forEach((v) => v.classList.toggle('on', v.dataset.view === view));
+    document.querySelectorAll('nav.tabs .tab').forEach((t) => {
+      if (t.getAttribute('href') === '#' + view) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', show);
+  show();
+
+  // table of contents inside the legal pages: jump without changing the view
+  document.querySelectorAll('[data-jump]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const el = document.getElementById(a.dataset.jump);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+
+  // ---------------------------------------------------------------- module browser
+  const TABS = [['All', null], ['PvP', 'PvP'], ['Visuals', 'Visuals'], ['HUD', 'HUD'], ['Player', 'Player'], ['Misc', 'Misc'], ['Extra', 'Extra'], ['Configs', 'Configs']];
+  let filter = null;
+  let query = '';
+  const filtersEl = document.getElementById('filters');
+  const modsEl = document.getElementById('mods');
+  const count = (f) => MODULES.filter((m) => !f || (f === 'HUD' ? m.hud : m.cat === f)).length;
+  TABS.forEach(([label, key]) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = label + '<span class="n">' + count(key) + '</span>';
+    b.setAttribute('aria-pressed', String(key === filter));
+    b.addEventListener('click', () => {
+      filter = key;
+      filtersEl.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderMods();
+    });
+    filtersEl.append(b);
+  });
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function renderMods() {
+    const q = query.trim().toLowerCase();
+    const list = MODULES.filter((m) => (!filter || (filter === 'HUD' ? m.hud : m.cat === filter))
+      && (!q || m.name.toLowerCase().includes(q) || m.desc.toLowerCase().includes(q)));
+    modsEl.innerHTML = list.length ? list.map((m) => '<div class="mod"><div class="mod-top"><b>' + esc(m.name) + '</b><span>'
+      + (m.hud ? '<span class="tag hud">HUD</span> ' : '') + '<span class="tag">' + esc(m.cat) + '</span></span></div><p>' + esc(m.desc) + '</p></div>').join('')
+      : '<div class="empty">No module matches “' + esc(query) + '”.</div>';
+  }
+  document.getElementById('mod-search').addEventListener('input', (e) => { query = e.target.value; renderMods(); });
+  renderMods();
+
+  // ---------------------------------------------------------------- launcher screenshots
+  const shotImg = document.getElementById('launcher-shot-img');
+  const shotCap = document.getElementById('launcher-shot-cap');
+  document.querySelectorAll('[data-shot]').forEach((b) => b.addEventListener('click', () => {
+    const s = SHOTS[b.dataset.shot];
+    shotImg.src = s[0]; shotCap.textContent = s[1]; shotImg.alt = s[2];
+    document.querySelectorAll('[data-shot]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  }));
+
+
+  // ---------------------------------------------------------------- download chooser
+  // Where each file is hosted: a full https:// address, or a path on this site (/downloads/...).
+  // The files come from the GitHub release "launcher" of CrystalMacross/Visual-Client.
+  // When a new version is released there, update file names, sizes and the version labels on this page.
+  // An empty url shows "Not available yet"; soon: true shows "Coming soon" instead. size 0 hides the size.
+  const GH = 'https://github.com/CrystalMacross/Visual-Client/releases/download/launcher/';
+  const DOWNLOADS = {
+    launcher: [
+      { os: 'windows', name: 'Windows · Installer', file: 'Visual.Launcher.Setup.1.10.16.exe', size: 142740129, url: GH + 'Visual.Launcher.Setup.1.10.16.exe' },
+      { os: 'windows', name: 'Windows · Portable (no install)', file: 'Visual-Launcher-1.10.16-portable.exe', size: 123738158, url: GH + 'Visual-Launcher-1.10.16-portable.exe' },
+      { os: 'mac', name: 'macOS · Apple Silicon (M1 and newer)', file: 'Visual-Launcher-1.10.16-arm64.dmg', size: 142870913, url: GH + 'Visual-Launcher-1.10.16-arm64.dmg' },
+      { os: 'mac', name: 'macOS · Intel', file: 'Visual-Launcher-1.10.16-x64.dmg', size: 148698310, url: GH + 'Visual-Launcher-1.10.16-x64.dmg' },
+      { os: 'linux', name: 'Linux · AppImage', file: 'Visual.Launcher-1.10.16.AppImage', size: 147611547, url: GH + 'Visual.Launcher-1.10.16.AppImage' }
+    ],
+    mod: [
+      { os: '', name: 'Visual Client 1.20.7', file: 'visual-client-1.20.7.jar', size: 17429200, url: GH + 'visual-client-1.20.7.jar' }
+    ],
+    // Source ZIPs on this site: mod and launcher from commit eae9879 (the build behind the release files above), Styles 1.7.0 from its Gradle project.
+    source: [
+      { os: '', name: 'Mod · Visual Client 1.20.7', file: 'visual-client-1.20.7-source.zip', size: 5044707, url: '/downloads/visual-client-1.20.7-source.zip' },
+      { os: '', name: 'Launcher · Visual Launcher 1.10.16', file: 'visual-launcher-1.10.16-source.zip', size: 412509, url: '/downloads/visual-launcher-1.10.16-source.zip' },
+      { os: '', name: 'Styles · Visual Styles 1.7.0', file: 'visual-styles-1.7.0-source.zip', size: 3602308, url: '/downloads/visual-styles-1.7.0-source.zip' }
+    ],
+    // Visual Styles is served by this site (small jar, Minecraft 1.21.11 only).
+    styles: [
+      { os: '', name: 'Visual Styles 1.7.0', file: 'visual-styles-1.7.0+1.21.11.jar', size: 3632252, url: '/downloads/visual-styles-1.7.0+1.21.11.jar' }
+    ]
+  };
+  const ua = navigator.userAgent || '';
+  const myOs = /Windows/i.test(ua) ? 'windows' : /Mac OS X|Macintosh/i.test(ua) ? 'mac' : /Linux/i.test(ua) && !/Android/i.test(ua) ? 'linux' : '';
+  const mb = (b) => (b / 1e6).toFixed(b < 1e8 ? 1 : 0) + ' MB';
+  function fillList(id, items) {
+    document.getElementById(id).innerHTML = items.map((f) => {
+      const mine = f.os && f.os === myOs;
+      const ok = /^(https:\/\/|\/)/.test(f.url);
+      const button = ok
+        ? '<a class="btn primary" href="' + esc(f.url) + '" download="' + esc(f.file) + '">Download</a>'
+        : '<span class="btn" aria-disabled="true">' + (f.soon ? 'Coming soon' : 'Not available yet') + '</span>';
+      return '<div class="dl-row' + (mine ? ' mine' : '') + '"><div class="what"><b>' + esc(f.name) + '</b>' + (mine ? '<span class="yours">Your system</span>' : '')
+        + '<span class="file">' + esc(f.file) + '</span></div>' + (f.size ? '<span class="size">' + mb(f.size) + '</span>' : '') + button + '</div>';
+    }).join('');
+  }
+  fillList('dl-launcher', DOWNLOADS.launcher);
+  fillList('dl-mod', DOWNLOADS.mod);
+  fillList('dl-src', DOWNLOADS.source);
+  fillList('dl-styles', DOWNLOADS.styles);
+  const dl = document.getElementById('dl');
+  let lastFocus = null;
+  function step(name) {
+    dl.querySelectorAll('[data-step]').forEach((el) => { el.hidden = el.dataset.step !== name; });
+    const title = { pick: 'Download', launcher: 'Download the Launcher', mod: 'Download the Mod', styles: 'Download Visual Styles', source: 'Source code' }[name];
+    document.getElementById('dl-title').textContent = title;
+  }
+  function openDl(which) {
+    lastFocus = document.activeElement;
+    step(['launcher', 'mod', 'styles', 'source'].includes(which) ? which : 'pick');
+    dl.hidden = false;
+    document.getElementById('dl-close').focus();
+  }
+  function closeDl() { dl.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus(); }
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-download]');
+    if (t) { e.preventDefault(); openDl(t.dataset.download); return; }
+    const go = e.target.closest('[data-go]');
+    if (go && dl.contains(go)) step(go.dataset.go);
+  });
+  document.getElementById('dl-close').addEventListener('click', closeDl);
+  dl.addEventListener('click', (e) => { if (e.target === dl) closeDl(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dl.hidden) closeDl(); });
+
+  // ---------------------------------------------------------------- lightbox
+  const box = document.getElementById('lightbox');
+  const boxImg = document.getElementById('lightbox-img');
+  document.addEventListener('click', (e) => {
+    const fig = e.target.closest('[data-zoom]');
+    if (!fig) return;
+    const img = fig.querySelector('img');
+    boxImg.src = img.src; boxImg.alt = img.alt; box.hidden = false;
+  });
+  const close = () => { box.hidden = true; };
+  document.getElementById('lightbox-close').addEventListener('click', close);
+  box.addEventListener('click', (e) => { if (e.target === box) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+
+  // ---------------------------------------------------------------- card light under the cursor
+  document.addEventListener('pointermove', (e) => {
+    const card = e.target.closest && e.target.closest('.card');
+    if (!card) return;
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  }, { passive: true });
+
+  // ---------------------------------------------------------------- Discord status demo on the home page
+  const BIOMES = [
+    ['cherry', 'Cherry Grove', 'Overworld'], ['deepdark', 'Deep Dark', 'Overworld'], ['desert', 'Desert', 'Overworld'],
+    ['snow', 'Snowy Slopes', 'Overworld'], ['jungle', 'Bamboo Jungle', 'Overworld'], ['ocean', 'Warm Ocean', 'Overworld'],
+    ['mushroom', 'Mushroom Fields', 'Overworld'], ['lush', 'Lush Caves', 'Overworld'], ['pale', 'Pale Garden', 'Overworld'],
+    ['badlands', 'Badlands', 'Overworld'], ['nether', 'Crimson Forest', 'Nether'], ['end', 'End Highlands', 'The End']
+  ];
+  const biomesEl = document.getElementById('biomes');
+  if (biomesEl) {
+    const small = document.getElementById('rpc-small');
+    const stateEl = document.getElementById('rpc-state');
+    const timeEl = document.getElementById('rpc-time');
+    const homeView = document.getElementById('view-home');
+    let idx = 0;
+    let auto = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pickBiome = (i) => {
+      idx = i;
+      const b = BIOMES[i];
+      small.src = 'rpc/biomes/' + b[0] + '.png';
+      small.alt = 'Biome: ' + b[1];
+      stateEl.textContent = b[1] + ' · ' + b[2];
+      biomesEl.querySelectorAll('button').forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
+    };
+    BIOMES.forEach((b, i) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.innerHTML = '<img src="rpc/biomes/' + b[0] + '.png" width="34" height="34" alt="" loading="lazy">' + esc(b[1]);
+      btn.addEventListener('click', () => { auto = false; pickBiome(i); });
+      biomesEl.append(btn);
+    });
+    pickBiome(0);
+    const t0 = Date.now() - 42000;
+    setInterval(() => {
+      if (document.hidden || !homeView.classList.contains('on')) return;
+      const s = Math.floor((Date.now() - t0) / 1000);
+      timeEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0') + ' elapsed';
+      if (auto && s % 3 === 0) pickBiome((idx + 1) % BIOMES.length);
+    }, 1000);
+  }
+})();
+</script>
+
+</body>
+</html>

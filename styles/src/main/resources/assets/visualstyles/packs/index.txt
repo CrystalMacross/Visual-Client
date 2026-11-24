@@ -1,0 +1,455 @@
+vrzc|vrzc mashup|textures/block/respawn_anchor_bottom.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_side0.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_side1.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_side2.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_side3.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_side4.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_top.png
+vrzc|vrzc mashup|textures/block/respawn_anchor_top_off.png
+vrzc|vrzc mashup|textures/block/obsidian.png
+vrzc|vrzc mashup|textures/block/fire_0.png
+vrzc|vrzc mashup|textures/block/fire_1.png
+vrzc|vrzc mashup|textures/block/snow.png
+vrzc|vrzc mashup|textures/misc/enchanted_glint_item.png
+vrzc|vrzc mashup|textures/misc/enchanted_glint_armor.png
+l3po|l3po Private|textures/entity/end_crystal/end_crystal.png
+l3po|l3po Private|textures/block/respawn_anchor_bottom.png
+l3po|l3po Private|textures/block/respawn_anchor_side0.png
+l3po|l3po Private|textures/block/respawn_anchor_side1.png
+l3po|l3po Private|textures/block/respawn_anchor_side2.png
+l3po|l3po Private|textures/block/respawn_anchor_side3.png
+l3po|l3po Private|textures/block/respawn_anchor_side4.png
+l3po|l3po Private|textures/block/respawn_anchor_top.png
+l3po|l3po Private|textures/block/respawn_anchor_top_off.png
+l3po|l3po Private|textures/block/obsidian.png
+l3po|l3po Private|textures/item/netherite_sword.png
+l3po|l3po Private|textures/block/fire_0.png
+l3po|l3po Private|textures/block/fire_1.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_bottom.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_side0.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_side1.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_side2.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_side3.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_side4.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/respawn_anchor_top_off.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/obsidian.png
+ve_clean_cyan|VE x Clean Cyan|textures/item/netherite_helmet.png
+ve_clean_cyan|VE x Clean Cyan|textures/item/netherite_chestplate.png
+ve_clean_cyan|VE x Clean Cyan|textures/item/netherite_leggings.png
+ve_clean_cyan|VE x Clean Cyan|textures/item/netherite_boots.png
+ve_clean_cyan|VE x Clean Cyan|textures/item/ender_pearl.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/fire_0.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/fire_1.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/stone.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/deepslate.png
+ve_clean_cyan|VE x Clean Cyan|textures/block/deepslate_top.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/inventory.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/crafting_table.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/furnace.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/blast_furnace.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/smoker.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/smithing.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/enchanting_table.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/brewing_stand.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/beacon.png
+ve_clean_cyan|VE x Clean Cyan|textures/gui/container/villager.png
+ve_clean_cyan|VE x Clean Cyan|textures/misc/enchanted_glint_item.png
+ve_clean_cyan|VE x Clean Cyan|textures/misc/enchanted_glint_armor.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_bottom.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_side0.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_side1.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_side2.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_side3.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_side4.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_top.png
+ve_dagga|VE x Dagga|textures/block/respawn_anchor_top_off.png
+ve_dagga|VE x Dagga|textures/block/obsidian.png
+ve_dagga|VE x Dagga|textures/block/fire_0.png
+ve_dagga|VE x Dagga|textures/block/fire_1.png
+ayvexs|ayvexs pack|textures/entity/end_crystal/end_crystal.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_bottom.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_side0.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_side1.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_side2.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_side3.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_side4.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_top.png
+ayvexs|ayvexs pack|textures/block/respawn_anchor_top_off.png
+ayvexs|ayvexs pack|textures/block/glowstone.png
+ayvexs|ayvexs pack|textures/block/obsidian.png
+ayvexs|ayvexs pack|textures/item/totem_of_undying.png
+ayvexs|ayvexs pack|textures/item/ender_pearl.png
+ayvexs|ayvexs pack|textures/block/fire_0.png
+ayvexs|ayvexs pack|textures/block/fire_1.png
+ayvexs|ayvexs pack|textures/block/stone.png
+ayvexs|ayvexs pack|textures/block/deepslate.png
+ayvexs|ayvexs pack|textures/block/deepslate_top.png
+ayvexs|ayvexs pack|textures/misc/enchanted_glint_item.png
+ayvexs|ayvexs pack|textures/misc/enchanted_glint_armor.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_bottom.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_side0.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_side1.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_side2.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_side3.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_side4.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_top.png
+vanilla_pink|Vanilla Pink|textures/block/respawn_anchor_top_off.png
+vanilla_pink|Vanilla Pink|textures/item/totem_of_undying.png
+vanilla_pink|Vanilla Pink|textures/item/ender_pearl.png
+vanilla_pink|Vanilla Pink|textures/item/mace.png
+evantii_dagga|Evantii x Dagga|textures/entity/end_crystal/end_crystal.png
+evantii_dagga|Evantii x Dagga|textures/item/netherite_sword.png
+evantii_dagga|Evantii x Dagga|textures/item/diamond_sword.png
+evantii_dagga|Evantii x Dagga|textures/item/ender_pearl.png
+itzrealme|ItzRealMe Private|textures/entity/end_crystal/end_crystal.png
+itzrealme|ItzRealMe Private|textures/item/netherite_sword.png
+itzrealme|ItzRealMe Private|textures/item/diamond_sword.png
+olivershh|Olivershh|textures/entity/end_crystal/end_crystal.png
+olivershh|Olivershh|textures/block/respawn_anchor_bottom.png
+olivershh|Olivershh|textures/block/respawn_anchor_side0.png
+olivershh|Olivershh|textures/block/respawn_anchor_side1.png
+olivershh|Olivershh|textures/block/respawn_anchor_side2.png
+olivershh|Olivershh|textures/block/respawn_anchor_side3.png
+olivershh|Olivershh|textures/block/respawn_anchor_side4.png
+olivershh|Olivershh|textures/block/respawn_anchor_top.png
+olivershh|Olivershh|textures/block/respawn_anchor_top_off.png
+olivershh|Olivershh|textures/block/obsidian.png
+olivershh|Olivershh|textures/item/diamond_helmet.png
+olivershh|Olivershh|textures/item/diamond_chestplate.png
+olivershh|Olivershh|textures/item/diamond_leggings.png
+olivershh|Olivershh|textures/item/diamond_boots.png
+olivershh|Olivershh|textures/item/diamond_sword.png
+olivershh|Olivershh|textures/item/diamond_pickaxe.png
+olivershh|Olivershh|textures/item/totem_of_undying.png
+olivershh|Olivershh|textures/item/ender_pearl.png
+olivershh|Olivershh|textures/block/fire_0.png
+olivershh|Olivershh|textures/block/fire_1.png
+olivershh|Olivershh|textures/misc/enchanted_glint_item.png
+olivershh|Olivershh|textures/misc/enchanted_glint_armor.png
+greg_xmas|Greg Christmas|textures/entity/equipment/humanoid/netherite.png
+greg_xmas|Greg Christmas|textures/entity/equipment/humanoid/diamond.png
+greg_xmas|Greg Christmas|textures/item/netherite_helmet.png
+greg_xmas|Greg Christmas|textures/item/totem_of_undying.png
+greg_xmas|Greg Christmas|textures/item/ender_pearl.png
+kesu|kesu Private|textures/block/respawn_anchor_side1.png
+kesu|kesu Private|textures/block/respawn_anchor_side2.png
+kesu|kesu Private|textures/block/respawn_anchor_side3.png
+kesu|kesu Private|textures/block/respawn_anchor_side4.png
+kesu|kesu Private|textures/block/glowstone.png
+kesu|kesu Private|textures/block/obsidian.png
+kesu|kesu Private|textures/entity/equipment/humanoid/netherite.png
+kesu|kesu Private|textures/entity/equipment/humanoid/diamond.png
+kesu|kesu Private|textures/entity/equipment/humanoid_leggings/netherite.png
+kesu|kesu Private|textures/entity/equipment/humanoid_leggings/diamond.png
+kesu|kesu Private|textures/item/netherite_helmet.png
+kesu|kesu Private|textures/item/netherite_chestplate.png
+kesu|kesu Private|textures/item/netherite_leggings.png
+kesu|kesu Private|textures/item/netherite_boots.png
+kesu|kesu Private|textures/item/diamond_helmet.png
+kesu|kesu Private|textures/item/diamond_chestplate.png
+kesu|kesu Private|textures/item/diamond_leggings.png
+kesu|kesu Private|textures/item/diamond_boots.png
+kesu|kesu Private|textures/item/netherite_sword.png
+kesu|kesu Private|textures/item/diamond_sword.png
+kesu|kesu Private|textures/item/netherite_pickaxe.png
+kesu|kesu Private|textures/item/diamond_pickaxe.png
+kesu|kesu Private|textures/item/totem_of_undying.png
+kesu|kesu Private|textures/item/ender_pearl.png
+kesu|kesu Private|textures/block/fire_0.png
+kesu|kesu Private|textures/block/fire_1.png
+kesu|kesu Private|textures/block/deepslate.png
+kesu|kesu Private|textures/block/deepslate_top.png
+kesu|kesu Private|textures/misc/enchanted_glint_item.png
+kesu|kesu Private|textures/misc/enchanted_glint_armor.png
+kesu|kesu Private|textures/gui/sprites/hud/crosshair.png
+sktred|SKTred|textures/entity/end_crystal/end_crystal.png
+sktred|SKTred|textures/block/obsidian.png
+sktred|SKTred|textures/item/netherite_pickaxe.png
+sktred|SKTred|textures/item/totem_of_undying.png
+sktred|SKTred|textures/item/ender_pearl.png
+sktred|SKTred|textures/item/mace.png
+sktred|SKTred|textures/block/fire_0.png
+sktred|SKTred|textures/block/fire_1.png
+sktred|SKTred|textures/block/stone.png
+sktred|SKTred|textures/block/deepslate.png
+sktred|SKTred|textures/block/deepslate_top.png
+sktred|SKTred|textures/misc/enchanted_glint_item.png
+sktred|SKTred|textures/misc/enchanted_glint_armor.png
+gallery_walk|Gallery Walk Remake|textures/entity/end_crystal/end_crystal.png
+gregory_blue|GregoryBlueory II|textures/entity/end_crystal/end_crystal.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_bottom.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_side0.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_side1.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_side2.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_side3.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_side4.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_top.png
+gregory_blue|GregoryBlueory II|textures/block/respawn_anchor_top_off.png
+gregory_blue|GregoryBlueory II|textures/block/glowstone.png
+gregory_blue|GregoryBlueory II|textures/block/obsidian.png
+gregory_blue|GregoryBlueory II|textures/item/totem_of_undying.png
+gregory_blue|GregoryBlueory II|textures/item/ender_pearl.png
+gregory_blue|GregoryBlueory II|textures/block/fire_0.png
+gregory_blue|GregoryBlueory II|textures/block/fire_1.png
+marlow|marlow vs do re mi|textures/entity/end_crystal/end_crystal.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_bottom.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_side0.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_side1.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_side2.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_side3.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_side4.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_top.png
+marlow|marlow vs do re mi|textures/block/respawn_anchor_top_off.png
+marlow|marlow vs do re mi|textures/block/glowstone.png
+marlow|marlow vs do re mi|textures/item/totem_of_undying.png
+marlow|marlow vs do re mi|textures/item/ender_pearl.png
+marlow|marlow vs do re mi|textures/block/fire_0.png
+marlow|marlow vs do re mi|textures/block/fire_1.png
+marlow|marlow vs do re mi|textures/gui/container/brewing_stand.png
+marlow|marlow vs do re mi|textures/gui/container/villager.png
+purple_vanilla|Purple Vanilla+|textures/entity/end_crystal/end_crystal.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_bottom.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_side0.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_side1.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_side2.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_side3.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_side4.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_top.png
+purple_vanilla|Purple Vanilla+|textures/block/respawn_anchor_top_off.png
+purple_vanilla|Purple Vanilla+|textures/block/obsidian.png
+purple_vanilla|Purple Vanilla+|textures/entity/equipment/humanoid/netherite.png
+purple_vanilla|Purple Vanilla+|textures/entity/equipment/humanoid/diamond.png
+purple_vanilla|Purple Vanilla+|textures/entity/equipment/humanoid_leggings/netherite.png
+purple_vanilla|Purple Vanilla+|textures/entity/equipment/humanoid_leggings/diamond.png
+purple_vanilla|Purple Vanilla+|textures/item/netherite_helmet.png
+purple_vanilla|Purple Vanilla+|textures/item/netherite_chestplate.png
+purple_vanilla|Purple Vanilla+|textures/item/netherite_leggings.png
+purple_vanilla|Purple Vanilla+|textures/item/netherite_boots.png
+purple_vanilla|Purple Vanilla+|textures/item/diamond_helmet.png
+purple_vanilla|Purple Vanilla+|textures/item/diamond_chestplate.png
+purple_vanilla|Purple Vanilla+|textures/item/diamond_leggings.png
+purple_vanilla|Purple Vanilla+|textures/item/diamond_boots.png
+purple_vanilla|Purple Vanilla+|textures/item/netherite_sword.png
+purple_vanilla|Purple Vanilla+|textures/item/diamond_sword.png
+purple_vanilla|Purple Vanilla+|textures/item/netherite_pickaxe.png
+purple_vanilla|Purple Vanilla+|textures/item/diamond_pickaxe.png
+purple_vanilla|Purple Vanilla+|textures/item/totem_of_undying.png
+purple_vanilla|Purple Vanilla+|textures/item/ender_pearl.png
+purple_vanilla|Purple Vanilla+|textures/block/fire_0.png
+purple_vanilla|Purple Vanilla+|textures/block/fire_1.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/inventory.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/generic_54.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/shulker_box.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/crafting_table.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/furnace.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/blast_furnace.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/smoker.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/dispenser.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/hopper.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/anvil.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/grindstone.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/smithing.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/enchanting_table.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/brewing_stand.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/beacon.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/stonecutter.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/cartography_table.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/loom.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/villager.png
+purple_vanilla|Purple Vanilla+|textures/gui/container/horse.png
+purple_vanilla|Purple Vanilla+|textures/misc/enchanted_glint_item.png
+purple_vanilla|Purple Vanilla+|textures/misc/enchanted_glint_armor.png
+purple_vanilla|Purple Vanilla+|textures/gui/sprites/hud/crosshair.png
+ruin_overlay|Ruin Overlay V1|textures/block/glowstone.png
+ruin_overlay|Ruin Overlay V1|textures/item/totem_of_undying.png
+ruin_overlay|Ruin Overlay V1|textures/item/ender_pearl.png
+ruin_overlay|Ruin Overlay V1|textures/block/fire_0.png
+ruin_overlay|Ruin Overlay V1|textures/block/fire_1.png
+ruin_overlay|Ruin Overlay V1|textures/misc/enchanted_glint_armor.png
+vanilla_vision|Vanilla Vision|textures/entity/end_crystal/end_crystal.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_bottom.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_side0.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_side1.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_side2.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_side3.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_side4.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_top.png
+vanilla_vision|Vanilla Vision|textures/block/respawn_anchor_top_off.png
+vanilla_vision|Vanilla Vision|textures/block/glowstone.png
+vanilla_vision|Vanilla Vision|textures/block/obsidian.png
+vanilla_vision|Vanilla Vision|textures/entity/equipment/humanoid/diamond.png
+vanilla_vision|Vanilla Vision|textures/entity/equipment/humanoid_leggings/diamond.png
+vanilla_vision|Vanilla Vision|textures/item/netherite_helmet.png
+vanilla_vision|Vanilla Vision|textures/item/netherite_chestplate.png
+vanilla_vision|Vanilla Vision|textures/item/diamond_helmet.png
+vanilla_vision|Vanilla Vision|textures/item/diamond_chestplate.png
+vanilla_vision|Vanilla Vision|textures/item/diamond_leggings.png
+vanilla_vision|Vanilla Vision|textures/item/diamond_boots.png
+vanilla_vision|Vanilla Vision|textures/item/netherite_sword.png
+vanilla_vision|Vanilla Vision|textures/item/diamond_sword.png
+vanilla_vision|Vanilla Vision|textures/item/netherite_pickaxe.png
+vanilla_vision|Vanilla Vision|textures/item/diamond_pickaxe.png
+vanilla_vision|Vanilla Vision|textures/item/totem_of_undying.png
+vanilla_vision|Vanilla Vision|textures/item/ender_pearl.png
+vanilla_vision|Vanilla Vision|textures/block/stone.png
+vanilla_vision|Vanilla Vision|textures/block/deepslate.png
+vanilla_vision|Vanilla Vision|textures/block/deepslate_top.png
+vanilla_vision|Vanilla Vision|textures/gui/container/inventory.png
+vanilla_vision|Vanilla Vision|textures/gui/container/generic_54.png
+vanilla_vision|Vanilla Vision|textures/gui/container/shulker_box.png
+vanilla_vision|Vanilla Vision|textures/gui/container/crafting_table.png
+vanilla_vision|Vanilla Vision|textures/gui/container/furnace.png
+vanilla_vision|Vanilla Vision|textures/gui/container/blast_furnace.png
+vanilla_vision|Vanilla Vision|textures/gui/container/smoker.png
+vanilla_vision|Vanilla Vision|textures/gui/container/dispenser.png
+vanilla_vision|Vanilla Vision|textures/gui/container/hopper.png
+vanilla_vision|Vanilla Vision|textures/gui/container/anvil.png
+vanilla_vision|Vanilla Vision|textures/gui/container/grindstone.png
+vanilla_vision|Vanilla Vision|textures/gui/container/smithing.png
+vanilla_vision|Vanilla Vision|textures/gui/container/enchanting_table.png
+vanilla_vision|Vanilla Vision|textures/gui/container/brewing_stand.png
+vanilla_vision|Vanilla Vision|textures/gui/container/beacon.png
+vanilla_vision|Vanilla Vision|textures/gui/container/stonecutter.png
+vanilla_vision|Vanilla Vision|textures/gui/container/cartography_table.png
+vanilla_vision|Vanilla Vision|textures/gui/container/loom.png
+vanilla_vision|Vanilla Vision|textures/gui/container/villager.png
+vanilla_vision|Vanilla Vision|textures/gui/container/horse.png
+vanilla_vision|Vanilla Vision|textures/misc/enchanted_glint_item.png
+vanilla_vision|Vanilla Vision|textures/misc/enchanted_glint_armor.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_bottom.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_side0.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_side1.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_side2.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_side3.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_side4.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_top.png
+cowarted|Cowarted Default Mashup|textures/block/respawn_anchor_top_off.png
+cowarted|Cowarted Default Mashup|textures/block/obsidian.png
+cowarted|Cowarted Default Mashup|textures/item/totem_of_undying.png
+cowarted|Cowarted Default Mashup|textures/item/ender_pearl.png
+cowarted|Cowarted Default Mashup|textures/block/fire_0.png
+cowarted|Cowarted Default Mashup|textures/block/fire_1.png
+cowarted|Cowarted Default Mashup|textures/gui/container/inventory.png
+cowarted|Cowarted Default Mashup|textures/gui/container/generic_54.png
+cowarted|Cowarted Default Mashup|textures/gui/container/shulker_box.png
+cowarted|Cowarted Default Mashup|textures/gui/container/crafting_table.png
+cowarted|Cowarted Default Mashup|textures/gui/container/furnace.png
+cowarted|Cowarted Default Mashup|textures/gui/container/blast_furnace.png
+cowarted|Cowarted Default Mashup|textures/gui/container/smoker.png
+cowarted|Cowarted Default Mashup|textures/gui/container/dispenser.png
+cowarted|Cowarted Default Mashup|textures/gui/container/hopper.png
+cowarted|Cowarted Default Mashup|textures/gui/container/anvil.png
+cowarted|Cowarted Default Mashup|textures/gui/container/grindstone.png
+cowarted|Cowarted Default Mashup|textures/gui/container/smithing.png
+cowarted|Cowarted Default Mashup|textures/gui/container/enchanting_table.png
+cowarted|Cowarted Default Mashup|textures/gui/container/brewing_stand.png
+cowarted|Cowarted Default Mashup|textures/gui/container/beacon.png
+cowarted|Cowarted Default Mashup|textures/gui/container/stonecutter.png
+cowarted|Cowarted Default Mashup|textures/gui/container/cartography_table.png
+cowarted|Cowarted Default Mashup|textures/gui/container/loom.png
+cowarted|Cowarted Default Mashup|textures/gui/container/villager.png
+cowarted|Cowarted Default Mashup|textures/gui/container/horse.png
+cowarted|Cowarted Default Mashup|textures/gui/container/crafter.png
+cowarted|Cowarted Default Mashup|textures/gui/sprites/hud/crosshair.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/entity/end_crystal/end_crystal.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_bottom.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_side0.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_side1.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_side2.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_side3.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_side4.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_top.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/respawn_anchor_top_off.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/glowstone.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/obsidian.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/item/totem_of_undying.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/fire_0.png
+swetsy_xmas|Xmas Remake by Swetsy|textures/block/fire_1.png
+gray_faith|Gray Faith x Swetsy|textures/entity/end_crystal/end_crystal.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_bottom.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_side0.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_side1.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_side2.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_side3.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_side4.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_top.png
+gray_faith|Gray Faith x Swetsy|textures/block/respawn_anchor_top_off.png
+gray_faith|Gray Faith x Swetsy|textures/block/obsidian.png
+gray_faith|Gray Faith x Swetsy|textures/item/totem_of_undying.png
+gray_faith|Gray Faith x Swetsy|textures/block/fire_0.png
+gray_faith|Gray Faith x Swetsy|textures/block/fire_1.png
+green_faith|Green Faith|textures/entity/end_crystal/end_crystal.png
+green_faith|Green Faith|textures/block/respawn_anchor_bottom.png
+green_faith|Green Faith|textures/block/respawn_anchor_side0.png
+green_faith|Green Faith|textures/block/respawn_anchor_side1.png
+green_faith|Green Faith|textures/block/respawn_anchor_side2.png
+green_faith|Green Faith|textures/block/respawn_anchor_side3.png
+green_faith|Green Faith|textures/block/respawn_anchor_side4.png
+green_faith|Green Faith|textures/block/respawn_anchor_top.png
+green_faith|Green Faith|textures/block/respawn_anchor_top_off.png
+green_faith|Green Faith|textures/block/obsidian.png
+ledgemain|Ledgemain Cheats|textures/entity/end_crystal/end_crystal.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_bottom.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_side0.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_side1.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_side2.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_side3.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_side4.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_top.png
+ledgemain|Ledgemain Cheats|textures/block/respawn_anchor_top_off.png
+ledgemain|Ledgemain Cheats|textures/block/glowstone.png
+ledgemain|Ledgemain Cheats|textures/block/obsidian.png
+ledgemain|Ledgemain Cheats|textures/item/totem_of_undying.png
+ledgemain|Ledgemain Cheats|textures/item/ender_pearl.png
+ledgemain|Ledgemain Cheats|textures/block/fire_0.png
+ledgemain|Ledgemain Cheats|textures/block/fire_1.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_side0.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_side1.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_side2.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_side3.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_side4.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_top.png
+marlow_edited|Marlow Edited|textures/block/respawn_anchor_top_off.png
+marlow_edited|Marlow Edited|textures/block/obsidian.png
+marlow_edited|Marlow Edited|textures/entity/equipment/humanoid/netherite.png
+marlow_edited|Marlow Edited|textures/entity/equipment/humanoid/diamond.png
+marlow_edited|Marlow Edited|textures/entity/equipment/humanoid_leggings/netherite.png
+marlow_edited|Marlow Edited|textures/entity/equipment/humanoid_leggings/diamond.png
+marlow_edited|Marlow Edited|textures/item/netherite_helmet.png
+marlow_edited|Marlow Edited|textures/item/netherite_chestplate.png
+marlow_edited|Marlow Edited|textures/item/netherite_leggings.png
+marlow_edited|Marlow Edited|textures/item/netherite_boots.png
+marlow_edited|Marlow Edited|textures/item/diamond_helmet.png
+marlow_edited|Marlow Edited|textures/item/diamond_chestplate.png
+marlow_edited|Marlow Edited|textures/item/diamond_leggings.png
+marlow_edited|Marlow Edited|textures/item/diamond_boots.png
+marlow_edited|Marlow Edited|textures/item/netherite_sword.png
+marlow_edited|Marlow Edited|textures/item/diamond_sword.png
+marlow_edited|Marlow Edited|textures/item/netherite_pickaxe.png
+marlow_edited|Marlow Edited|textures/item/diamond_pickaxe.png
+marlow_edited|Marlow Edited|textures/item/totem_of_undying.png
+marlow_edited|Marlow Edited|textures/gui/container/inventory.png
+marlow_edited|Marlow Edited|textures/gui/container/generic_54.png
+marlow_edited|Marlow Edited|textures/gui/container/shulker_box.png
+marlow_edited|Marlow Edited|textures/gui/container/crafting_table.png
+marlow_edited|Marlow Edited|textures/gui/container/furnace.png
+marlow_edited|Marlow Edited|textures/gui/container/blast_furnace.png
+marlow_edited|Marlow Edited|textures/gui/container/smoker.png
+marlow_edited|Marlow Edited|textures/gui/container/dispenser.png
+marlow_edited|Marlow Edited|textures/gui/container/hopper.png
+marlow_edited|Marlow Edited|textures/gui/container/anvil.png
+marlow_edited|Marlow Edited|textures/gui/container/grindstone.png
+marlow_edited|Marlow Edited|textures/gui/container/smithing.png
+marlow_edited|Marlow Edited|textures/gui/container/enchanting_table.png
+marlow_edited|Marlow Edited|textures/gui/container/brewing_stand.png
+marlow_edited|Marlow Edited|textures/gui/container/beacon.png
+marlow_edited|Marlow Edited|textures/gui/container/stonecutter.png
+marlow_edited|Marlow Edited|textures/gui/container/cartography_table.png
+marlow_edited|Marlow Edited|textures/gui/container/loom.png
+marlow_edited|Marlow Edited|textures/gui/container/villager.png
+marlow_edited|Marlow Edited|textures/gui/container/horse.png
+marlow_edited|Marlow Edited|textures/misc/enchanted_glint_item.png
+marlow_edited|Marlow Edited|textures/misc/enchanted_glint_armor.png
+vanillaplus_2d|VanillaPlus V2 2D Crystal|textures/entity/end_crystal/end_crystal.png
+vanillaplus_2d|VanillaPlus V2 2D Crystal|textures/block/fire_0.png
+vanillaplus_2d|VanillaPlus V2 2D Crystal|textures/block/fire_1.png
