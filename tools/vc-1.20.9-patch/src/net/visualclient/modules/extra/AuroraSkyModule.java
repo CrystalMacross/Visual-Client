@@ -23,6 +23,9 @@ import net.visualclient.hud.Overlay;
  * terrain, trees and buildings within 160 blocks hide the lower part of a curtain (the heightmap of the
  * loaded chunks gives the terrain's horizon in every direction), and the aurora fades out under a roof,
  * underwater, in rain, during the day ("Only at night") and outside the Overworld.
+ *
+ * "Falling blocks" (own setting, on by default) adds glowing 3D cubes in the aurora's colours that tumble down
+ * through the sky in the distance (24 - 64 blocks), drawn as shaded cube faces with the same projection.
  */
 public final class AuroraSkyModule extends ClientModule implements Overlay {
 
@@ -36,6 +39,17 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 	private final NumberSetting speed = this.add(new NumberSetting("Speed", 1.0, 0.2, 3.0, 0.1).suffix("x"));
 	private final BoolSetting nightOnly = this.add(new BoolSetting("Only at night", true));
 	private final BoolSetting terrain = this.add(new BoolSetting("Hide behind terrain", true));
+	private final BoolSetting blocks = this.add(new BoolSetting("Falling blocks", true));
+	private final NumberSetting blockCount = this.add(new NumberSetting("Block amount", 20.0, 4.0, 40.0, 1.0));
+
+	/** Falling 3D blocks: position relative to the player's eye (blocks), fall speed, size, spin. */
+	private static final int MAX_BLOCKS = 40;
+	private final double[][] cubes = new double[MAX_BLOCKS][];
+	private final java.util.Random rng = new java.util.Random();
+	/** Cube corners and faces (corner indices, counter-clockwise seen from outside) with a light factor. */
+	private static final double[][] CORNERS = {{-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1}, {-1, -1, 1}, {1, -1, 1}, {1, 1, 1}, {-1, 1, 1}};
+	private static final int[][] FACES = {{0, 3, 2, 1}, {4, 5, 6, 7}, {0, 4, 7, 3}, {1, 2, 6, 5}, {3, 7, 6, 2}, {0, 1, 5, 4}};
+	private static final float[] FACE_LIGHT = {0.8F, 0.8F, 0.65F, 0.65F, 1.0F, 0.5F};
 
 	/** Curtain columns all around the sky (0.5 degrees each). */
 	private static final int COLUMNS = 720;
@@ -84,6 +98,7 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 		}
 		this.visible += (target - this.visible) * Math.min(1.0F, dt * 1.5F);
 		if (this.visible < 0.01F) return;
+		if (this.blocks.on()) this.moveBlocks(dt);
 
 		if (this.terrain.on()) this.updateHorizon(level, ex, ey, ez);
 
@@ -165,6 +180,126 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 				fillV(g, x0, x1, yTop, ySplit, argb(cHigh, 0.0F), argb(midC, a * 0.7F), bottomLimit);
 				double rimTop = projectY(th, low + Math.toRadians(1.5), fx, fy, fz, rx, rz, ux, uy, uz, cy, ky);
 				if (!Double.isNaN(rimTop)) fillV(g, x0, x1, rimTop, yLow, argb(lowC, 0.0F), argb(rimC, Math.min(1.0F, a * 0.9F)), bottomLimit);
+			}
+		}
+		if (this.blocks.on()) this.drawBlocks(g, fx, fy, fz, rx, rz, ux, uy, uz, cx, cy, kx, ky, w, bottomLimit, bright, cLow, cHigh);
+	}
+
+	/** Lets the blocks fall; a block that left the sky starts again high up in a random direction. */
+	private void moveBlocks(float dt) {
+		int n = Math.min(MAX_BLOCKS, this.blockCount.asInt());
+		double spd = this.speed.asDouble();
+		for (int i = 0; i < MAX_BLOCKS; i++) {
+			double[] c = this.cubes[i];
+			if (i >= n) {
+				this.cubes[i] = null;
+				continue;
+			}
+			if (c == null) {
+				c = this.cubes[i] = this.spawn(true);
+			}
+			c[1] -= c[3] * dt * spd;
+			c[5] += c[6] * dt * spd;
+			c[7] += c[8] * dt * spd;
+			double dist = Math.sqrt(c[0] * c[0] + c[2] * c[2]);
+			if (Math.atan2(c[1], dist) < Math.toRadians(4.0)) this.cubes[i] = this.spawn(false);
+		}
+	}
+
+	/** {x, y, z, fall speed, size, spin a, spin speed a, spin b, spin speed b, color mix}. */
+	private double[] spawn(boolean anywhere) {
+		double th = this.rng.nextDouble() * Math.PI * 2.0;
+		double d = 24.0 + this.rng.nextDouble() * 40.0;
+		double y = anywhere ? 10.0 + this.rng.nextDouble() * 55.0 : 50.0 + this.rng.nextDouble() * 20.0;
+		return new double[]{-Math.sin(th) * d, y, Math.cos(th) * d, 2.0 + this.rng.nextDouble() * 2.5, 1.6 + this.rng.nextDouble() * 2.0,
+			this.rng.nextDouble() * 6.3, (this.rng.nextDouble() - 0.5) * 1.6, this.rng.nextDouble() * 6.3, (this.rng.nextDouble() - 0.5) * 1.2,
+			this.rng.nextDouble()};
+	}
+
+	/** Draws the blocks as shaded 3D cubes: visible faces far to near, each face filled with 1px rows. */
+	private void drawBlocks(GG g, double fx, double fy, double fz, double rx, double rz, double ux, double uy, double uz,
+			double cx, double cy, double kx, double ky, int w, int bottomLimit, float bright, int cLow, int cHigh) {
+		double[] px = new double[8], py = new double[8], vx = new double[8], vy = new double[8], vz = new double[8];
+		double[] fxs = new double[4], fys = new double[4];
+		for (double[] c : this.cubes) {
+			if (c == null) continue;
+			double dist = Math.sqrt(c[0] * c[0] + c[2] * c[2]);
+			double el = Math.atan2(c[1], dist);
+			// behind terrain?
+			if (this.terrain.on()) {
+				double th = Math.atan2(-c[0], c[2]);
+				int hi = (int) Math.floorMod(Math.round(th / (Math.PI * 2.0) * HORIZON), (long) HORIZON);
+				if (el < this.horizon[hi] + Math.toRadians(0.5)) continue;
+			}
+			// fade in near the top, fade out near the horizon
+			float fade = (float) Math.min(1.0, Math.min((el - Math.toRadians(4.0)) / Math.toRadians(10.0), (72.0 - c[1]) / 10.0));
+			if (fade <= 0.02F) continue;
+			double ca = Math.cos(c[5]), sa = Math.sin(c[5]), cb = Math.cos(c[7]), sb = Math.sin(c[7]);
+			double half = c[4] * 0.5;
+			boolean ok = true;
+			for (int k = 0; k < 8; k++) {
+				double x = CORNERS[k][0] * half, y = CORNERS[k][1] * half, z = CORNERS[k][2] * half;
+				double x1 = x * ca - z * sa, z1 = x * sa + z * ca; // spin around Y
+				double y1 = y * cb - z1 * sb, z2 = y * sb + z1 * cb; // tilt around X
+				vx[k] = c[0] + x1;
+				vy[k] = c[1] + y1;
+				vz[k] = c[2] + z2;
+				double zc = vx[k] * fx + vy[k] * fy + vz[k] * fz;
+				if (zc < 0.5) {
+					ok = false;
+					break;
+				}
+				px[k] = cx + (vx[k] * rx + vz[k] * rz) / zc * kx;
+				py[k] = cy - (vx[k] * ux + vy[k] * uy + vz[k] * uz) / zc * ky;
+			}
+			if (!ok) continue;
+			int base = mix(cLow, cHigh, (float) c[9]);
+			float alpha = bright * fade * 0.85F;
+			for (int f = 0; f < 6; f++) {
+				int[] q = FACES[f];
+				// face normal (outward) against the direction to the eye: draw only faces turned to the camera
+				double ax = vx[q[1]] - vx[q[0]], ay = vy[q[1]] - vy[q[0]], az = vz[q[1]] - vz[q[0]];
+				double bx = vx[q[3]] - vx[q[0]], by = vy[q[3]] - vy[q[0]], bz = vz[q[3]] - vz[q[0]];
+				double nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+				if (nx * vx[q[0]] + ny * vy[q[0]] + nz * vz[q[0]] >= 0.0) continue;
+				for (int k = 0; k < 4; k++) {
+					fxs[k] = px[q[k]];
+					fys[k] = py[q[k]];
+				}
+				int col = shade(base, FACE_LIGHT[f]);
+				fillPoly(g, fxs, fys, argb(col, alpha), w, bottomLimit);
+			}
+		}
+	}
+
+	private static int shade(int rgb, float f) {
+		int r = Math.min(255, Math.round(((rgb >> 16) & 255) * f + 40 * f));
+		int gg = Math.min(255, Math.round(((rgb >> 8) & 255) * f + 40 * f));
+		int b = Math.min(255, Math.round((rgb & 255) * f + 40 * f));
+		return r << 16 | gg << 8 | b;
+	}
+
+	/** Fills a convex polygon with 1px rows (the GUI only has axis-aligned fills). */
+	private static void fillPoly(GG g, double[] xs, double[] ys, int color, int w, int bottomLimit) {
+		if (color >>> 24 == 0) return;
+		double minY = Math.min(Math.min(ys[0], ys[1]), Math.min(ys[2], ys[3]));
+		double maxY = Math.max(Math.max(ys[0], ys[1]), Math.max(ys[2], ys[3]));
+		int y0 = Math.max(0, (int) Math.floor(minY));
+		int y1 = Math.min(bottomLimit, (int) Math.ceil(maxY));
+		if (y1 - y0 > 200) return;
+		for (int row = y0; row < y1; row++) {
+			double yc = row + 0.5, lo = Double.MAX_VALUE, hi = -Double.MAX_VALUE;
+			for (int i = 0; i < 4; i++) {
+				double ax = xs[i], ay = ys[i], bx = xs[(i + 1) % 4], by = ys[(i + 1) % 4];
+				if (yc >= ay && yc < by || yc >= by && yc < ay) {
+					double ix = ax + (yc - ay) * (bx - ax) / (by - ay);
+					lo = Math.min(lo, ix);
+					hi = Math.max(hi, ix);
+				}
+			}
+			if (lo <= hi) {
+				int l = Math.max(0, (int) Math.round(lo)), r = Math.min(w, (int) Math.round(hi));
+				if (r > l) g.fill(l, row, r, row + 1, color);
 			}
 		}
 	}

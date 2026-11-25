@@ -47,4 +47,5 @@ for v in 1.21.4 1.21.5 1.21.6 1.21.9 1.21.11 26.1 26.2 26.3; do
 done
 java --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
      --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
-     "$here/Swap.java" "$in" "$out" "$b/classes"
+     "$here/Swap.java" "$in" "$out" "$b/classes" \
+     "$(basename "$in" .jar | sed 's/^visual-client-//')" "$(basename "$out" .jar | sed 's/^visual-client-//')"

@@ -5,16 +5,20 @@ import java.util.*;
 import java.util.zip.*;
 
 /**
- * Builds visual-client-1.20.9.jar from the 1.20.8 bundle: every class in classesDir/<nested jar name>/ is added
+ * Builds visual-client-1.20.9.jar from the 1.20.8 bundle (or another step, see the arguments): every class in classesDir/<nested jar name>/ is added
  * to that nested jar or replaces the existing one (old inner classes of a replaced class are dropped), and the
  * versions go 1.20.8.x -> 1.20.9.x (outer and nested fabric.mod.json). Everything else is copied unchanged.
- *   java Swap.java in.jar out.jar classesDir
+ *   java Swap.java in.jar out.jar classesDir [fromVersion toVersion]
  */
 public class Swap {
-	static final String FROM = "1.20.8", TO = "1.20.9";
+	static String FROM = "1.20.8", TO = "1.20.9";
 
 	public static void main(String[] a) throws Exception {
 		Path classes = Path.of(a[2]);
+		if (a.length >= 5) {
+			FROM = a[3];
+			TO = a[4];
+		}
 		Map<String, byte[]> out = new LinkedHashMap<>();
 		for (var e : read(Files.readAllBytes(Path.of(a[0]))).entrySet()) {
 			String n = e.getKey();
