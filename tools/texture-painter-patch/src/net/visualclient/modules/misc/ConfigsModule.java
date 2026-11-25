@@ -87,6 +87,7 @@ public final class ConfigsModule extends ClientModule {
 		list.add(net.visualclient.modules.extra.NoExplosionParticlesModule.INSTANCE);
 		list.add(net.visualclient.modules.extra.ItemSizeModule.INSTANCE);
 		list.add(net.visualclient.modules.extra.NoEquipAnimationModule.INSTANCE);
+		list.add(net.visualclient.modules.extra.AuroraSkyModule.INSTANCE);
 		list.add(INSTANCE);
 		return Collections.unmodifiableList(list);
 	}
