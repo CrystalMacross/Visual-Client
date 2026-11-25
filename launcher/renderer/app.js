@@ -397,6 +397,7 @@ function renderSettings() {
   $('#win-h').value = s.game.height;
   $('#fullscreen').checked = s.game.fullscreen;
   $('#close-launcher').checked = s.game.closeLauncher;
+  $('#perf-mods').checked = s.game.performanceMods !== false;
   $('#discord-on').checked = s.discord.enabled;
   $('#discord-server').checked = s.discord.showServer;
   $('#discord-server').disabled = !s.discord.enabled;
@@ -501,6 +502,7 @@ $('#discord-id').addEventListener('change', (e) => {
   saveDiscord();
 });
 $('#close-launcher').addEventListener('change', (e) => { state.settings.game.closeLauncher = e.target.checked; saveSetting({ game: state.settings.game }); });
+$('#perf-mods').addEventListener('change', (e) => { state.settings.game.performanceMods = e.target.checked; saveSetting({ game: state.settings.game }); });
 
 // ------------------------------------------------------------------ instances
 

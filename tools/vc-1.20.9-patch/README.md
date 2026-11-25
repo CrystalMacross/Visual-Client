@@ -1,4 +1,4 @@
-# Visual Client 1.20.9 - 1.20.11 patch
+# Visual Client 1.20.9 - 1.20.12 patch
 
 `visual-client-1.20.9.jar` is the 1.20.8 bundle with one new module; `visual-client-1.20.10.jar` is 1.20.9 with
 the Falling blocks of Aurora Sky (`build.sh visual-client-1.20.9.jar visual-client-1.20.10.jar <work>`); 1.20.11 gives
@@ -17,6 +17,18 @@ the cubes and the "Visual" colours the look of the website's sky (visualmod.verc
   near cubes and the site's cube colours (teal, sky, lime, indigo, mint, amber); near cubes are more opaque. The
   *Visual* aurora uses the site's three ribbons (teal/lime, sky/teal, indigo/sky) with its curtain gradient (edge
   colour at the bottom, curtain colour fading out at the top), waves, rays and envelope.
+
+- **1.20.12:** blocks always hide the aurora (the *Hide behind terrain* switch is gone, it is always on). Every frame a
+  ray per column direction (720) runs cell by cell through a cached heightmap square of 113 x 113 blocks around the
+  camera, starting right at the camera, so walls next to you, trees and buildings cover the curtains; beyond that the
+  highest point up to 384 blocks per direction is kept as a world position (48 directions refreshed per frame).
+  A column starts above the highest terrain of its own and both neighbouring directions; cubes are skipped while any
+  part of them could be behind terrain. Smooth at 60+ fps: drawn in real screen pixels (pose scaled by 1 / GUI scale)
+  instead of GUI pixels, animated with `System.nanoTime` (the millisecond clock steps in 16 ms on Windows) and placed
+  with the interpolated camera position.
+- Windows build: `build-windows.ps1` (PowerShell port of `build.sh`, `MergeMaps.java` replaces `merge.py`); the pose
+  calls are filled in per build (`pushPose`/`scale(x, y, 1)`/`popPose` on 1.21.4 - 1.21.5, `pushMatrix`/`scale(x, y)`/
+  `popMatrix` on 1.21.6+), and the camera position (`getPosition()` / `position()`).
 
 ## How it works
 - `src/.../AuroraSkyModule.java` is an `Overlay` (drawn from the HUD layer like the Pins module). The curtains
