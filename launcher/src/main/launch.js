@@ -1,5 +1,6 @@
 // Starts Minecraft with Fabric (+ Visual Client) through minecraft-launcher-core.
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const childProcess = require('child_process');
 const { Client } = require('minecraft-launcher-core');
@@ -10,6 +11,7 @@ const versions = require('./versions');
 const { ensureJava } = require('./java');
 const { presence } = require('./discord');
 const fastlaunch = require('./fastlaunch');
+const modrinth = require('./modrinth');
 
 fastlaunch.install();
 
@@ -116,6 +118,12 @@ async function start(instanceId, send) {
       await versions.ensureFabricApi(gameDir, inst.mcVersion);
     }
     if (inst.visualClient) versions.installVisualStyles(gameDir, inst.mcVersion);
+    if (settings.game.performanceMods !== false) {
+      progress({ stage: 'Performance-Mods werden geprüft', current: 0, total: 1 });
+      const added = await modrinth.ensurePerformanceMods(inst.id);
+      if (added.length) send('launch:log', '[Visual Launcher]: performance mods added: ' + added.join(', ') + '\n');
+      await versions.ensureFabricApi(gameDir, inst.mcVersion).catch(() => {});
+    }
     let javaPath = settings.java.customPath && fs.existsSync(settings.java.customPath) ? settings.java.customPath : null;
     let component = null;
     if (!javaPath) {
@@ -130,6 +138,11 @@ async function start(instanceId, send) {
 
   const userArgs = settings.java.jvmArgs ? settings.java.jvmArgs.split(/\s+/).filter(Boolean) : [];
   const fastArgs = settings.java.fastStart === false ? [] : fastlaunch.jvmFlags(root, fabric.id, component);
+  // garbage collector tuned for a game: short pauses instead of long stutters (unless the player picked a collector)
+  const gcArgs = userArgs.some((a) => /^-XX:\+Use\w*GC$/i.test(a)) ? [] : [
+    '-XX:+UseG1GC', '-XX:+UnlockExperimentalVMOptions', '-XX:G1NewSizePercent=20', '-XX:G1ReservePercent=20',
+    '-XX:MaxGCPauseMillis=50', '-XX:G1HeapRegionSize=32M', '-XX:+ParallelRefProcEnabled', '-XX:+DisableExplicitGC'
+  ];
 
   const launcher = new Client();
   const opts = {
@@ -138,7 +151,7 @@ async function start(instanceId, send) {
     version: { number: inst.mcVersion, type: 'release', custom: fabric.id },
     memory: { max: `${settings.java.maxMemory}M`, min: `${settings.java.minMemory}M` },
     javaPath,
-    customArgs: fastArgs.concat(userArgs),
+    customArgs: fastArgs.concat(gcArgs, userArgs),
     window: settings.game.fullscreen ? { fullscreen: true } : { width: settings.game.width, height: settings.game.height },
     overrides: { gameDirectory: gameDir, detached: true, maxSockets: 8 }
   };
@@ -175,6 +188,8 @@ async function start(instanceId, send) {
   const child = await launcher.launch(opts);
   if (!child) throw new Error('Minecraft konnte nicht gestartet werden. Details stehen im Protokoll.');
   running = child;
+  // the game gets more CPU time than background programs
+  try { os.setPriority(child.pid, os.constants.priority.PRIORITY_ABOVE_NORMAL); } catch { /* not allowed: keep normal */ }
   instances.update(inst.id, { lastPlayed: Date.now() });
   send('launch:started', { instanceId: inst.id });
   presence.gameStarted(inst, gameDir);

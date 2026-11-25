@@ -103,7 +103,7 @@ function create({ name, mcVersion, loaderVersion = null, visualClient = true, ic
 
 function update(id, patch) {
   const meta = read(id);
-  const allowed = ['name', 'visualClient', 'icon', 'lastPlayed', 'loaderVersion', 'installed'];
+  const allowed = ['name', 'visualClient', 'icon', 'lastPlayed', 'loaderVersion', 'installed', 'performanceMods'];
   for (const k of allowed) if (k in patch) meta[k] = patch[k];
   return write(meta);
 }

@@ -72,6 +72,8 @@
     'Schnellstart (Java-Klassen-Cache, ab Minecraft 1.20.5)': 'Fast start (Java class cache, Minecraft 1.20.5 and newer)',
     'Spiel': 'Game', 'Fenstergröße und Verhalten beim Start.': 'Window size and behaviour on start.',
     'Breite': 'Width', 'Höhe': 'Height', 'Vollbild': 'Fullscreen', 'Launcher beim Spielstart minimieren': 'Minimize the launcher when the game starts',
+    'Performance-Mods automatisch installieren (Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling, ModernFix)': 'Install performance mods automatically (Sodium, Lithium, FerriteCore, ImmediatelyFast, EntityCulling, ModernFix)',
+    'Performance-Mods werden geprüft': 'Checking performance mods',
     'Discord-Status': 'Discord status', 'Discord Rich Presence anzeigen': 'Show Discord Rich Presence',
     'Zeigt in Discord z. B. „Playing: mc.hypixel.net“. Der Launcher spricht dafür nur mit der Discord-App auf diesem PC.': 'Shows e.g. “Playing: mc.hypixel.net” in Discord. For this the launcher only talks to the Discord app on this PC.',
     'Zeigt in Discord z. B. „Playing: mc.hypixel.net“. Der Launcher spricht dafür nur mit der Discord-App auf diesem PC. Die Application ID erstellst du unter': 'Shows e.g. “Playing: mc.hypixel.net” in Discord. For this the launcher only talks to the Discord app on this PC. Create the Application ID at',

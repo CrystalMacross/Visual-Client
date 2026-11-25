@@ -90,6 +90,54 @@ async function install({ instanceId, projectId, type, title, icon }) {
   return { version: list[0].version_number };
 }
 
+// ---------------------------------------------------------------- performance mods
+
+/**
+ * Performance mods the launcher adds to every instance while "Performance mods" is on
+ * (Modrinth slug, and a file name pattern to spot copies that came from elsewhere).
+ */
+const PERFORMANCE_MODS = [
+  ['sodium', /^sodium-/i],
+  ['lithium', /^lithium-/i],
+  ['ferrite-core', /^ferritecore-/i],
+  ['immediatelyfast', /^immediatelyfast-/i],
+  ['entityculling', /^entityculling-/i],
+  ['modernfix', /^modernfix-/i]
+];
+
+/**
+ * Installs the missing performance mods (newest Fabric build for the instance's Minecraft
+ * version, with required dependencies). A mod is added only once per instance: if the player
+ * removes or disables it later, it stays that way. Mods without a build for the version, or
+ * not reachable, are skipped. Returns the titles of the mods that were added.
+ */
+async function ensurePerformanceMods(instanceId) {
+  const inst = instances.read(instanceId);
+  const modsDir = path.join(instances.instanceDir(inst.id), 'mods');
+  fs.mkdirSync(modsDir, { recursive: true });
+  const present = fs.readdirSync(modsDir);
+  const handled = { ...(inst.performanceMods || {}) };
+  const done = new Set();
+  const added = [];
+  for (const [slug, pattern] of PERFORMANCE_MODS) {
+    if (handled[slug]) continue;
+    if (present.some((f) => pattern.test(f))) { handled[slug] = 'present'; continue; }
+    try {
+      const p = await getJson(`${API}/project/${slug}`);
+      if (inst.installed[`modrinth:${p.id}`]) { handled[slug] = 'present'; continue; }
+      const list = await compatibleVersions(p.id, 'mod', inst.mcVersion);
+      if (!list.length) continue; // no build for this version yet: try again next start
+      await installVersion(inst, list[0], 'mod', { title: p.title, icon: p.icon_url }, done);
+      handled[slug] = 'installed';
+      added.push(p.title);
+    } catch {
+      // offline or Modrinth unreachable: the game still starts, the mod is tried next time
+    }
+  }
+  instances.update(inst.id, { performanceMods: handled });
+  return added;
+}
+
 /** Installs a Modrinth modpack (.mrpack) as a new instance. */
 async function installModpack({ projectId, title, icon, gameVersion }, onProgress = () => {}) {
   const params = new URLSearchParams({ loaders: JSON.stringify(['fabric']) });
@@ -141,4 +189,4 @@ async function gameVersions() {
   return tags.filter((t) => t.version_type === 'release').map((t) => t.version);
 }
 
-module.exports = { search, project, install, installModpack, gameVersions };
+module.exports = { search, project, install, installModpack, gameVersions, ensurePerformanceMods, PERFORMANCE_MODS };
