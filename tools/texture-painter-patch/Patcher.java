@@ -676,6 +676,40 @@ public class Patcher implements Opcodes {
 	 *   }
 	 * 1.21.x builds use intermediary names (class_757.method_3189), 26.x the official ones.
 	 */
+	static final String NO_EQUIP_MIXIN = "net/visualclient/mixin/NoEquipAnimationMixin";
+
+	/** Empty mixin on ItemInHandRenderer: VisualMixinPlugin finds tick() by its shape and patches it. */
+	static byte[] noEquipMixin(byte[] shieldMixin) {
+		// the hand renderer of this build, as the mod's own ShieldMixin names it; in 26.3+ the hand
+		// items and heights moved from the renderer into net.minecraft.client.player.FirstPersonHandsAndItems
+		ClassNode shield = new ClassNode();
+		new ClassReader(shieldMixin).accept(shield, ClassReader.SKIP_CODE);
+		String target = null;
+		for (AnnotationNode an : shield.invisibleAnnotations)
+			if (an.desc.equals("Lorg/spongepowered/asm/mixin/Mixin;"))
+				for (int i = 0; i < an.values.size(); i += 2)
+					if (an.values.get(i).equals("value")) target = ((Type) ((List<?>) an.values.get(i + 1)).get(0)).getInternalName();
+		if (target == null) throw new IllegalStateException("ShieldMixin target not found");
+		if (target.endsWith("/FirstPersonHandsAndItemsRenderer")) target = "net/minecraft/client/player/FirstPersonHandsAndItems";
+		ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+		cw.visit(V21, ACC_PUBLIC | ACC_SUPER | ACC_ABSTRACT, NO_EQUIP_MIXIN, null, "java/lang/Object", null);
+		cw.visitSource("NoEquipAnimationMixin.java", null);
+		var mixin = cw.visitAnnotation("Lorg/spongepowered/asm/mixin/Mixin;", false);
+		var targets = mixin.visitArray("value");
+		targets.visit(null, Type.getObjectType(target));
+		targets.visitEnd();
+		mixin.visitEnd();
+		var ctor = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+		ctor.visitCode();
+		ctor.visitVarInsn(ALOAD, 0);
+		ctor.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+		ctor.visitInsn(RETURN);
+		ctor.visitMaxs(0, 0);
+		ctor.visitEnd();
+		cw.visitEnd();
+		return cw.toByteArray();
+	}
+
 	static byte[] noPopMixin(boolean official) {
 		String gameRenderer = official ? "net/minecraft/client/renderer/GameRenderer" : "net/minecraft/class_757";
 		String target = official ? "displayItemActivation(Lnet/minecraft/world/item/ItemStack;)V" : "method_3189(Lnet/minecraft/class_1799;)V";
@@ -848,7 +882,9 @@ public class Patcher implements Opcodes {
 		boolean official = jarName.contains("-mc26.");
 		Map<String, byte[]> add = new TreeMap<>(extraClasses);
 		add.put(NO_POP_MIXIN + ".class", noPopMixin(official));
+		
 		Map<String, byte[]> entries = readJar(jar);
+		add.put(NO_EQUIP_MIXIN + ".class", noEquipMixin(entries.get("net/visualclient/mixin/ShieldMixin.class")));
 		add.put(ITEM_SIZE_MIXIN + ".class", itemSizeMixin(entries.get(XP_ORB_MIXIN + ".class"), official));
 		add.put(NEW_SCREEN + ".class", newGuiScreen(entries.get(GUI_SCREEN + ".class"), entries.get(COMPAT + ".class"),
 			entries.get(GUI_OPENER + ".class"), findItemDraw(entries)));
@@ -888,7 +924,7 @@ public class Patcher implements Opcodes {
 				return setVersion(data, version);
 			}
 			if (name.equals("visualclient.mixins.json")) {
-				return addPlugin(addMixin(addMixin(data, "NoPopAnimationMixin"), "ItemSizeMixin"));
+				return addPlugin(addMixin(addMixin(addMixin(data, "NoPopAnimationMixin"), "ItemSizeMixin"), "NoEquipAnimationMixin"));
 			}
 			return data;
 		}, add);
