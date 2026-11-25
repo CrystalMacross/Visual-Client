@@ -1,7 +1,8 @@
-# Visual Client 1.20.9 / 1.20.10 patch
+# Visual Client 1.20.9 - 1.20.11 patch
 
 `visual-client-1.20.9.jar` is the 1.20.8 bundle with one new module; `visual-client-1.20.10.jar` is 1.20.9 with
-the Falling blocks of Aurora Sky (`build.sh visual-client-1.20.9.jar visual-client-1.20.10.jar <work>`).
+the Falling blocks of Aurora Sky (`build.sh visual-client-1.20.9.jar visual-client-1.20.10.jar <work>`); 1.20.11 gives
+the cubes and the "Visual" colours the look of the website's sky (visualmod.vercel.app, sky.js).
 
 ## New
 - **Aurora Sky** (category Extra, off by default): glowing aurora curtains in the night sky. Colors: *Visual*
@@ -11,6 +12,11 @@ the Falling blocks of Aurora Sky (`build.sh visual-client-1.20.9.jar visual-clie
   in the aurora colours tumble down through the sky 24 - 64 blocks away. Each cube is projected corner by corner;
   the faces turned to the camera are filled row by row with a light factor per side (top brightest). Cubes behind
   the terrain horizon are not drawn, they fade in at the top and out near the horizon, then start again.
+- **1.20.11, like the website's sky:** the cubes are the voxel cubes of sky.js: see-through faces shaded by a light
+  from above, glowing 1px edges (runs of fills), a 4 x 4 block-pixel grid on the bigger cubes, a soft glow around
+  near cubes and the site's cube colours (teal, sky, lime, indigo, mint, amber); near cubes are more opaque. The
+  *Visual* aurora uses the site's three ribbons (teal/lime, sky/teal, indigo/sky) with its curtain gradient (edge
+  colour at the bottom, curtain colour fading out at the top), waves, rays and envelope.
 
 ## How it works
 - `src/.../AuroraSkyModule.java` is an `Overlay` (drawn from the HUD layer like the Pins module). The curtains
