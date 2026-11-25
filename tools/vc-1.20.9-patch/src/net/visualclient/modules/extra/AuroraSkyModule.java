@@ -19,10 +19,12 @@ import net.visualclient.hud.Overlay;
  *
  * The curtains hang at fixed directions in the sky (like the sun and the moon) and are projected onto the
  * screen every frame with the camera's direction and field of view (the same projection as the Pins module),
- * so they stay in place when you look around. They are drawn as soft vertical gradients from the HUD layer:
- * terrain, trees and buildings within 160 blocks hide the lower part of a curtain (the heightmap of the
- * loaded chunks gives the terrain's horizon in every direction), and the aurora fades out under a roof,
- * underwater, in rain, during the day ("Only at night") and outside the Overworld.
+ * so they stay in place when you look around. They are drawn as soft vertical gradients from the HUD layer, in
+ * real screen pixels (not GUI pixels) with a nanosecond clock and the interpolated camera, so they move smoothly at
+ * any frame rate. Blocks always hide them (1.20.12): every frame a ray per direction runs through the cached
+ * heightmap from the camera on, so walls right next to you, trees, buildings and mountains up to 384 blocks
+ * cover the curtains and the cubes. Under a roof, underwater, in rain, during the day ("Only at night") and outside
+ * the Overworld the aurora is gone.
  *
  * "Falling blocks" (own setting, on by default) adds the voxel cubes of the website's sky: see-through cubes with
  * glowing edges, light-shaded faces, a 4 x 4 block-pixel grid and a soft glow, tumbling down through the sky in the
@@ -39,7 +41,6 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 	private final NumberSetting height = this.add(new NumberSetting("Curtain height", 30.0, 12.0, 60.0, 2.0).suffix("°"));
 	private final NumberSetting speed = this.add(new NumberSetting("Speed", 1.0, 0.2, 3.0, 0.1).suffix("x"));
 	private final BoolSetting nightOnly = this.add(new BoolSetting("Only at night", true));
-	private final BoolSetting terrain = this.add(new BoolSetting("Hide behind terrain", true));
 	private final BoolSetting blocks = this.add(new BoolSetting("Falling blocks", true));
 	private final NumberSetting blockCount = this.add(new NumberSetting("Block amount", 20.0, 4.0, 40.0, 1.0));
 
@@ -54,9 +55,25 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 	/** Curtain columns all around the sky (0.5 degrees each). */
 	private static final int COLUMNS = 720;
 	private static final double STEP = Math.PI * 2.0 / COLUMNS;
-	/** Terrain horizon in 240 directions (radians above the eye), refreshed twice a second or after moving. */
-	private static final int HORIZON = 240;
+	/**
+	 * Blocks always hide the aurora. The terrain heights (MOTION_BLOCKING heightmap) around the camera are cached in a
+	 * square of 2 * NEAR + 1 blocks; every frame a ray is traced through that grid in each of the 720 column
+	 * directions, cell by cell from the camera on (walls right next to you count too), and gives the steepest terrain
+	 * slope. Beyond that, up to FAR blocks, the highest point per direction is sampled a few directions per frame and
+	 * kept as a world position, so it stays right while you move. horizon = terrain elevation (radians) per column.
+	 */
+	private static final int HORIZON = COLUMNS;
+	private static final int NEAR = 56, SIDE = NEAR * 2 + 1, NEAR_RANGE = NEAR - 9, FAR = 384;
+	private final int[] tops = new int[SIDE * SIDE];
+	private int tox = Integer.MIN_VALUE, toz, topRow;
+	private Object topLevel;
+	private final double[] nearSlope = new double[HORIZON];
+	private final double[] farX = new double[HORIZON], farZ = new double[HORIZON], farTop = new double[HORIZON];
+	private int farNext;
+	private long horizonNs;
 	private final double[] horizon = new double[HORIZON];
+	private final double[] horizonNear = new double[HORIZON];
+	private static final long T0 = System.nanoTime();
 	/**
 	 * The three ribbons of the website's sky (sky.js): lower edge (degrees), wave amplitude (degrees), height factor,
 	 * wave scale k, speed, strength, phase.
@@ -65,8 +82,6 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 	private static final int TEAL = 0x2DD4BF, SKY = 0x38BDF8, LIME = 0xA3E635, MINT = 0x5EEAD4, INDIGO = 0x818CF8, VIOLET = 0xC084FC, AMBER = 0xFBBF24;
 	/** Cube colours of the website. */
 	private static final int[] CUBE_COLORS = {TEAL, SKY, LIME, INDIGO, MINT, AMBER, SKY, TEAL};
-	private long horizonAt;
-	private double hx = Double.NaN, hy, hz;
 	private float visible;
 	private long lastFrame;
 
@@ -85,7 +100,10 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 			this.visible = 0.0F;
 			return;
 		}
-		double ex = p.getX(), ey = p.getEyeY(), ez = p.getZ();
+		var cam = mc.gameRenderer.CAMERA;
+		// the camera's position is interpolated every frame (the player's position only changes 20 times a second)
+		var camPos = cam.POS;
+		double ex = camPos.x, ey = camPos.y, ez = camPos.z;
 
 		// how visible the aurora should be right now
 		float target = 1.0F;
@@ -97,28 +115,51 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 			} catch (Throwable ignored) {
 			}
 			if (p.isUnderWater()) target = 0.0F;
-			else if (this.terrain.on()) {
+			else {
 				int roof = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(ex), (int) Math.floor(ez));
-				if (roof > ey + 0.2) target = 0.0F;
+				if (roof > ey + 0.1) target = 0.0F;
 			}
 		}
 		this.visible += (target - this.visible) * Math.min(1.0F, dt * 1.5F);
+		if (target == 0.0F && this.visible < 0.35F) this.visible = 0.0F; // under a roof: gone quickly, not shining through
 		if (this.visible < 0.01F) return;
 		if (this.blocks.on()) this.moveBlocks(dt);
 
-		if (this.terrain.on()) this.updateHorizon(level, ex, ey, ez);
+		this.updateHorizon(level, ex, ey, ez);
 
-		int w = g.guiWidth();
-		int h = g.guiHeight();
-		var cam = mc.gameRenderer.CAMERA;
+		// draw in real screen pixels instead of GUI pixels: smooth movement at any GUI scale
+		int gw = g.guiWidth();
+		int gh = g.guiHeight();
+		double fbw = net.visualclient.compat.Compat.framebufferWidth();
+		double fbh = net.visualclient.compat.Compat.framebufferHeight();
+		boolean real = fbw >= gw && fbh >= gh && fbw > 0.0 && fbh > 0.0;
+		int w = real ? (int) fbw : gw;
+		int h = real ? (int) fbh : gh;
+		float down = real ? (float) (gw / fbw) : 1.0F;
+		double gs = real ? fbw / gw : 1.0;
+		this.lw = Math.max(1, (int) Math.round(gs * 0.5));
+		this.band = gs >= 3.0 ? 2 : 1;
+		this.lim = Math.max(1.0, gs);
+		g.pose().PUSH();
+		if (real) g.pose().SCALE(down);
+		try {
+			this.draw(g, mc, cam, w, h);
+		} finally {
+			g.pose().POP();
+		}
+	}
+
+	/** Line thickness, polygon row height and size limit factor for the current GUI scale. */
+	private int lw = 1, band = 1;
+	private double lim = 1.0;
+
+	private void draw(GG g, Minecraft mc, net.minecraft.client.Camera cam, int w, int h) {
 		double yaw = Math.toRadians(cam.YAW);
 		double pitch = Math.toRadians(cam.PITCH);
 		double fov = net.visualclient.modules.misc.PinModule.worldFov;
 		if (!(fov > 1.0) || !(fov < 179.0)) fov = optionsFov(mc);
 		double tan = Math.tan(Math.toRadians(fov) * 0.5);
-		double fbw = net.visualclient.compat.Compat.framebufferWidth();
-		double fbh = net.visualclient.compat.Compat.framebufferHeight();
-		double aspect = fbw > 0.0 && fbh > 0.0 ? fbw / fbh : (double) w / Math.max(1, h);
+		double aspect = (double) w / Math.max(1, h);
 
 		// camera basis (yaw 0 looks to +Z, positive pitch looks down)
 		double fx = -Math.sin(yaw) * Math.cos(pitch), fy = -Math.sin(pitch), fz = Math.cos(yaw) * Math.cos(pitch);
@@ -128,7 +169,8 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 		double kx = cx / (tan * aspect), ky = cy / tan;
 		int bottomLimit = h;
 
-		double t = (System.currentTimeMillis() % 3_600_000L) / 1000.0 * this.speed.asDouble();
+		// nanosecond clock: the animation moves on every frame (the millisecond clock jumps in 16 ms steps on Windows)
+		double t = ((System.nanoTime() - T0) % 3_600_000_000_000L) / 1.0E9 * this.speed.asDouble();
 		double hDeg = this.height.asDouble();
 		float bright = (float) (this.brightness.asDouble() / 100.0) * this.visible;
 		// per ribbon: curtain colour and lower edge colour (the website's home sky for "Visual")
@@ -169,8 +211,9 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 					+ 0.45 * Math.sin(u * Math.PI * 2.0 * 2.9 * k - t * 0.33 + ph * 1.7)));
 				double len = Math.toRadians(hDeg * rb[2] * (0.72 + 0.28 * Math.sin(u * 19.0 * k + t * 0.5 + ph)));
 				double top = base + len;
-				double low = base;
-				if (this.terrain.on()) low = Math.max(low, this.horizon[i * HORIZON / COLUMNS] + Math.toRadians(0.4));
+				// the column (0.5 degrees wide) starts above the highest terrain of its own and both neighbouring directions
+				double hor = Math.max(this.horizon[i], Math.max(this.horizon[(i + 1) % HORIZON], this.horizon[(i + HORIZON - 1) % HORIZON]));
+				double low = Math.max(base, hor + Math.toRadians(0.4));
 				if (low >= top - Math.toRadians(1.0)) continue;
 
 				// x extents of the column at its lower edge
@@ -245,12 +288,17 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 			if (c == null) continue;
 			double dist = Math.sqrt(c[0] * c[0] + c[2] * c[2]);
 			double el = Math.atan2(c[1], dist);
-			if (this.terrain.on()) {
-				double th = Math.atan2(-c[0], c[2]);
-				int hi = (int) Math.floorMod(Math.round(th / (Math.PI * 2.0) * HORIZON), (long) HORIZON);
-				if (el < this.horizon[hi] + Math.toRadians(0.5)) continue;
-			}
+			// hidden as soon as any part of the cube could be behind terrain (over its whole width, lowest corner)
+			double reach = c[4] * 0.87;
+			double th = Math.atan2(-c[0], c[2]);
+			double aw = Math.atan2(reach, dist) + STEP;
+			int h0 = (int) Math.floor((th - aw) / STEP), h1 = (int) Math.ceil((th + aw) / STEP);
+			double hor = -Math.PI / 2;
+			for (int hi = h0; hi <= h1; hi++) hor = Math.max(hor, this.horizonNear[Math.floorMod(hi, HORIZON)]);
+			double lowEl = Math.atan2(c[1] - reach, dist);
+			if (lowEl < hor + Math.toRadians(0.5)) continue;
 			float fade = (float) Math.min(1.0, Math.min((el - Math.toRadians(4.0)) / Math.toRadians(10.0), (72.0 - c[1]) / 10.0));
+			fade *= (float) Math.min(1.0, (lowEl - hor - Math.toRadians(0.5)) / Math.toRadians(2.0));
 			if (fade <= 0.02F) continue;
 			double ca = Math.cos(c[5]), sa = Math.sin(c[5]), cb = Math.cos(c[7]), sb = Math.sin(c[7]);
 			double half = c[4] * 0.5;
@@ -311,7 +359,7 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 				fillPoly(g, fxs, fys, argb(scale(col, sh), alpha * (0.38F + 0.42F * lit)), w, bottomLimit);
 				int line = argb(col, alpha * (0.45F + 0.5F * lit));
 				for (int k = 0; k < 4; k++) line(g, fxs[k], fys[k], fxs[(k + 1) % 4], fys[(k + 1) % 4], line, w, bottomLimit);
-				if (size > 22.0) { // 4 x 4 block pixels on the bigger cubes
+				if (size > 22.0 * this.lim) { // 4 x 4 block pixels on the bigger cubes
 					int grid = argb(col, alpha * 0.2F);
 					for (int n = 1; n < 4; n++) {
 						double t = n / 4.0;
@@ -337,7 +385,7 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 	}
 
 	/** A 1px line from runs of fills: one fill per row (steep lines) or per column (flat lines). */
-	private static void line(GG g, double x0, double y0, double x1, double y1, int color, int w, int bottomLimit) {
+	private void line(GG g, double x0, double y0, double x1, double y1, int color, int w, int bottomLimit) {
 		if (color >>> 24 == 0) return;
 		double dx = x1 - x0, dy = y1 - y0;
 		if (Math.abs(dx) >= Math.abs(dy)) {
@@ -348,14 +396,14 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 				dx = -dx;
 			}
 			int rows = Math.max(1, (int) Math.round(Math.abs(dy)) + 1);
-			if (rows > 400) return;
+			if (rows > 400 * this.lim) return;
 			for (int i = 0; i < rows; i++) {
 				double a = (double) i / rows, b = (double) (i + 1) / rows;
 				int y = (int) Math.floor(y0 + dy * (a + b) * 0.5);
 				if (y < 0 || y >= bottomLimit) continue;
 				int xa = Math.max(0, (int) Math.round(x0 + dx * a)), xb = Math.min(w, (int) Math.round(x0 + dx * b));
 				if (xb <= xa) xb = xa + 1;
-				g.fill(xa, y, xb, y + 1, color);
+				g.fill(xa, y, xb, y + this.lw, color);
 			}
 		} else {
 			if (y1 < y0) {
@@ -365,7 +413,7 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 				dx = -dx;
 			}
 			int cols = Math.max(1, (int) Math.round(Math.abs(dx)) + 1);
-			if (cols > 400) return;
+			if (cols > 400 * this.lim) return;
 			for (int i = 0; i < cols; i++) {
 				double a = (double) i / cols, b = (double) (i + 1) / cols;
 				int x = (int) Math.floor(x0 + dx * (a + b) * 0.5);
@@ -373,21 +421,21 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 				int ya = Math.max(0, (int) Math.round(y0 + dy * a)), yb = Math.min(bottomLimit, (int) Math.round(y0 + dy * b));
 				if (yb <= ya) yb = ya + 1;
 				if (ya >= bottomLimit) continue;
-				g.fill(x, ya, x + 1, yb, color);
+				g.fill(x, ya, x + this.lw, yb, color);
 			}
 		}
 	}
 
 	/** Fills a convex polygon with 1px rows (the GUI only has axis-aligned fills). */
-	private static void fillPoly(GG g, double[] xs, double[] ys, int color, int w, int bottomLimit) {
+	private void fillPoly(GG g, double[] xs, double[] ys, int color, int w, int bottomLimit) {
 		if (color >>> 24 == 0) return;
 		double minY = Math.min(Math.min(ys[0], ys[1]), Math.min(ys[2], ys[3]));
 		double maxY = Math.max(Math.max(ys[0], ys[1]), Math.max(ys[2], ys[3]));
 		int y0 = Math.max(0, (int) Math.floor(minY));
 		int y1 = Math.min(bottomLimit, (int) Math.ceil(maxY));
-		if (y1 - y0 > 200) return;
-		for (int row = y0; row < y1; row++) {
-			double yc = row + 0.5, lo = Double.MAX_VALUE, hi = -Double.MAX_VALUE;
+		if (y1 - y0 > 200 * this.lim) return;
+		for (int row = y0; row < y1; row += this.band) {
+			double yc = row + this.band * 0.5, lo = Double.MAX_VALUE, hi = -Double.MAX_VALUE;
 			for (int i = 0; i < 4; i++) {
 				double ax = xs[i], ay = ys[i], bx = xs[(i + 1) % 4], by = ys[(i + 1) % 4];
 				if (yc >= ay && yc < by || yc >= by && yc < ay) {
@@ -398,7 +446,7 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 			}
 			if (lo <= hi) {
 				int l = Math.max(0, (int) Math.round(lo)), r = Math.min(w, (int) Math.round(hi));
-				if (r > l) g.fill(l, row, r, row + 1, color);
+				if (r > l) g.fill(l, row, r, Math.min(y1, row + this.band), color);
 			}
 		}
 	}
@@ -441,28 +489,102 @@ public final class AuroraSkyModule extends ClientModule implements Overlay {
 		return cy - yc / zc * ky;
 	}
 
-	/** Terrain horizon in every column direction from the heightmap of the loaded chunks (up to 160 blocks). */
+	/**
+	 * Terrain horizon in all 720 column directions. Near (up to NEAR_RANGE blocks): a ray through the cached heightmap,
+	 * every cell it crosses, from the camera on, every frame. Far (up to FAR blocks): the highest point per direction,
+	 * 48 directions per frame, kept as a world position.
+	 */
 	private void updateHorizon(ClientLevel level, double ex, double ey, double ez) {
-		long now = System.currentTimeMillis();
-		double moved = Double.isNaN(this.hx) ? 1e9 : sq(ex - this.hx) + sq(ey - this.hy) + sq(ez - this.hz);
-		if (now - this.horizonAt < 500L && moved < 4.0) return;
-		this.horizonAt = now;
-		this.hx = ex;
-		this.hy = ey;
-		this.hz = ez;
-		for (int i = 0; i < HORIZON; i++) {
-			double th = i * Math.PI * 2.0 / HORIZON;
-			double dx = -Math.sin(th), dz = Math.cos(th);
-			double best = -Math.PI / 2;
-			for (int d = 3; d <= 160; d += d < 32 ? 2 : 4) {
-				int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(ex + dx * d), (int) Math.floor(ez + dz * d));
-				double el = Math.atan2(top - ey, d);
-				if (el > best) best = el;
+		int bx = (int) Math.floor(ex), bz = (int) Math.floor(ez);
+		long nowNs = System.nanoTime();
+		boolean paused = nowNs - this.horizonNs > 250_000_000L; // not drawn for a while (roof, day, menu): read everything again
+		this.horizonNs = nowNs;
+		boolean recenter = paused || level != this.topLevel || Math.abs(bx - this.tox) > 8 || Math.abs(bz - this.toz) > 8;
+		if (recenter) {
+			boolean farToo = paused || level != this.topLevel || Math.abs(bx - this.tox) > 48 || Math.abs(bz - this.toz) > 48;
+			this.topLevel = level;
+			this.tox = bx;
+			this.toz = bz;
+			for (int r = 0; r < SIDE; r++) this.fillRow(level, r);
+			if (farToo) for (int i = 0; i < HORIZON; i++) this.sampleFar(level, i, ex, ey, ez);
+		} else {
+			// keep the cache fresh (placed and broken blocks): 1/8 of the rows per frame
+			for (int k = 0; k < SIDE / 8 + 1; k++) {
+				this.fillRow(level, this.topRow);
+				this.topRow = (this.topRow + 1) % SIDE;
 			}
-			this.horizon[i] = best;
+		}
+		for (int k = 0; k < 48; k++) {
+			this.sampleFar(level, this.farNext, ex, ey, ez);
+			this.farNext = (this.farNext + 1) % HORIZON;
+		}
+		// near: walk the grid along each direction (2D DDA), steepest slope of the cell tops
+		double ox = ex - (this.tox - NEAR), oz = ez - (this.toz - NEAR);
+		for (int i = 0; i < HORIZON; i++) {
+			double th = i * STEP;
+			double dx = -Math.sin(th), dz = Math.cos(th);
+			int cx = (int) Math.floor(ox), cz = (int) Math.floor(oz);
+			int sx = dx > 0 ? 1 : -1, sz = dz > 0 ? 1 : -1;
+			double tdx = Math.abs(dx) < 1e-9 ? Double.MAX_VALUE : Math.abs(1.0 / dx);
+			double tdz = Math.abs(dz) < 1e-9 ? Double.MAX_VALUE : Math.abs(1.0 / dz);
+			double tmx = Math.abs(dx) < 1e-9 ? Double.MAX_VALUE : (dx > 0 ? cx + 1 - ox : ox - cx) * tdx;
+			double tmz = Math.abs(dz) < 1e-9 ? Double.MAX_VALUE : (dz > 0 ? cz + 1 - oz : oz - cz) * tdz;
+			double best = -1e9;
+			while (true) {
+				double tEnter;
+				if (tmx < tmz) {
+					tEnter = tmx;
+					tmx += tdx;
+					cx += sx;
+				} else {
+					tEnter = tmz;
+					tmz += tdz;
+					cz += sz;
+				}
+				if (tEnter > NEAR_RANGE || cx < 0 || cz < 0 || cx >= SIDE || cz >= SIDE) break;
+				double s = (this.tops[cz * SIDE + cx] - ey) / Math.max(0.05, tEnter);
+				if (s > best) best = s;
+			}
+			this.nearSlope[i] = best;
+		}
+		for (int i = 0; i < HORIZON; i++) {
+			double near = this.nearSlope[i] < -1e8 ? -Math.PI / 2 : Math.atan(this.nearSlope[i]);
+			this.horizonNear[i] = near;
+			double far = -Math.PI / 2;
+			if (!Double.isNaN(this.farTop[i])) {
+				double d = Math.sqrt(sq(this.farX[i] - ex) + sq(this.farZ[i] - ez));
+				if (d > 1.0) far = Math.atan2(this.farTop[i] - ey, d);
+			}
+			this.horizon[i] = Math.max(near, far);
 		}
 	}
 
+	private void fillRow(ClientLevel level, int r) {
+		int z = this.toz - NEAR + r, x0 = this.tox - NEAR;
+		for (int c = 0; c < SIDE; c++) this.tops[r * SIDE + c] = level.getHeight(Heightmap.Types.MOTION_BLOCKING, x0 + c, z);
+	}
+
+	/** Highest terrain point (by elevation) in direction i between NEAR_RANGE - 8 and FAR blocks. */
+	private void sampleFar(ClientLevel level, int i, double ex, double ey, double ez) {
+		double th = i * STEP;
+		double dx = -Math.sin(th), dz = Math.cos(th);
+		double best = -1e9, bxp = 0, bzp = 0, btop = Double.NaN;
+		for (int d = NEAR_RANGE - 8; d <= FAR; d += d < 128 ? 2 : 4) {
+			double x = ex + dx * d, z = ez + dz * d;
+			int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) Math.floor(x), (int) Math.floor(z));
+			// the near edge of the sampled area, so the point is never placed too far away
+			double s = (top - ey) / (d - 1.5);
+			if (s > best) {
+				best = s;
+				bxp = ex + dx * (d - 1.5);
+				bzp = ez + dz * (d - 1.5);
+				btop = top;
+			}
+		}
+		this.farX[i] = bxp;
+		this.farZ[i] = bzp;
+		this.farTop[i] = btop;
+	}
 	/** 0 by day, 1 at night, with a smooth dusk and dawn (ticks of the day, 0 = sunrise). */
 	private static float night(long dayTime) {
 		double t = Math.floorMod(dayTime, 24000L);
